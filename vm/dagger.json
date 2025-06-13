@@ -1,0 +1,19 @@
+{
+  "name": "vm",
+  "engineVersion": "v0.18.10",
+  "sdk": {
+    "source": "go"
+  },
+  "dependencies": [
+    {
+      "name": "sops",
+      "source": "github.com/stuttgart-things/dagger/sops@v0.13.0",
+      "pin": "db530d4a1cbc0373f29fa75d6cf4e860cc3a07c0"
+    },
+    {
+      "name": "terraform",
+      "source": "github.com/stuttgart-things/dagger/terraform@v0.13.0",
+      "pin": "db530d4a1cbc0373f29fa75d6cf4e860cc3a07c0"
+    }
+  ]
+}

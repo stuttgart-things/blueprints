@@ -28,6 +28,7 @@ import (
 	"context"
 	"dagger/vm/internal/dagger"
 	"fmt"
+	"log"
 )
 
 type Vm struct {
@@ -71,14 +72,29 @@ func (v *Vm) Bake(
 		ctr = ctr.WithNewFile(fmt.Sprintf("%s/terraform.tfvars.json", workDir), decryptedContent)
 	}
 
-	// Extract updated directory from container
-	updatedDir := ctr.Directory(workDir)
+	// EXTRACT UPDATED DIRECTORY FROM CONTAINER
+	updatedWorkspace := ctr.Directory(workDir)
 
-	dir := dag.Terraform().Execute(updatedDir, dagger.TerraformExecuteOpts{
+	dir := dag.Terraform().Execute(updatedWorkspace, dagger.TerraformExecuteOpts{
 		Operation:     "apply",
 		EncryptedFile: nil,
 	})
 
-	return dir, nil
+	// GET TERRAFORM OUTPUT FOR INVENTORY CREATION
+	tfOutput, err := dag.Terraform().Output(ctx, dir)
+	if err != nil {
+		return nil, fmt.Errorf("getting terraform output failed: %w", err)
+	}
 
+	// CREATE ANSIBLE INVENTORY FROM JSON
+	inventory, err := CreateAnsibleInventory(tfOutput)
+	if err != nil {
+		log.Fatalf("Error creating inventory: %v", err)
+	}
+	// WRITE THE DECRYPTED CONTENT INTO THE CONTAINER
+	ctr = ctr.WithNewFile(fmt.Sprintf("%s/inventory.yaml", workDir), inventory)
+	// EXTRACT UPDATED DIRECTORY FROM CONTAINER
+	updatedWorkspace = ctr.Directory(workDir)
+
+	return updatedWorkspace, nil
 }

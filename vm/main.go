@@ -12,22 +12,73 @@
 // rest is a long description with more detail on the module's purpose or usage,
 // if appropriate. All modules should have a short description.
 
+// IDEA
+// RENDER TO BRANCH/PR -> IMPLEMENT LATER
+// SOPS DECRYPT
+// TERRAFORM EXECUTE
+// TERRAFORM OUTPUT
+// ANSIBLE INVENTORY CREATION
+// ANSIBLE EXECUTION
+// TEST VM
+// MERGE PR
+
 package main
 
-import "context"
+import (
+	"context"
+	"dagger/vm/internal/dagger"
+	"fmt"
+)
 
-type Vm struct{}
+type Vm struct {
+	BaseImage string
+}
 
-func (v *Vm) Create(
-	ctx context.Context) {
+func (v *Vm) Bake(
+	ctx context.Context,
+	terraformDir *dagger.Directory,
+	// +optional
+	// +default="apply"
+	operation string,
+	// +optional
+	encryptedFile *dagger.File,
+	// +optional
+	sopsKey *dagger.Secret,
+) (*dagger.Directory, error) {
 
-	// RENDER TO BRANCH/PR -> IMPLEMENT LATER
-	// SOPS DECRYPT
-	// TERRAFORM EXECUTE
-	// TERRAFORM OUTPUT
-	// ANSIBLE INVENTORY CREATION
-	// ANSIBLE EXECUTION
-	// TEST VM
-	// MERGE PR
+	workDir := "/src"
+
+	// INIT WORKING CONTAINER
+	ctr, err := v.container(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("container init failed: %w", err)
+	}
+	ctr = ctr.WithDirectory(workDir, terraformDir).WithWorkdir(workDir)
+
+	if encryptedFile != nil {
+
+		// DECRYPT TO STRING
+		decryptedContent, err := dag.Sops().DecryptSops(
+			ctx,
+			sopsKey,
+			encryptedFile,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("decrypting sops file failed: %w", err)
+		}
+
+		// Write the decrypted content into the container
+		ctr = ctr.WithNewFile(fmt.Sprintf("%s/terraform.tfvars.json", workDir), decryptedContent)
+	}
+
+	// Extract updated directory from container
+	updatedDir := ctr.Directory(workDir)
+
+	dir := dag.Terraform().Execute(updatedDir, dagger.TerraformExecuteOpts{
+		Operation:     "apply",
+		EncryptedFile: nil,
+	})
+
+	return dir, nil
 
 }

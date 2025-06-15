@@ -1,0 +1,19 @@
+{
+	"vsphere_server": "ENC[AES256_GCM,data:YhXNnbqjYHKUzXZI4A==,iv:L3JXKAR/2UwAkr3RQ9S8pBCjfMeVVjAhdF53q++mIKQ=,tag:5WjW1oG0/Batk5kkZjabFg==,type:str]",
+	"vsphere_user": "ENC[AES256_GCM,data:T7JuZiLXtF8fLbiUyhSX/QqEZZ0uHGLfsGE=,iv:1jBSm8DR815UsG94x1Fz6OJFdqunpR6RBAehJHRDxhQ=,tag:NzJ9kWWuPrJU4/ppDsvKwA==,type:str]",
+	"vsphere_password": "ENC[AES256_GCM,data:CXT1whP3QM6hWba+LQVTczNDbQ==,iv:lRasi6MU/jG5MwEq7g3B3+LXCUn5bVX+SqA8C+KYX7I=,tag:ueQP5zxfqfSlmeR7LShmog==,type:str]",
+	"vm_ssh_user": "ENC[AES256_GCM,data:/V+XrGOrgA==,iv:YaHe3Za4cZeUU0aw588AR07dJzayqSwJFq9AItW6aG4=,tag:ONYWkWg93GSw267FPF5IZg==,type:str]",
+	"vm_ssh_password": "ENC[AES256_GCM,data:xPqnlVdI0mI=,iv:4B0H5XXhsNUbVRdlxAJ8coMHsz8X/9O3+d1D7uR79YM=,tag:apGzlE/vXGCUaCNuHRGILw==,type:str]",
+	"sops": {
+		"age": [
+			{
+				"recipient": "age19vgzvmpt9tdlcsu8rzaacj397yz8gguz38nsmuy6eeelt5vjsyms542xtm",
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBaaHl0enVodFVuQ1NNNElB\nTmU1THE2QUt1SmE4S3dvTmthUld2dDZpMndJCmM4SnkzS3pMQ1pMODJUcEM1T0k1\nNXJqSm9obzZ0KzQxQ29mWDJEWElQSEUKLS0tIFJyYXBuMXhBNy9KUUx6VlJVZUtt\nY1lMbGhycVVFSzlleFFkN3dXc1ZXZUkKIZx3F/UJfEwAItszYYpRzbFbFTppNIro\nXwkbhDGUidQLBhi/0ITSTRtQIL4Y2eY6vmkh0rbVQVYAArkZCDhAOQ==\n-----END AGE ENCRYPTED FILE-----\n"
+			}
+		],
+		"lastmodified": "2025-06-10T20:31:23Z",
+		"mac": "ENC[AES256_GCM,data:qPlotJIupSufYGfT5DMTBnfUT4wOTn2PEC5zz2lIPH9vkGYK60WCGjkQFVZyJohppTxeMmbMdgp/UZQCLVjj8veOUnhVjnMEOA/ZxUIc63z3JGjUyG6sQr9ZZW5l4m7SXY30MnLrQf5GgM+Nzdh+CxlqWZV9uFIiCXk4BMeDuZc=,iv:zO+UrLWR3Pyhrcv+zIxkcpMk1WZFG3fmRcqktvzZFY4=,tag:AjG9LQ9Pdqnwowx5EPJ9KQ==,type:str]",
+		"unencrypted_suffix": "_unencrypted",
+		"version": "3.10.2"
+	}
+}

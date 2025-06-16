@@ -9,6 +9,41 @@ vars:
 dotenv: ['.env', '{{.HOME}}/.env']
 
 tasks:
+  test-vm:
+    desc: Test vm module
+    cmds:
+      - |
+        echo "Running bake command for vm module - apply terraform code"
+        rm -rf {{ .EXPORTED_TF_WORKSPACE }} || true
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --terraform-dir {{ .TF_CODE_TEST_DIR }} \
+        --encrypted-file {{ .SOPS_ENCRYPTED_VARS }} \
+        --operation apply \
+        --sops-key={{ .SOPS_KEY }} \
+        -vv --progress plain \
+        export --path={{ .EXPORTED_TF_WORKSPACE }}
+      - |
+        echo "Running bake command for vm module - apply terraform code over existing workspace"
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --terraform-dir {{ .EXPORTED_TF_WORKSPACE }} \
+        --encrypted-file {{ .SOPS_ENCRYPTED_VARS }} \
+        --operation apply \
+        --sops-key={{ .SOPS_KEY }} \
+        -vv --progress plain \
+        export --path={{ .EXPORTED_TF_WORKSPACE }}
+    vars:
+      MODULE: vm
+      FUNCTION: bake
+      TF_CODE_TEST_DIR: tests/vm/tf
+      SOPS_ENCRYPTED_VARS: tests/vm/terraform.tfvars.enc.json
+      EXPORTED_TF_WORKSPACE: /tmp/terraform/vms/dagger/
+      SOPS_KEY: env:SOPS_AGE_KEY
+
+
+
+
+
+
   create:
     desc: Create new dagger module
     cmds:

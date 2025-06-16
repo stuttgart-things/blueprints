@@ -39,11 +39,6 @@ tasks:
       EXPORTED_TF_WORKSPACE: /tmp/terraform/vms/dagger/
       SOPS_KEY: env:SOPS_AGE_KEY
 
-
-
-
-
-
   create:
     desc: Create new dagger module
     cmds:

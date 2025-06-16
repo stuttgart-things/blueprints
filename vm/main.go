@@ -76,8 +76,7 @@ func (v *Vm) Bake(
 	updatedWorkspace := ctr.Directory(workDir)
 
 	dir := dag.Terraform().Execute(updatedWorkspace, dagger.TerraformExecuteOpts{
-		Operation:     "apply",
-		EncryptedFile: nil,
+		Operation: "apply",
 	})
 
 	// GET TERRAFORM OUTPUT FOR INVENTORY CREATION

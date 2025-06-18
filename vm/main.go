@@ -45,6 +45,24 @@ func (v *Vm) Bake(
 	encryptedFile *dagger.File,
 	// +optional
 	sopsKey *dagger.Secret,
+	// +optional
+	vaultAppRoleID *dagger.Secret,
+	// +optional
+	vaultSecretID *dagger.Secret,
+	// +optional
+	vaultUrl *dagger.Secret,
+	// +optional
+	ansibleInventoryTemplate *dagger.File,
+	// +optional
+	ansiblePlaybooks string,
+	// +optional
+	ansibleRequirementsFile *dagger.File,
+	// +optional
+	ansibleUser *dagger.Secret,
+	// +optional
+	ansiblePassword *dagger.Secret,
+	// +optional
+	ansibleParameters string,
 ) (*dagger.Directory, error) {
 
 	workDir := "/src"
@@ -90,10 +108,24 @@ func (v *Vm) Bake(
 	if err != nil {
 		log.Fatalf("Error creating inventory: %v", err)
 	}
+
 	// WRITE THE DECRYPTED CONTENT INTO THE CONTAINER
 	ctr = ctr.WithNewFile(fmt.Sprintf("%s/inventory.yaml", workDir), inventory)
 	// EXTRACT UPDATED DIRECTORY FROM CONTAINER
 	updatedWorkspace = ctr.Directory(workDir)
+
+	// RUN ANSIBLE PLAYBOOK
+	dag.Ansible().Execute(ctx, ansiblePlaybooks, dagger.AnsibleExecuteOpts{
+		Src:            updatedWorkspace,
+		Inventory:      updatedWorkspace.File("inventory.yaml"),
+		Parameters:     ansibleParameters,
+		VaultAppRoleID: vaultAppRoleID,
+		VaultSecretID:  vaultSecretID,
+		VaultURL:       vaultUrl,
+		Requirements:   ansibleRequirementsFile,
+		SSHUser:        ansibleUser,
+		SSHPassword:    ansiblePassword,
+	})
 
 	return updatedWorkspace, nil
 }

@@ -1,6 +1,6 @@
 {
   "branches": ["main"],
-  "repositoryUrl": "https://github.com/stuttgart-things/dagger",
+  "repositoryUrl": "https://github.com/stuttgart-things/blueprints",
   "tagFormat": "v${version}",
   "plugins": [
     [

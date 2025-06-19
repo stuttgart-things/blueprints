@@ -1,0 +1,20 @@
+# 1.0.0 (2025-06-19)
+
+
+### Bug Fixes
+
+* fix/vm-readme ([1330894](https://github.com/stuttgart-things/blueprints/commit/1330894a4ce878ef54c4c12bead5b6c6d0c06b3f))
+
+
+### Features
+
+* feat/add-vm-module ([e6f11d9](https://github.com/stuttgart-things/blueprints/commit/e6f11d9890cdbad376f16802ddc59874855501d1))
+* feat/add-vm-module ([6011862](https://github.com/stuttgart-things/blueprints/commit/6011862e20fb41ce06cf972236f398b8b065c6ad))
+* feat/add-vm-module ([cfa3759](https://github.com/stuttgart-things/blueprints/commit/cfa3759ca413d5a9a44e15ab063b175d67e74b61))
+* feat/add-vm-module ([43ff058](https://github.com/stuttgart-things/blueprints/commit/43ff058ef9ceae06f8fa3a9820c2d1b208349019))
+* feat/add-vm-module ([60a1521](https://github.com/stuttgart-things/blueprints/commit/60a15219cf31274e23af09792d06ef445e5bb810))
+* feat/add-vm-module ([4f588d6](https://github.com/stuttgart-things/blueprints/commit/4f588d6c068c9c65ecbe16e7a5078fe85b45e47b))
+* feat/add-vm-module ([edae486](https://github.com/stuttgart-things/blueprints/commit/edae4861202156a6dc9b78b5ba9b6cb912c2fa91))
+* feat/add-vm-module ([f4eaceb](https://github.com/stuttgart-things/blueprints/commit/f4eacebe8fed5294de53466b29f27053da891390))
+* feat/add-vm-module ([8b11218](https://github.com/stuttgart-things/blueprints/commit/8b11218e0c9691886948b8d3320e16dc31bbd7c5))
+* feat/add-vm-module ([b7f64e3](https://github.com/stuttgart-things/blueprints/commit/b7f64e368dc4a9467658f0e7e399058b97798d84))

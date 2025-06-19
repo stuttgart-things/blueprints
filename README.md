@@ -2,7 +2,7 @@
 
 collection of modular, reusable Dagger pipelines for automating build, test &amp; deployment workflows
 
-[VM Module](./VM/README.md)
+[VM Module](./vm/README.md)
 
 
 ## LICENSE

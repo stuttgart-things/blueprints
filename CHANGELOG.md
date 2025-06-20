@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/stuttgart-things/blueprints/compare/v1.1.0...v1.1.1) (2025-06-20)
+
+
+### Bug Fixes
+
+* fix/tf-output-fix ([bac83b4](https://github.com/stuttgart-things/blueprints/commit/bac83b4a6bec07cf6e30395632266c01cc4b2f88))
+
 # [1.1.0](https://github.com/stuttgart-things/blueprints/compare/v1.0.0...v1.1.0) (2025-06-20)
 
 

@@ -63,8 +63,12 @@ func (v *Vm) Bake(
 	ansiblePassword *dagger.Secret,
 	// +optional
 	ansibleParameters string,
+	// +optional
+	// +default="default"
+	ansibleInventoryType string,
 ) (*dagger.Directory, error) {
 
+	var inventory string
 	workDir := "/src"
 
 	// INIT WORKING CONTAINER
@@ -103,10 +107,19 @@ func (v *Vm) Bake(
 		return nil, fmt.Errorf("getting terraform output failed: %w", err)
 	}
 
-	// CREATE ANSIBLE INVENTORY FROM JSON
-	inventory, err := CreateAnsibleInventory(tfOutput)
-	if err != nil {
-		log.Fatalf("Error creating inventory: %v", err)
+	switch ansibleInventoryType {
+	case "default":
+		// CREATE ANSIBLE INVENTORY FROM JSON
+		inventory, err = CreateDefaultAnsibleInventory(tfOutput)
+		if err != nil {
+			log.Fatalf("Error creating inventory: %v", err)
+		}
+	case "cluster":
+		// CREATE ANSIBLE INVENTORY FROM JSON
+		inventory, err = CreateClusterAnsibleInventory(tfOutput)
+		if err != nil {
+			log.Fatalf("Error creating inventory: %v", err)
+		}
 	}
 
 	// WRITE THE DECRYPTED CONTENT INTO THE CONTAINER

@@ -138,3 +138,4 @@ tasks:
       - npx semantic-release --dry-run
       - npx semantic-release --debug --no-ci
       - echo released version $(git describe --tags --abbrev=0)
+# check: https://github.com/act3-ai/dagger/blob/main/release/main.go

@@ -28,7 +28,6 @@ import (
 	"context"
 	"dagger/vm/internal/dagger"
 	"fmt"
-	"log"
 )
 
 type Vm struct {
@@ -67,8 +66,6 @@ func (v *Vm) Bake(
 	// +default="default"
 	ansibleInventoryType string,
 ) (*dagger.Directory, error) {
-
-	var inventory string
 	workDir := "/src"
 
 	// INIT WORKING CONTAINER
@@ -78,59 +75,47 @@ func (v *Vm) Bake(
 	}
 	ctr = ctr.WithDirectory(workDir, terraformDir).WithWorkdir(workDir)
 
+	// OPTIONAL SOPS DECRYPTION
 	if encryptedFile != nil {
-
-		// DECRYPT TO STRING
-		decryptedContent, err := dag.Sops().DecryptSops(
-			ctx,
-			sopsKey,
-			encryptedFile,
-		)
+		decryptedContent, err := dag.Sops().DecryptSops(ctx, sopsKey, encryptedFile)
 		if err != nil {
 			return nil, fmt.Errorf("decrypting sops file failed: %w", err)
 		}
-
-		// Write the decrypted content into the container
 		ctr = ctr.WithNewFile(fmt.Sprintf("%s/terraform.tfvars.json", workDir), decryptedContent)
 	}
 
-	// EXTRACT UPDATED DIRECTORY FROM CONTAINER
-	updatedWorkspace := ctr.Directory(workDir)
-
-	dir := dag.Terraform().Execute(updatedWorkspace, dagger.TerraformExecuteOpts{
-		Operation: "apply",
+	// RUN TERRAFORM
+	terraformDirResult := dag.Terraform().Execute(ctr.Directory(workDir), dagger.TerraformExecuteOpts{
+		Operation: operation,
 	})
 
-	// GET TERRAFORM OUTPUT FOR INVENTORY CREATION
-	tfOutput, err := dag.Terraform().Output(ctx, dir)
+	// GET TERRAFORM OUTPUT
+	tfOutput, err := dag.Terraform().Output(ctx, terraformDirResult)
 	if err != nil {
 		return nil, fmt.Errorf("getting terraform output failed: %w", err)
 	}
 
+	// GENERATE ANSIBLE INVENTORY
+	var inventory string
 	switch ansibleInventoryType {
 	case "default":
-		// CREATE ANSIBLE INVENTORY FROM JSON
 		inventory, err = CreateDefaultAnsibleInventory(tfOutput)
-		if err != nil {
-			log.Fatalf("Error creating inventory: %v", err)
-		}
 	case "cluster":
-		// CREATE ANSIBLE INVENTORY FROM JSON
 		inventory, err = CreateClusterAnsibleInventory(tfOutput)
-		if err != nil {
-			log.Fatalf("Error creating inventory: %v", err)
-		}
+	default:
+		err = fmt.Errorf("unsupported inventory type: %s", ansibleInventoryType)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("creating inventory failed: %w", err)
 	}
 
-	// WRITE THE DECRYPTED CONTENT INTO THE CONTAINER
+	// WRITE INVENTORY TO CONTAINER
 	ctr = ctr.WithNewFile(fmt.Sprintf("%s/inventory.yaml", workDir), inventory)
-	// EXTRACT UPDATED DIRECTORY FROM CONTAINER
-	updatedWorkspace = ctr.Directory(workDir)
 
-	// RUN ANSIBLE PLAYBOOK
+	// RUN ANSIBLE
 	dag.Ansible().Execute(ctx, ansiblePlaybooks, dagger.AnsibleExecuteOpts{
-		Src:            updatedWorkspace,
-		Inventory:      updatedWorkspace.File("inventory.yaml"),
+		Src:            terraformDirResult,
+		Inventory:      terraformDirResult.File("inventory.yaml"),
 		Parameters:     ansibleParameters,
 		VaultAppRoleID: vaultAppRoleID,
 		VaultSecretID:  vaultSecretID,
@@ -140,5 +125,6 @@ func (v *Vm) Bake(
 		SSHPassword:    ansiblePassword,
 	})
 
-	return updatedWorkspace, nil
+	// RETURN UPDATED WORKDIR WITH INVENTORY
+	return terraformDirResult, nil
 }

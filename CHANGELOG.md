@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/stuttgart-things/blueprints/compare/v1.0.0...v1.1.0) (2025-06-20)
+
+
+### Features
+
+* feat/add-vm-k8s-inventory ([ca8a3e9](https://github.com/stuttgart-things/blueprints/commit/ca8a3e9e02be821bc21c0b8f33ae6fc66ed234bc))
+
 # 1.0.0 (2025-06-19)
 
 

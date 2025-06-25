@@ -1,0 +1,14 @@
+{
+  "name": "vmtemplate",
+  "engineVersion": "v0.18.10",
+  "sdk": {
+    "source": "go"
+  },
+  "dependencies": [
+    {
+      "name": "packer",
+      "source": "github.com/stuttgart-things/dagger/packer@v0.15.1",
+      "pin": "15b13cbd278ac02814311a82fb874943869452d5"
+    }
+  ]
+}

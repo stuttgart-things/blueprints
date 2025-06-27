@@ -1,5 +1,7 @@
 # stuttgart-things/blueprints/vm
 
+## 📊 Diagram: VM Provisioning Flow
+
 ```mermaid
 flowchart TD
     enc[terraform.tfvars.enc.json] --> A[SOPS Decrypt]
@@ -8,7 +10,7 @@ flowchart TD
     B --> infra[Infrastructure Created]
     infra --> C[Generate Ansible Inventory YAML]
     C --> out[inventory.yaml]
-
+```
 
 <details><summary>BUILD NEW VM</summary>
 

@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/stuttgart-things/blueprints/compare/v1.1.1...v1.2.0) (2025-06-27)
+
+
+### Features
+
+* feat/add-packer-task ([724499d](https://github.com/stuttgart-things/blueprints/commit/724499d8f2b46b43cd625b7afddda6233a119556))
+
 ## [1.1.1](https://github.com/stuttgart-things/blueprints/compare/v1.1.0...v1.1.1) (2025-06-20)
 
 

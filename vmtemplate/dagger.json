@@ -7,8 +7,8 @@
   "dependencies": [
     {
       "name": "packer",
-      "source": "github.com/stuttgart-things/dagger/packer@v0.15.1",
-      "pin": "15b13cbd278ac02814311a82fb874943869452d5"
+      "source": "github.com/stuttgart-things/dagger/packer@v0.15.2",
+      "pin": "f2676ea92e1f36a480fe5f93d73bab6161eed0f8"
     }
   ]
 }

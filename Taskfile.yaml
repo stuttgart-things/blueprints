@@ -9,6 +9,28 @@ vars:
 dotenv: ['.env', '{{.HOME}}/.env']
 
 tasks:
+  test-all:
+    desc: Run all tests
+    cmds:
+      - task: test-vmtemplate
+      - task: test-vm
+
+  test-vmtemplate:
+    desc: Test vmtemplate module
+    cmds:
+      - |
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --packer-config-dir {{ .CODE_TEST_DIR }} \
+        --packer-config {{ .TEST_CONFIG }} \
+        --packer-version {{ .PACKER_VERSION }} \
+        --progress plain -vv
+    vars:
+      MODULE: vmtemplate
+      FUNCTION: bake
+      CODE_TEST_DIR: tests/{{ .MODULE }}/hello
+      TEST_CONFIG: hello.pkr.hcl
+      PACKER_VERSION: 1.13.1
+
   test-vm:
     desc: Test vm module
     cmds:
@@ -34,8 +56,8 @@ tasks:
     vars:
       MODULE: vm
       FUNCTION: bake
-      TF_CODE_TEST_DIR: tests/vm/tf
-      SOPS_ENCRYPTED_VARS: tests/vm/terraform.tfvars.enc.json
+      TF_CODE_TEST_DIR: tests/{{ .MODULE }}/tf
+      SOPS_ENCRYPTED_VARS: tests/{{ .MODULE }}/terraform.tfvars.enc.json
       EXPORTED_TF_WORKSPACE: /tmp/terraform/vms/dagger/
       SOPS_KEY: env:SOPS_AGE_KEY
 
@@ -51,17 +73,18 @@ tasks:
       SDK:
         sh: gum choose "go" "python"
 
-  do:
-    desc: Select a task to run
-    cmds:
-      - |
-        task=$(yq e '.tasks | keys' Taskfile.yaml | sed 's/^- //' | gum choose)
-        task ${task}
-
   check:
     desc: "Run pre-commit hooks"
     cmds:
       - pre-commit run -a
+
+  release:
+    desc: bump new version
+    cmds:
+      - task: pr
+      - npx semantic-release --dry-run
+      - npx semantic-release --debug --no-ci
+      - echo released version $(git describe --tags --abbrev=0)
 
   switch-remote:
     desc: Switch to remote branch
@@ -121,7 +144,7 @@ tasks:
 
   pr:
     desc: Create pull request into main
-    # deps: [lint]
+    deps: [test-all]
     cmds:
       - task: commit
       - gh pr create -t "{{ .BRANCH }}" -b "{{ .BRANCH }} branch into main"
@@ -130,12 +153,10 @@ tasks:
       - gh pr merge $(gh pr list | grep "^[^#;]" | grep '{{ .BRANCH }}' | awk '{print $1}') --auto --rebase --delete-branch
       - git checkout main && git pull
 
-  release:
-    desc: push new version
+  do:
+    desc: Select a task to run
     cmds:
-      - task: test-vm
-      - task: pr
-      - npx semantic-release --dry-run
-      - npx semantic-release --debug --no-ci
-      - echo released version $(git describe --tags --abbrev=0)
+      - |
+        task=$(yq e '.tasks | keys' Taskfile.yaml | sed 's/^- //' | gum choose)
+        task ${task}
 # check: https://github.com/act3-ai/dagger/blob/main/release/main.go

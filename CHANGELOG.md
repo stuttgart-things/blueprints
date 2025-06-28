@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/stuttgart-things/blueprints/compare/v1.2.0...v1.3.0) (2025-06-28)
+
+
+### Features
+
+* feat/add-git-source-vmtemplate ([f0b45d0](https://github.com/stuttgart-things/blueprints/commit/f0b45d02d31e336140e30fa41455ae5733d4d232))
+
 # [1.2.0](https://github.com/stuttgart-things/blueprints/compare/v1.1.1...v1.2.0) (2025-06-27)
 
 

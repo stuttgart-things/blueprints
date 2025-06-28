@@ -6,6 +6,11 @@
   },
   "dependencies": [
     {
+      "name": "git",
+      "source": "github.com/stuttgart-things/dagger/git@v0.15.2",
+      "pin": "f2676ea92e1f36a480fe5f93d73bab6161eed0f8"
+    },
+    {
       "name": "packer",
       "source": "github.com/stuttgart-things/dagger/packer@v0.15.2",
       "pin": "f2676ea92e1f36a480fe5f93d73bab6161eed0f8"

@@ -11,6 +11,7 @@ dotenv: ['.env', '{{.HOME}}/.env']
 tasks:
   test-all:
     desc: Run all tests
+    deps: [check]
     cmds:
       - task: test-vmtemplate
       - task: test-vm

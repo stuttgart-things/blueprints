@@ -11,6 +11,11 @@
       "pin": "4271c634f7c27c6aee9e70bea9ab7b4047004466"
     },
     {
+      "name": "git",
+      "source": "github.com/stuttgart-things/dagger/git@v0.15.3",
+      "pin": "7982ab59d9575d636cb31d410d5cee4f39de194b"
+    },
+    {
       "name": "go",
       "source": "github.com/stuttgart-things/dagger/go@v0.13.5",
       "pin": "040c935e6840b7df68686c457280236e7a91a448"

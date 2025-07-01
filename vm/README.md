@@ -12,10 +12,10 @@ flowchart TD
     C --> out[inventory.yaml]
 ```
 
-<details><summary>BUILD NEW VM</summary>
+<details><summary>BAKE LOCAL</summary>
 
 ```bash
-dagger call -m vm bake \
+dagger call -m vm bake-local \
 --terraform-dir tests/vm/tf \
 --encrypted-file tests/vm/terraform.tfvars.enc.json \
 --operation apply \
@@ -28,7 +28,7 @@ export --path=~/projects/terraform/vms/dagger/
 export SSH_USER=sthings
 export SSH_PASSWORD=<REPLACEME>
 
-dagger call -m vm bake \
+dagger call -m vm bake-local \
 --terraform-dir ~/projects/terraform/vms/sthings-runner/ \
 --encrypted-file /home/sthings/projects/stuttgart-things/terraform/secrets/labda-terraform.tfvars.enc.json \
 --operation apply \
@@ -52,6 +52,10 @@ dagger call -m vm bake \
 --encrypted-file /home/sthings/projects/stuttgart-things/terraform/secrets/ labda-terraform.tfvars.enc.json \
 --operation apply \
 --sops-key=env:SOPS_AGE_KEY \
+--ansible-user=env:SSH_USER \
+--ansible-password=env:SSH_PASSWORD \
+--ansible-parameters "send_to_homerun=false" \
+--ansible-playbooks "sthings.baseos.setup" \
 -vv --progress plain \
 export --path=~/projects/terraform/vms/sthings-runner/
 ```

@@ -61,6 +61,11 @@ func (v *Vm) BakeLocal(
 		Operation: operation,
 	})
 
+	// IF OPERATION IS NOT APPLY, RETURN EARLY
+	if operation != "apply" {
+		return terraformDirResult, nil
+	}
+
 	// GET TERRAFORM OUTPUT
 	tfOutput, err := dag.Terraform().Output(ctx, terraformDirResult)
 	if err != nil {
@@ -81,8 +86,8 @@ func (v *Vm) BakeLocal(
 		return nil, fmt.Errorf("creating inventory failed: %w", err)
 	}
 
-	// WRITE INVENTORY TO CONTAINER
-	ctr = ctr.WithNewFile(fmt.Sprintf("%s/inventory.yaml", workDir), inventory)
+	// WRITE INVENTORY TO terraformDirResult
+	terraformDirResult = terraformDirResult.WithNewFile("inventory.yaml", inventory)
 
 	// RUN ANSIBLE
 	dag.Ansible().Execute(ctx, ansiblePlaybooks, dagger.AnsibleExecuteOpts{

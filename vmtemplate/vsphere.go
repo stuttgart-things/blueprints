@@ -44,6 +44,9 @@ func (m *Vmtemplate) RunVsphereWorkflow(
 	// Git repository to clone
 	// +optional
 	repository string,
+	// Ref to checkout in the Git repository
+	// +optional
+	ref string,
 	// Git authentication token
 	// +optional
 	token *dagger.Secret) {
@@ -53,12 +56,21 @@ func (m *Vmtemplate) RunVsphereWorkflow(
 	if repository != "" && token != nil {
 		fmt.Println("Cloning Git repository...")
 		configDir = m.CloneGitRepository(scm, repository, token)
+
+		configDir = dag.Git().CloneGitHub(
+			repository,
+			token,
+			dagger.GitCloneGitHubOpts{
+				Ref: ref,
+			},
+		)
+
 	} else {
 		fmt.Println("Using local directory for Packer config...")
 		configDir = packerConfigDir
 	}
 
-	// Bake the Packer template
+	// BAKE THE PACKER TEMPLATE
 	fmt.Println("Baking Packer template...")
 	m.Bake(
 		ctx,

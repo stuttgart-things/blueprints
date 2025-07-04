@@ -7,13 +7,13 @@
   "dependencies": [
     {
       "name": "git",
-      "source": "github.com/stuttgart-things/dagger/git@v0.15.3",
-      "pin": "7982ab59d9575d636cb31d410d5cee4f39de194b"
+      "source": "github.com/stuttgart-things/dagger/git@v0.16.0",
+      "pin": "b368eab925a6b849e964ea017dec3885afea2919"
     },
     {
       "name": "packer",
-      "source": "github.com/stuttgart-things/dagger/packer@v0.15.2",
-      "pin": "f2676ea92e1f36a480fe5f93d73bab6161eed0f8"
+      "source": "github.com/stuttgart-things/dagger/packer@v0.16.0",
+      "pin": "b368eab925a6b849e964ea017dec3885afea2919"
     }
   ]
 }

@@ -43,36 +43,41 @@ func (m *Vmtemplate) RunVsphereWorkflow(
 	scm string,
 	// Git repository to clone
 	// +optional
-	repository string,
+	gitRepository string,
+	// Folder in git repository
+	// +optional
+	gitWorkdir string,
 	// Ref to checkout in the Git repository
 	// +optional
-	ref string,
+	gitRef string,
 	// Git authentication token
 	// +optional
-	token *dagger.Secret) {
+	gitToken *dagger.Secret) {
 
 	var configDir *dagger.Directory
 
-	if repository != "" && token != nil {
-		fmt.Println("Cloning Git repository...")
-		configDir = m.CloneGitRepository(scm, repository, token)
-
+	// CLONE GIT REPOSITORY IF PROVIDED
+	if gitRepository != "" && gitToken != nil {
 		configDir = dag.Git().CloneGitHub(
-			repository,
-			token,
+			gitRepository,
+			gitToken,
 			dagger.GitCloneGitHubOpts{
-				Ref: ref,
+				Ref: gitRef,
 			},
 		)
 
+		configDir = configDir.Directory(gitWorkdir)
+
 	} else {
-		fmt.Println("Using local directory for Packer config...")
+		// USE LOCAL DIRECTORY FOR PACKER CONFIG
+		fmt.Println("USING LOCAL DIRECTORY FOR PACKER CONFIG...")
 		configDir = packerConfigDir
 	}
 
-	// BAKE THE PACKER TEMPLATE
-	fmt.Println("Baking Packer template...")
-	m.Bake(
+	// BAKE THE PACKER TEMPLATE +
+	// GET THE VM-TEMPLATE NAME
+
+	vmTemplateName, error := m.Bake(
 		ctx,
 		configDir,
 		packerConfig,
@@ -84,5 +89,26 @@ func (m *Vmtemplate) RunVsphereWorkflow(
 		vaultSecretID,
 		vaultToken,
 	)
+
+	if error != nil {
+		fmt.Println("Error baking Packer template:", error)
+		return
+	}
+
+	fmt.Println("VM Template Name:", vmTemplateName)
+
+	// CREATE TEST-VM FROM TEMPLATE
+
+	// RUN ANSIBLE TESTS AGAINST THE TEST-VM
+
+	// DELETE THE TEST-VM
+
+	// RENAME EXISTING VM-TEMPLATE
+
+	// RENAME NEW VM-TEMPLATE
+
+	// MOVE NEW VM-TEMPLATE TO THE FINAL LOCATION
+
+	// DELETE OLD VM-TEMPLATE
 
 }

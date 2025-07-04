@@ -33,8 +33,8 @@ func (m *Vmtemplate) Bake(
 	// vaultToken
 	// +optional
 	vaultToken *dagger.Secret,
-) error {
-	return dag.Packer().
+) (string, error) {
+	logFile, error := dag.Packer().
 		Bake(
 			ctx,
 			packerConfig,
@@ -48,4 +48,13 @@ func (m *Vmtemplate) Bake(
 				VaultSecretID: vaultSecretID,
 				VaultToken:    vaultToken,
 			})
+
+	if error != nil {
+		return "", error
+	}
+
+	// EXTRACT THE VM TEMPLATE NAME FROM THE LOG FILE
+	vmTemplateName := ExtractTemplateName(logFile)
+
+	return vmTemplateName, error
 }

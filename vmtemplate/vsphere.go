@@ -76,7 +76,6 @@ func (m *Vmtemplate) RunVsphereWorkflow(
 
 	// BAKE THE PACKER TEMPLATE +
 	// GET THE VM-TEMPLATE NAME
-
 	vmTemplateName, error := m.Bake(
 		ctx,
 		configDir,

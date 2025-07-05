@@ -14,6 +14,11 @@
       "name": "packer",
       "source": "github.com/stuttgart-things/dagger/packer@v0.16.0",
       "pin": "b368eab925a6b849e964ea017dec3885afea2919"
+    },
+    {
+      "name": "terraform",
+      "source": "github.com/stuttgart-things/dagger/terraform@v0.16.0",
+      "pin": "b368eab925a6b849e964ea017dec3885afea2919"
     }
   ]
 }

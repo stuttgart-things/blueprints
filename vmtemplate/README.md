@@ -46,6 +46,18 @@ dagger call -m vmtemplate bake \
 
 </details>
 
+<details><summary>CREATE TEST VM</summary>
+
+```bash
+dagger call -m vmtemplate create-test-vm \
+--terraform-dir tests/vmtemplate/tftest/ \
+--variables count_test_instances=8 \
+--progress plain -vv
+```
+
+</details>
+
+
 <details><summary>MODULE TEST</summary>
 
 ```bash

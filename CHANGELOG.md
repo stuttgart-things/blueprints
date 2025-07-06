@@ -1,3 +1,17 @@
+# [1.4.0](https://github.com/stuttgart-things/blueprints/compare/v1.3.0...v1.4.0) (2025-07-06)
+
+
+### Features
+
+* feat/add-git-vm ([8758e0a](https://github.com/stuttgart-things/blueprints/commit/8758e0a83fd7c2f15b450b325529bef8f861506b))
+* feat/add-git-vm ([71b51c5](https://github.com/stuttgart-things/blueprints/commit/71b51c56f588e506257f2651ac8cf96b9eccd967))
+* feat/add-git-vm ([c7e8cad](https://github.com/stuttgart-things/blueprints/commit/c7e8cadc9a07c0b63a6a75409c3d031739d43f68))
+* feat/add-git-vm ([8655345](https://github.com/stuttgart-things/blueprints/commit/86553456f64ba7e030468d44daec1d17dde7e423))
+* feat/add-git-vm ([4c4c200](https://github.com/stuttgart-things/blueprints/commit/4c4c2000087c4eb1ba7961d966ab003c091676ea))
+* feat/add-git-vm ([df3509c](https://github.com/stuttgart-things/blueprints/commit/df3509c9d1a786d71b3a7f5d17616a7042c85d6f))
+* feat/add-git-vm ([cc5e794](https://github.com/stuttgart-things/blueprints/commit/cc5e79466d0dd3404ae20866fd99cedc10b5f1af))
+* feat/add-git-vm ([0df86a8](https://github.com/stuttgart-things/blueprints/commit/0df86a80ea3f47f83f0ecc2133657fce9bc48661))
+
 # [1.3.0](https://github.com/stuttgart-things/blueprints/compare/v1.2.0...v1.3.0) (2025-06-28)
 
 

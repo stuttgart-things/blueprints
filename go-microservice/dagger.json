@@ -1,0 +1,14 @@
+{
+  "name": "go-microservice",
+  "engineVersion": "v0.18.12",
+  "sdk": {
+    "source": "go"
+  },
+  "dependencies": [
+    {
+      "name": "go",
+      "source": "github.com/stuttgart-things/dagger/go@v0.17.0",
+      "pin": "66cd4c06c01a5a5487e5419c351bcda3a8920417"
+    }
+  ]
+}

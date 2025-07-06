@@ -56,7 +56,7 @@ tasks:
         export --path={{ .EXPORTED_TF_WORKSPACE }}
     vars:
       MODULE: vm
-      FUNCTION: bake
+      FUNCTION: bake-local
       TF_CODE_TEST_DIR: tests/{{ .MODULE }}/tf
       SOPS_ENCRYPTED_VARS: tests/{{ .MODULE }}/terraform.tfvars.enc.json
       EXPORTED_TF_WORKSPACE: /tmp/terraform/vms/dagger/

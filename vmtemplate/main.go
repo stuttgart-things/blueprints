@@ -1,25 +1,30 @@
-// A generated module for Vmtemplate functions
+// Vmtemplate module provides a workflow for managing VM template builds using
+// Packer and Vault, optionally driven by Git-hosted configurations.
 //
-// This module has been generated via dagger init and serves as a reference to
-// basic module structure as you get started with Dagger.
+// This module is designed for infrastructure automation involving dynamic VM
+// image generation in vSphere environments. It supports building templates via
+// Packer with secure secret injection from Vault (AppRole or token-based),
+// optionally sourcing the build configuration from a Git repository.
 //
-// Two functions have been pre-created. You can modify, delete, or add to them,
-// as needed. They demonstrate usage of arguments and return types using simple
-// echo and grep commands. The functions can be called from the dagger CLI or
-// from one of the SDKs.
+// The primary function RunVsphereWorkflow orchestrates this process. It clones
+// a Packer configuration from Git or uses a provided local directory, then
+// invokes the Bake function to initialize and optionally build the template.
+// Secrets such as vSphere credentials or config values are fetched from Vault
+// and injected securely into the Packer process.
 //
-// The first line in this comment block is a short description line and the
-// rest is a long description with more detail on the module's purpose or usage,
-// if appropriate. All modules should have a short description.
+// This module is well-suited for use within Dagger-based CI/CD pipelines or
+// automated image delivery systems. Its integration with Vault ensures secrets
+// never touch the disk, while Git integration makes the workflow reproducible.
+//
+// Future enhancements planned include:
+// - Creating and validating test VMs from newly built templates
+// - Running Ansible-based verification and post-provisioning logic
+// - Performing automated template promotion and cleanup
+// - Supporting versioned GitOps-style workflows for image release
+//
+// This documentation provides an overview of the current implementation and
+// serves as a foundation for extending the VM lifecycle automation further.
 
 package main
 
 type Vmtemplate struct{}
-
-// + ADD GITSOURCE
-// + ADD SOPS SUPPORT
-// + ADD TEST VM CREATION
-// + ADD TEST VM CREATION TESTS
-// + ADD TEST VM CREATION DELETION
-// + ADD DELETION OF OLD VM TEMPLATE
-// + ADD MOVE OF NEWLY CREATED VM TEMPLATE TO OLD VM TEMPLATE

@@ -25,7 +25,6 @@ dagger call -m vmtemplate run-vsphere-workflow \
 
 </details>
 
-
 <details><summary>EXAMPLE PACKER BUILD - UBUNTU24 VSPHERE</summary>
 
 ```bash
@@ -56,8 +55,7 @@ dagger call -m vmtemplate create-test-vm \
 ```
 
 </details>
-
-
+s
 <details><summary>MODULE TEST</summary>
 
 ```bash

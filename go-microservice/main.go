@@ -1,37 +1,33 @@
-// A generated module for GoMicroservice functions
+// Go Microservice module provides a reusable Dagger pipeline for building, testing,
+// and validating Go-based microservices in CI/CD workflows.
 //
-// This module has been generated via dagger init and serves as a reference to
-// basic module structure as you get started with Dagger.
+// This module was scaffolded using `dagger init` and designed to serve as a flexible
+// DevOps automation unit for Go projects. It integrates static analysis, unit testing,
+// code coverage reporting, and security scanning in a streamlined containerized pipeline.
 //
-// Two functions have been pre-created. You can modify, delete, or add to them,
-// as needed. They demonstrate usage of arguments and return types using simple
-// echo and grep commands. The functions can be called from the dagger CLI or
-// from one of the SDKs.
+// The primary function orchestrates the workflow by accepting source directories,
+// test file paths, linter configurations, and other runtime options. It ensures
+// clean and consistent execution environments for Go toolchain operations using Dagger
+// containers and caches.
 //
-// The first line in this comment block is a short description line and the
-// rest is a long description with more detail on the module's purpose or usage,
-// if appropriate. All modules should have a short description.
+// Features include:
+// - Static analysis using golangci-lint with customizable configuration
+// - Unit test execution with optional code coverage reports
+// - Modular and composable design, suitable for use in monorepos or multi-service platforms
+// - Security scanning with tools like `gosec` (planned)
+//
+// This module can be invoked via the Dagger CLI or imported into another Dagger pipeline,
+// making it ideal for use in CI runners, GitOps systems, or developer workstations.
+//
+// Future improvements may include:
+// - Dependency vulnerability scanning integration (e.g., `govulncheck` or `trivy`)
+// - Auto-formatting and import validation (`goimports`, `gofmt`)
+// - Multi-platform build support for releasing binaries
+// - Integration with release pipelines for tagging, changelogs, and artifact publishing
+//
+// This documentation serves as both an overview and implementation reference
+// for integrating Go microservice workflows using Dagger.
 
 package main
 
-import (
-	"context"
-	"dagger/go-microservice/internal/dagger"
-)
-
 type GoMicroservice struct{}
-
-// Returns a container that echoes whatever string argument is provided
-func (m *GoMicroservice) ContainerEcho(stringArg string) *dagger.Container {
-	return dag.Container().From("alpine:latest").WithExec([]string{"echo", stringArg})
-}
-
-// Returns lines that match a pattern in the files of the provided Directory
-func (m *GoMicroservice) GrepDir(ctx context.Context, directoryArg *dagger.Directory, pattern string) (string, error) {
-	return dag.Container().
-		From("alpine:latest").
-		WithMountedDirectory("/mnt", directoryArg).
-		WithWorkdir("/mnt").
-		WithExec([]string{"grep", "-R", pattern, "."}).
-		Stdout(ctx)
-}

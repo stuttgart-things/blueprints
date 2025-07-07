@@ -117,33 +117,33 @@ func (m *GoMicroservice) RunStaticStage(
 		}
 		stats.Test.Duration = time.Since(testStart).String()
 
-		// Extract coverage from test output
+		// EXTRACT COVERAGE FROM TEST OUTPUT
 		coverage := security.ExtractCoverage(testOutput)
 		stats.Test.Coverage = coverage
 		errChan <- nil
 	}()
 
 	// WAIT FOR ALL GOROUTINES TO COMPLETE
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 3; i++ {
 		if err := <-errChan; err != nil {
 			return nil, err
 		}
 	}
 
-	// Track total workflow duration
+	// TRACK TOTAL WORKFLOW DURATION
 	stats.TotalDuration = time.Since(startTime).String()
 
-	// Generate JSON file with statistics
+	// GENERATE JSON FILE WITH STATISTICS
 	statsJSON, err := json.MarshalIndent(stats, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("error generating stats JSON: %w", err)
 	}
 
-	// Write JSON to a file in the container
+	// WRITE JSON TO A FILE IN THE CONTAINER
 	statsFile := dag.Directory().
 		WithNewFile("workflow-stats.json", string(statsJSON)).
 		File("workflow-stats.json")
 
-	// Return the stats file
+	// RETURN THE STATS FILE
 	return statsFile, nil
 }

@@ -10,10 +10,6 @@ type WorkflowStats struct {
 		Duration string   `json:"duration"`
 		Findings []string `json:"findings"`
 	} `json:"lint"`
-	Build struct {
-		Duration   string `json:"duration"`
-		BinarySize string `json:"binarySize"`
-	} `json:"build"`
 	Test struct {
 		Duration string `json:"duration"`
 		Coverage string `json:"coverage"`
@@ -22,9 +18,5 @@ type WorkflowStats struct {
 		Duration string   `json:"duration"`
 		Findings []string `json:"findings"`
 	} `json:"securityScan"`
-	TrivyScan struct {
-		Duration string   `json:"duration"`
-		Findings []string `json:"findings"`
-	} `json:"trivyScan"`
 	TotalDuration string `json:"totalDuration"` // Total duration of the workflow
 }

@@ -4,10 +4,11 @@ collection of modular, reusable Dagger pipelines for automating build, test &amp
 
 ### 🧩 Modular Dagger Pipelines
 
-| Module                | Link                                              | Description                                                                 |
-|-----------------------|---------------------------------------------------|-----------------------------------------------------------------------------|
-| **VM Module**         | [📘 vm/README.md](./vm/README.md)                 | Automates VM lifecycle with Terraform and Ansible, integrates Vault/SOPS.  |
-| **VM-Template Module**| [📘 vmtemplate/README.md](./vmtemplate/README.md) | Builds and tests vSphere VM templates using Packer and secure Vault access. |
+| Module                 | Link                                                      | Description                                                                                      |
+|------------------------|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| **VM Module**          | [📘 vm/README.md](./vm/README.md)                         | Automates VM lifecycle with Terraform and Ansible, integrates Vault/SOPS.                       |
+| **VM-Template Module** | [📘 vmtemplate/README.md](./vmtemplate/README.md)         | Builds and tests VM templates using Packer, Vault secrets, and Git SCM workflows.               |
+| **Go Microservice**    | [📘 go-microservice/README.md](./go-microservice/README.md) | Executes a Go microservice CI pipeline with linting, testing, coverage analysis, and security scanning. |
 
 
 ## LICENSE

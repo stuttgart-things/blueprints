@@ -2,8 +2,13 @@
 
 collection of modular, reusable Dagger pipelines for automating build, test &amp; deployment workflows
 
-[VM Module](./vm/README.md)
-[VM-Template Module](./vmtemplate/README.md)
+### 🧩 Modular Dagger Pipelines
+
+| Module                | Link                                              | Description                                                                 |
+|-----------------------|---------------------------------------------------|-----------------------------------------------------------------------------|
+| **VM Module**         | [📘 vm/README.md](./vm/README.md)                 | Automates VM lifecycle with Terraform and Ansible, integrates Vault/SOPS.  |
+| **VM-Template Module**| [📘 vmtemplate/README.md](./vmtemplate/README.md) | Builds and tests vSphere VM templates using Packer and secure Vault access. |
+
 
 ## LICENSE
 

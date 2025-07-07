@@ -1,3 +1,11 @@
+# [1.5.0](https://github.com/stuttgart-things/blueprints/compare/v1.4.0...v1.5.0) (2025-07-07)
+
+
+### Features
+
+* feat/add-go-module ([1421bbc](https://github.com/stuttgart-things/blueprints/commit/1421bbca970aa5d94fb67d0560e1a624661faa73))
+* feat/add-go-module ([0e1d013](https://github.com/stuttgart-things/blueprints/commit/0e1d0137e57039ec75fefd6f675db3f79dbe67b7))
+
 # [1.4.0](https://github.com/stuttgart-things/blueprints/compare/v1.3.0...v1.4.0) (2025-07-06)
 
 

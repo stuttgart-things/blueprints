@@ -1,3 +1,15 @@
+# [1.6.0](https://github.com/stuttgart-things/blueprints/compare/v1.5.0...v1.6.0) (2025-07-10)
+
+
+### Features
+
+* feat/add-go-build-stage ([436a77c](https://github.com/stuttgart-things/blueprints/commit/436a77cd10ff29b01f5c4d0e70c4db9705edd8f6))
+* feat/add-go-build-stage ([0e580f7](https://github.com/stuttgart-things/blueprints/commit/0e580f79c7c6b3a08ac7d6029beb970f206e04fe))
+* feat/add-go-build-stage ([679eb61](https://github.com/stuttgart-things/blueprints/commit/679eb61b7632694249d048287739ff73c3aa66dc))
+* feat/add-go-build-stage ([e4e5f59](https://github.com/stuttgart-things/blueprints/commit/e4e5f5910a8699617f5d265f457c9f5c8254a53b))
+* main ([5e8efe3](https://github.com/stuttgart-things/blueprints/commit/5e8efe30823973ea32a009b3660994b041db6e2c))
+* main ([0db4fda](https://github.com/stuttgart-things/blueprints/commit/0db4fdab3a03dad39419509d78e5b8480b9b900b))
+
 # [1.5.0](https://github.com/stuttgart-things/blueprints/compare/v1.4.0...v1.5.0) (2025-07-07)
 
 

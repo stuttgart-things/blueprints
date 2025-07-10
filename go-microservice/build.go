@@ -25,6 +25,23 @@ func (m *GoMicroservice) RunBuildStage(
 	binName string,
 	// +optional
 	ldflags string,
+	// +optional
+	// +default="GITHUB_TOKEN"
+	tokenName string,
+	// +optional
+	token *dagger.Secret,
+	// +optional
+	// +default="ko.local"
+	koRepo string,
+	// +optional
+	// +default="v0.18.0"
+	koVersion string,
+	// +optional
+	// +default="."
+	koBuildArg string,
+	// +optional
+	// +default="false"
+	koPush string,
 ) (*dagger.Directory, error) {
 	// Start timing the workflow
 
@@ -38,6 +55,25 @@ func (m *GoMicroservice) RunBuildStage(
 			BinName:    binName,
 			Ldflags:    ldflags,
 		})
+
+	imageID, err := dag.Go().KoBuild(
+		ctx,
+		src,
+		dagger.GoKoBuildOpts{
+			TokenName: tokenName,
+			Token:     token,
+			Repo:      koRepo,
+			BuildArg:  koBuildArg,
+			KoVersion: koVersion,
+			Push:      koPush,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	binDir = binDir.WithNewFile(
+		"ko-image.txt", imageID)
 
 	return binDir, nil
 }

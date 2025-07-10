@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func (m *GoMicroservice) RunStaticStage(
@@ -39,111 +41,109 @@ func (m *GoMicroservice) RunStaticStage(
 	secureGoVersion string,
 	// +optional
 	// +default="false"
-	lintCanFail bool, // If true, linting can fail without stopping the workflow
+	lintCanFail bool,
 	// +optional
 	// +default="./..."
-	testArg string, // Arguments for `go test`
+	testArg string,
+	// +optional
+	// +default=true
+	lintEnabled bool,
+	// +optional
+	// +default=true
+	securityScan bool,
+	// +optional
+	// +default=true
+	test bool,
 ) (*dagger.File, error) {
-	// CREATE A STRUCT TO HOLD THE STATISTICS
-	stats := stats.WorkflowStats{}
-
-	// START TIMING THE WORKFLOW
 	startTime := time.Now()
+	stats := stats.WorkflowStats{}
+	g, gctx := errgroup.WithContext(ctx)
 
-	// CREATE A CHANNEL TO COLLECT ERRORS FROM GOROUTINES
-	errChan := make(chan error, 5) // Buffer size of 5 for lint, build, test, security scan, and Trivy scan
+	// Lint step
+	if lintEnabled {
+		g.Go(func() error {
+			lintStart := time.Now()
+			lintOutput, err := dag.Go().Lint(
+				src,
+				dagger.GoLintOpts{Timeout: lintTimeout},
+			).Stdout(gctx)
 
-	// RUN LINT STEP IN A GOROUTINE
-	go func() {
-		lintStart := time.Now()
-		lintOutput, err := dag.Go().Lint(
-			src,
-			dagger.GoLintOpts{
-				Timeout: lintTimeout,
-			}).
-			Stdout(ctx)
+			stats.Lint.Duration = time.Since(lintStart).String()
 
-		if err != nil {
-			if !lintCanFail {
-				errChan <- fmt.Errorf("error running lint: %w", err)
-				return
+			if err != nil {
+				if lintCanFail {
+					stats.Lint.Findings = []string{fmt.Sprintf("Linting failed (non-fatal): %v", err)}
+					return nil
+				}
+				return fmt.Errorf("error running lint: %w", err)
 			}
-			// IF LINTCANFAIL IS TRUE, LOG THE ERROR BUT CONTINUE
-			stats.Lint.Findings = []string{fmt.Sprintf("Linting failed: %v", err)}
-		} else {
-			stats.Lint.Findings = strings.Split(lintOutput, "\n") // Split lint output into findings
-		}
-		stats.Lint.Duration = time.Since(lintStart).String()
-		errChan <- nil
-	}()
 
-	// RUN SECURITY SCAN STEP IN A GOROUTINE
-	go func() {
-		securityScanStart := time.Now()
-		reportFile := dag.
-			Go().
-			SecurityScan(
+			stats.Lint.Findings = strings.Split(lintOutput, "\n")
+			return nil
+		})
+	}
+
+	// Security scan step
+	if securityScan {
+		g.Go(func() error {
+			securityStart := time.Now()
+			reportFile := dag.Go().SecurityScan(
 				src,
 				dagger.GoSecurityScanOpts{
 					SecureGoVersion: secureGoVersion,
 				})
 
-		// READ THE REPORT FILE CONTENTS
-		reportContent, err := reportFile.Contents(ctx)
-		if err != nil {
-			errChan <- fmt.Errorf("error reading security report: %w", err)
-			return
-		}
-		stats.SecurityScan.Findings = strings.Split(reportContent, "\n") // Split report content into findings
+			reportContent, err := reportFile.Contents(gctx)
+			stats.SecurityScan.Duration = time.Since(securityStart).String()
 
-		stats.SecurityScan.Duration = time.Since(securityScanStart).String()
-		errChan <- nil
-	}()
+			if err != nil {
+				return fmt.Errorf("error reading security report: %w", err)
+			}
 
-	// RUN TEST STEP IN A GOROUTINE
-	go func() {
-		testStart := time.Now()
-		testOutput, err := dag.Go().
-			Test(
-				ctx,
-				src,
-				dagger.GoTestOpts{
-					GoVersion: goVersion,
-				})
-
-		if err != nil {
-			errChan <- fmt.Errorf("error running tests: %w", err)
-			return
-		}
-		stats.Test.Duration = time.Since(testStart).String()
-
-		// EXTRACT COVERAGE FROM TEST OUTPUT
-		coverage := security.ExtractCoverage(testOutput)
-		stats.Test.Coverage = coverage
-		errChan <- nil
-	}()
-
-	// WAIT FOR ALL GOROUTINES TO COMPLETE
-	for i := 0; i < 3; i++ {
-		if err := <-errChan; err != nil {
-			return nil, err
-		}
+			stats.SecurityScan.Findings = strings.Split(reportContent, "\n")
+			return nil
+		})
 	}
 
-	// TRACK TOTAL WORKFLOW DURATION
+	// Test step
+	if test {
+		g.Go(func() error {
+			testStart := time.Now()
+			testOutput, err := dag.Go().Test(
+				gctx,
+				src,
+				dagger.GoTestOpts{GoVersion: goVersion},
+			)
+
+			stats.Test.Duration = time.Since(testStart).String()
+
+			if err != nil {
+				return fmt.Errorf("error running tests: %w", err)
+			}
+
+			stats.Test.Coverage = security.ExtractCoverage(testOutput)
+			return nil
+		})
+	}
+
+	// Wait for all enabled steps to complete
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	// Calculate total duration
 	stats.TotalDuration = time.Since(startTime).String()
 
-	// GENERATE JSON FILE WITH STATISTICS
+	// Generate JSON report
 	statsJSON, err := json.MarshalIndent(stats, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("error generating stats JSON: %w", err)
 	}
 
-	// WRITE JSON TO A FILE IN THE CONTAINER
+	// Create report file
 	statsFile := dag.Directory().
-		WithNewFile("workflow-stats.json", string(statsJSON)).
-		File("workflow-stats.json")
+		WithNewFile("static-analysis-report.json", string(statsJSON)).
+		File("static-analysis-report.json")
 
-	// RETURN THE STATS FILE
 	return statsFile, nil
 }

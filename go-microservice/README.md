@@ -1,12 +1,27 @@
 # stuttgart-things/blueprints/go-microservice
 
 ## STATIC STAGE
+
 ```bash
+# DO ALL STATIC CHECKS
 dagger call -m go-microservice \
 run-static-stage \
---src tests/go/calculator/ \
---lintCanFail=true \
+--src tests/go-microservice/ldflags/ \
+--progress plain -vv \
 export --path=/tmp/report.json
+
+# DO NOT TEST AND NO SECURITY SCAN
+dagger call -m go-microservice \
+run-static-stage \
+--src tests/go-microservice/ldflags/ \
+--lintCanFail=true \
+--security-scan=false \
+--test=false \
+--progress plain -vv \
+export --path=/tmp/report.json
+
+# CHECK CHECK REPORT
+cat /tmp/report.json
 ```
 
 ## BUILD STAGE

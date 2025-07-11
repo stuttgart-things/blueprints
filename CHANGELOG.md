@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/stuttgart-things/blueprints/compare/v1.6.0...v1.7.0) (2025-07-11)
+
+
+### Features
+
+* feat/add-test-vm-template-task ([89b401c](https://github.com/stuttgart-things/blueprints/commit/89b401c6686fb21b6c495d40a6798f1e8773f6e8))
+
 # [1.6.0](https://github.com/stuttgart-things/blueprints/compare/v1.5.0...v1.6.0) (2025-07-10)
 
 

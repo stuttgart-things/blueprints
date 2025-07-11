@@ -48,14 +48,19 @@ dagger call -m vmtemplate bake \
 <details><summary>CREATE TEST VM</summary>
 
 ```bash
-dagger call -m vmtemplate create-test-vm \
---terraform-dir tests/vmtemplate/tftest/ \
---variables count_test_instances=8 \
---progress plain -vv
+dagger call -m vmtemplate \
+create-test-vm \
+--terraform-dir tests/vmtemplate/tfvaulttest \
+--vault-secret-id env:VAULT_SECRET_ID \
+--vault-role-id env:VAULT_ROLE_ID \
+--variables "vault_addr=https://vault-example.com:8200" \
+--operation apply \
+-vv --progress plain \
+export --path=~/tmp/dagger/tests/terraform/
 ```
 
 </details>
-s
+
 <details><summary>MODULE TEST</summary>
 
 ```bash

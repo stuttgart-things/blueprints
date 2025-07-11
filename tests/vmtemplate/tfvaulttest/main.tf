@@ -19,7 +19,6 @@ provider "vault" {
   }
 }
 
-# For KV v2, include `/data/` in the path
 data "vault_kv_secret_v2" "myapp" {
   mount = "cloud"
   name  = "vsphere"

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"dagger/vmtemplate/internal/dagger"
-	"fmt"
 )
 
 func (m *Vmtemplate) CreateTestVM(
@@ -15,14 +14,28 @@ func (m *Vmtemplate) CreateTestVM(
 	// +optional
 	// e.g., "cpu=4,ram=4096,storage=100"
 	variables string,
-) {
+	// vaultRoleID
+	// +optional
+	vaultRoleID *dagger.Secret,
+	// vaultSecretID
+	// +optional
+	vaultSecretID *dagger.Secret,
+	// vaultToken
+	// +optional
+	vaultToken *dagger.Secret,
+) (*dagger.Directory, error) {
 	// RUN TERRAFORM
-	terraformDirResult := dag.Terraform().Execute(
-		terraformDir,
-		dagger.TerraformExecuteOpts{
-			Operation: operation,
-			Variables: variables,
-		})
+	terraformDirResult := dag.
+		Terraform().
+		Execute(
+			terraformDir,
+			dagger.TerraformExecuteOpts{
+				Operation:     operation,
+				Variables:     variables,
+				VaultRoleID:   vaultRoleID,
+				VaultSecretID: vaultSecretID,
+				VaultToken:    vaultToken,
+			})
 
-	fmt.Println(terraformDirResult)
+	return terraformDirResult, nil
 }

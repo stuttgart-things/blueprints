@@ -1,0 +1,14 @@
+{
+  "name": "kubernetes-microservice",
+  "engineVersion": "v0.18.12",
+  "sdk": {
+    "source": "go"
+  },
+  "dependencies": [
+    {
+      "name": "docker",
+      "source": "github.com/stuttgart-things/dagger/docker@v0.22.0",
+      "pin": "2820e73fb4c0dc247fb7f369194859e9dcb81691"
+    }
+  ]
+}

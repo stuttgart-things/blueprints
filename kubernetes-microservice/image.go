@@ -29,7 +29,6 @@ func (m *KubernetesMicroservice) BakeImage(
 	// +optional
 	withDirectories []*dagger.Directory,
 ) (string, error) {
-
 	return dag.
 		Docker().
 		BuildAndPush(

@@ -31,3 +31,24 @@ func (m *KubernetesMicroservice) ScanImage(
 			},
 		)
 }
+
+func (m *KubernetesMicroservice) ScanFilesystem(
+	ctx context.Context,
+	src *dagger.Directory,
+	// +optional
+	// +default="HIGH,CRITICAL"
+	severity string,
+	// +optional
+	// +default="0.64.1"
+	trivyVersion string,
+) *dagger.File {
+	return dag.
+		Trivy().
+		ScanFilesystem(
+			src,
+			dagger.TrivyScanFilesystemOpts{
+				Severity:     severity,
+				TrivyVersion: trivyVersion,
+			},
+		)
+}

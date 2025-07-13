@@ -4,7 +4,7 @@
 # BAKE IMAGE w/o AUTH
 dagger call -m kubernetes-microservice \
 bake-image \
---src tests/k8s-microservice \
+--src tests/kubernetes-microservice \
 --repository-name stuttgart-things/test \
 --registry-url ttl.sh \
 --tag 1.2.3 \
@@ -40,5 +40,14 @@ dagger call -m kubernetes-microservice stage-image \
 dagger call -m kubernetes-microservice \
 scan-image \
 --imageRef nginx \
+-vv --progress plain
+```
+
+```bash
+# LINT DOCKERFILE
+dagger call -m kubernetes-microservice \
+lint-dockerfile \
+--src . \
+--dockerfile tests/kubernetes-microservice/Dockerfile \
 -vv --progress plain
 ```

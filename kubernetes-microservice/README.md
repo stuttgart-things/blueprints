@@ -20,3 +20,10 @@ dagger call -m kubernetes-microservice stage-image \
 --platform linux/amd64 \
 -vv --progress plain
 ```
+
+```bash
+dagger call -m kubernetes-microservice \
+scan-image \
+--imageRef nginx \
+-vv --progress plain
+```

@@ -9,6 +9,7 @@ collection of modular, reusable Dagger pipelines for automating build, test &amp
 | **VM Module**          | [📘 vm/README.md](./vm/README.md)                         | Automates VM lifecycle with Terraform and Ansible, integrates Vault/SOPS.                       |
 | **VM-Template Module** | [📘 vmtemplate/README.md](./vmtemplate/README.md)         | Builds and tests VM templates using Packer, Vault secrets, and Git SCM workflows.               |
 | **Go Microservice**    | [📘 go-microservice/README.md](./go-microservice/README.md) | Executes a Go microservice CI pipeline with linting, testing, coverage analysis, and security scanning. |
+| **Kubernetes Microservice** | [📘 kubernetes-microservice/README.md](./kubernetes-microservice/README.md) | Builds and stages Kubernetes container images with support for insecure registries and platform targeting. |
 
 
 ## LICENSE
@@ -34,5 +35,5 @@ limitations under the License.
 ```yaml
 Author Information
 ------------------
-Patrick Hermann, stuttgart-things 11/2024
+Patrick Hermann, stuttgart-things 06/2025
 ```

@@ -51,3 +51,13 @@ lint-dockerfile \
 --dockerfile tests/kubernetes-microservice/Dockerfile \
 -vv --progress plain
 ```
+
+```bash
+# RUN STATIC WORKFLOW STAGE
+dagger call -m kubernetes-microservice \
+run-static-stage \
+--src . \
+--path-to-dockerfile tests/kubernetes-microservice \
+--progress plain -vv \
+export --path=/tmp/static.json
+```

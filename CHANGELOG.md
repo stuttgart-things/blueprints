@@ -1,3 +1,12 @@
+# [1.9.0](https://github.com/stuttgart-things/blueprints/compare/v1.8.0...v1.9.0) (2025-07-13)
+
+
+### Features
+
+* feat/add-bake-workflow ([7a295c3](https://github.com/stuttgart-things/blueprints/commit/7a295c353db923c63f1b720b3d9e8cb727afd6d0))
+* feat/add-bake-workflow ([2446b79](https://github.com/stuttgart-things/blueprints/commit/2446b79b852f5ae447672c9dd2f47b966da2a0ab))
+* feat/add-bake-workflow ([ba02d5f](https://github.com/stuttgart-things/blueprints/commit/ba02d5f0abffd646fcacdda1e38bbda8c4f47e60))
+
 # [1.8.0](https://github.com/stuttgart-things/blueprints/compare/v1.7.0...v1.8.0) (2025-07-13)
 
 

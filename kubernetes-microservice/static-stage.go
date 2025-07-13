@@ -3,8 +3,29 @@ package main
 import (
 	"context"
 	"dagger/kubernetes-microservice/internal/dagger"
+	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
+	"golang.org/x/sync/errgroup"
 )
+
+type StaticStageReport struct {
+	Lint struct {
+		Output   string   `json:"output,omitempty"`
+		Error    string   `json:"error,omitempty"`
+		Findings []string `json:"findings,omitempty"`
+		Duration string   `json:"duration,omitempty"`
+	} `json:"lint"`
+	Scan struct {
+		Output   string   `json:"output,omitempty"`
+		Error    string   `json:"error,omitempty"`
+		Findings []string `json:"findings,omitempty"`
+		Duration string   `json:"duration,omitempty"`
+	} `json:"scan"`
+	TotalDuration string `json:"totalDuration"`
+}
 
 func (m *KubernetesMicroservice) RunStaticStage(
 	ctx context.Context,
@@ -25,29 +46,73 @@ func (m *KubernetesMicroservice) RunStaticStage(
 	// The failure threshold
 	// +optional
 	threshold string,
-) {
-	scanReport := m.
-		ScanFilesystem(
-			ctx,
-			src,
-			severity,
-			trivyVersion,
-		)
+) (*dagger.File, error) {
+	startTime := time.Now()
+	report := StaticStageReport{}
+	g, gctx := errgroup.WithContext(ctx)
 
-	LintReport, err := m.
-		LintDockerfile(
-			ctx,
+	// LINT STEP
+	g.Go(func() error {
+		start := time.Now()
+		output, err := m.LintDockerfile(
+			gctx,
 			src.Directory(pathToDockerfile),
 			nameDockerfile,
 			threshold,
 		)
+		report.Lint.Duration = time.Since(start).String()
 
-	if err != nil {
-		fmt.Printf("Error during linting: %v\n", err)
-		return
+		if err != nil {
+			report.Lint.Error = err.Error()
+			return nil // Non-fatal error
+		}
+
+		report.Lint.Output = output
+		report.Lint.Findings = strings.Split(output, "\n")
+		return nil
+	})
+
+	// SCAN STEP
+	g.Go(func() error {
+		start := time.Now()
+		output := m.ScanFilesystem(
+			gctx,
+			src,
+			severity,
+			trivyVersion,
+		)
+		report.Scan.Duration = time.Since(start).String()
+
+		outputContent, err := output.Contents(gctx)
+		if err != nil {
+			return err
+		}
+
+		report.Scan.Output = outputContent
+
+		report.Scan.Output = outputContent
+		report.Scan.Findings = strings.Split(outputContent, "\n")
+		return nil
+	})
+
+	// WAIT FOR ALL STEPS TO COMPLETE
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
-	fmt.Println("Static analysis report:", LintReport)
+	// FINALIZE REPORT
+	report.TotalDuration = time.Since(startTime).String()
 
-	fmt.Println("Static analysis report:", scanReport)
+	// GENERATE JSON REPORT
+	reportJSON, err := json.MarshalIndent(report, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal report: %w", err)
+	}
+
+	// CREATE REPORT FILE
+	reportFile := dag.Directory().
+		WithNewFile("static-stage-report.json", string(reportJSON)).
+		File("static-stage-report.json")
+
+	return reportFile, nil
 }

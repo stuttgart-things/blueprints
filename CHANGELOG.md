@@ -1,3 +1,12 @@
+# [1.8.0](https://github.com/stuttgart-things/blueprints/compare/v1.7.0...v1.8.0) (2025-07-13)
+
+
+### Features
+
+* feat/add-k8s-microservice ([106d4e3](https://github.com/stuttgart-things/blueprints/commit/106d4e3bb81c1f96414c2a71d0c692dd725a15f4))
+* feat/add-k8s-microservice ([3de7f37](https://github.com/stuttgart-things/blueprints/commit/3de7f37067ebe6e3f29d1f2adfb406f08b9b968c))
+* feat/add-k8s-microservice ([f1c01ee](https://github.com/stuttgart-things/blueprints/commit/f1c01eee3a8251fb1e9d34b1306e67ceb0dd0f4b))
+
 # [1.7.0](https://github.com/stuttgart-things/blueprints/compare/v1.6.0...v1.7.0) (2025-07-11)
 
 

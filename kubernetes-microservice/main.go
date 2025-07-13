@@ -1,16 +1,29 @@
-// A generated module for KubernetesMicroservice functions
+// Kubernetes Microservice module for building and staging container images
 //
-// This module has been generated via dagger init and serves as a reference to
-// basic module structure as you get started with Dagger.
+// This module provides a high-level abstraction for working with container images
+// tailored for Kubernetes microservices, using Dagger as the execution engine.
 //
-// Two functions have been pre-created. You can modify, delete, or add to them,
-// as needed. They demonstrate usage of arguments and return types using simple
-// echo and grep commands. The functions can be called from the dagger CLI or
-// from one of the SDKs.
+// It offers two primary functions:
+//   - BakeImage: Builds and optionally pushes a Docker image from source code
+//                with support for extra build directories and custom Dockerfile paths.
+//   - StageImage: Stages (copies) an existing image between registries, optionally
+//                 using Docker config authentication or username/password pairs.
+//                 Supports insecure registries and custom platforms.
 //
-// The first line in this comment block is a short description line and the
-// rest is a long description with more detail on the module's purpose or usage,
-// if appropriate. All modules should have a short description.
+// Typical usage scenarios include:
+//   - Building a microservice image in CI/CD pipelines and pushing directly to a registry
+//   - Promoting (staging) images between registries (e.g., dev -> staging -> prod)
+//   - Supporting custom build contexts through additional directories
+//
+// Internally, this module delegates to the 'Docker' module for building/pushing images,
+// and the 'Crane' module for staging images between registries.
+//
+// Example workflows:
+//   - Bake a microservice image and push to a dev registry
+//   - Stage a built image to a production registry using secure or insecure connections
+//
+// This module is designed for integration in CI pipelines, platform automation, or
+// developer tooling around Kubernetes microservices.
 
 package main
 

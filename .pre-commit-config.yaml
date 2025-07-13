@@ -18,15 +18,6 @@ repos:
           - "SC1090"
           - "-e"
           - "SC1091"
-  - repo: https://github.com/hadolint/hadolint
-    rev: "v2.12.0"
-    hooks:
-      - id: hadolint-docker
-        args:
-          - --ignore
-          - DL4006
-          - --ignore
-          - DL3015
   - repo: https://github.com/sirosen/check-jsonschema
     rev: 0.30.0
     hooks:

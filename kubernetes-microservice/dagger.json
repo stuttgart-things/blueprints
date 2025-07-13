@@ -14,6 +14,11 @@
       "name": "docker",
       "source": "github.com/stuttgart-things/dagger/docker@v0.22.0",
       "pin": "2820e73fb4c0dc247fb7f369194859e9dcb81691"
+    },
+    {
+      "name": "trivy",
+      "source": "github.com/stuttgart-things/dagger/trivy@v0.23.0",
+      "pin": "41f188e601ad0a6cef3e70bf61bc318fe82eec71"
     }
   ]
 }

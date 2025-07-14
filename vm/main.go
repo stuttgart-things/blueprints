@@ -29,16 +29,6 @@
 // This documentation serves both as a high-level overview and a detailed guide
 // to the module’s capabilities and intended use cases.
 
-// IDEA
-// RENDER TO BRANCH/PR -> IMPLEMENT LATER
-// SOPS DECRYPT
-// TERRAFORM EXECUTE
-// TERRAFORM OUTPUT
-// ANSIBLE INVENTORY CREATION
-// ANSIBLE EXECUTION
-// TEST VM
-// MERGE PR
-
 package main
 
 import (

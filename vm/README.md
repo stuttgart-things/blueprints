@@ -12,6 +12,8 @@ flowchart TD
     C --> out[inventory.yaml]
 ```
 
+## WORKFLOWS
+
 <details><summary>BAKE LOCAL</summary>
 
 ```bash
@@ -61,3 +63,12 @@ export --path=~/projects/terraform/vms/sthings-runner/
 ```
 
 </details>
+
+## FUNCTIONS
+
+```bash
+dagger call -m vm \
+decrypt-sops \
+--sops-key=env:SOPS_AGE_KEY \
+--encrypted-file tests/vm/terraform.tfvars.enc.json
+```

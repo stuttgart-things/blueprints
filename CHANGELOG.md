@@ -1,3 +1,11 @@
+# [1.10.0](https://github.com/stuttgart-things/blueprints/compare/v1.9.0...v1.10.0) (2025-07-14)
+
+
+### Features
+
+* feat/add-vm-vault-auth ([d267bff](https://github.com/stuttgart-things/blueprints/commit/d267bffc63f16e7e3f1a9be7d438e0a6afba6fcc))
+* feat/add-vm-vault-auth ([0aca9dd](https://github.com/stuttgart-things/blueprints/commit/0aca9dd54d617a321400ec46dc8a4c99cff551bd))
+
 # [1.9.0](https://github.com/stuttgart-things/blueprints/compare/v1.8.0...v1.9.0) (2025-07-13)
 
 

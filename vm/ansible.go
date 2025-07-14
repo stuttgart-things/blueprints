@@ -27,7 +27,6 @@ func (m *Vm) ExecuteAnsible(
 	// +optional
 	sshPassword *dagger.Secret,
 ) (bool, error) {
-
 	return dag.Ansible().Execute(
 		ctx,
 		playbooks,
@@ -42,5 +41,4 @@ func (m *Vm) ExecuteAnsible(
 			SSHUser:        sshUser,
 			SSHPassword:    sshPassword,
 		})
-
 }

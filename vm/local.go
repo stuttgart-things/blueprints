@@ -20,7 +20,7 @@ func (v *Vm) BakeLocal(
 	// +optional
 	sopsKey *dagger.Secret,
 	// +optional
-	vaultAppRoleID *dagger.Secret,
+	vaultRoleID *dagger.Secret,
 	// +optional
 	vaultSecretID *dagger.Secret,
 	// vaultToken
@@ -77,7 +77,7 @@ func (v *Vm) BakeLocal(
 			ctr.Directory(workDir),
 			operation,
 			variables,
-			vaultAppRoleID,
+			vaultRoleID,
 			vaultSecretID,
 			vaultToken,
 		)
@@ -92,13 +92,11 @@ func (v *Vm) BakeLocal(
 	}
 
 	// GET TERRAFORM OUTPUT
-	tfOutput, err := dag.
-		Terraform().
-		Output(
+	tfOutput, err := v.
+		OutputTerraformRun(
 			ctx,
 			terraformDirResult,
 		)
-
 	if err != nil {
 		return nil, fmt.Errorf("getting terraform output failed: %w", err)
 	}
@@ -129,7 +127,7 @@ func (v *Vm) BakeLocal(
 			ansibleRequirementsFile,
 			terraformDirResult.File("inventory.yaml"),
 			ansibleParameters,
-			vaultAppRoleID,
+			vaultRoleID,
 			vaultSecretID,
 			vaultURL,
 			ansibleUser,

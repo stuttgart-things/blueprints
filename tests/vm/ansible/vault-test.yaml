@@ -1,0 +1,20 @@
+---
+- hosts: localhost
+  become: true
+
+  vars:
+    vault_auth_method: approle
+    vault_approle_id: "{{ lookup('env', 'VAULT_ROLE_ID') }}"
+    vault_approle_secret: "{{ lookup('env', 'VAULT_SECRET_ID') }}"
+    vault_url: "{{ lookup('env', 'VAULT_ADDR') }}"
+    test_username: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=cloud/data/vsphere:username validate_certs=false auth_method={{ vault_auth_method }} role_id={{ vault_approle_id }} secret_id={{ vault_approle_secret }} url={{ vault_url }}') }}"
+    test_password: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=cloud/data/vsphere:password validate_certs=false auth_method={{ vault_auth_method }} role_id={{ vault_approle_id }} secret_id={{ vault_approle_secret }} url={{ vault_url }}') }}"
+
+  tasks:
+    - name: Show vault secret user
+      debug:
+        var: test_username
+
+    - name: Show vault secret pw
+      debug:
+        var: test_password

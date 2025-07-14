@@ -39,3 +39,15 @@ func (m *Vm) ExecuteTerraform(
 
 	return terraformDirResult, nil
 }
+
+func (m *Vm) OutputTerraformRun(
+	ctx context.Context,
+	terraformDir *dagger.Directory,
+) (string, error) {
+	return dag.
+		Terraform().
+		Output(
+			ctx,
+			terraformDir,
+		)
+}

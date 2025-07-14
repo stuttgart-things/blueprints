@@ -18,7 +18,7 @@ type TemplateData struct {
 	Hosts []Host
 }
 
-// TERRAFORMOUTPUT REPRESENTS THE STRUCTURE OF THE INPUT JSON
+// TerraformOutput represents the structure of the input JSON.
 type TerraformOutput struct {
 	IP struct {
 		Value [][]string `json:"value"`
@@ -65,7 +65,7 @@ func ParseIPsFromTfOutput(terraformVMOutput string) ([]string, error) {
 	return ips, nil
 }
 
-// CREATEANSIBLEINVENTORY CONVERTS TERRAFORM OUTPUT TO ANSIBLE YAML
+// CreateDefaultAnsibleInventory converts Terraform output to Ansible YAML.
 func CreateDefaultAnsibleInventory(terraformVMOutput string) (string, error) {
 
 	ips, err := ParseIPsFromTfOutput(terraformVMOutput)
@@ -94,7 +94,7 @@ func CreateDefaultAnsibleInventory(terraformVMOutput string) (string, error) {
 	return string(yamlData), nil
 }
 
-// CREATEANSIBLEINVENTORY CONVERTS TERRAFORM OUTPUT TO ANSIBLE YAML
+// CreateClusterAnsibleInventory converts Terraform output to an Ansible inventory in INI format.
 func CreateClusterAnsibleInventory(terraformVMOutput string) (string, error) {
 
 	ips, err := ParseIPsFromTfOutput(terraformVMOutput)

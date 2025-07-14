@@ -13,6 +13,9 @@ func (v *Vm) BakeLocal(
 	// +default="apply"
 	operation string,
 	// +optional
+	// e.g., "cpu=4,ram=4096,storage=100"
+	variables string,
+	// +optional
 	encryptedFile *dagger.File,
 	// +optional
 	sopsKey *dagger.Secret,
@@ -20,6 +23,9 @@ func (v *Vm) BakeLocal(
 	vaultAppRoleID *dagger.Secret,
 	// +optional
 	vaultSecretID *dagger.Secret,
+	// vaultToken
+	// +optional
+	vaultToken *dagger.Secret,
 	// +optional
 	vaultURL *dagger.Secret,
 	// +optional
@@ -49,17 +55,36 @@ func (v *Vm) BakeLocal(
 
 	// OPTIONAL SOPS DECRYPTION
 	if encryptedFile != nil {
-		decryptedContent, err := dag.Sops().DecryptSops(ctx, sopsKey, encryptedFile)
+		decryptedContent, err := v.
+			DecryptSops(
+				ctx,
+				sopsKey,
+				encryptedFile,
+			)
 		if err != nil {
 			return nil, fmt.Errorf("decrypting sops file failed: %w", err)
 		}
-		ctr = ctr.WithNewFile(fmt.Sprintf("%s/terraform.tfvars.json", workDir), decryptedContent)
+		ctr = ctr.
+			WithNewFile(
+				fmt.Sprintf("%s/terraform.tfvars.json", workDir),
+				decryptedContent)
 	}
 
 	// RUN TERRAFORM
-	terraformDirResult := dag.Terraform().Execute(ctr.Directory(workDir), dagger.TerraformExecuteOpts{
-		Operation: operation,
-	})
+	terraformDirResult, error := v.
+		ExecuteTerraform(
+			ctx,
+			ctr.Directory(workDir),
+			operation,
+			variables,
+			vaultAppRoleID,
+			vaultSecretID,
+			vaultToken,
+		)
+
+	if error != nil {
+		return nil, fmt.Errorf("running terraform failed: %w", error)
+	}
 
 	// IF OPERATION IS NOT APPLY, RETURN EARLY
 	if operation != "apply" {
@@ -67,7 +92,13 @@ func (v *Vm) BakeLocal(
 	}
 
 	// GET TERRAFORM OUTPUT
-	tfOutput, err := dag.Terraform().Output(ctx, terraformDirResult)
+	tfOutput, err := dag.
+		Terraform().
+		Output(
+			ctx,
+			terraformDirResult,
+		)
+
 	if err != nil {
 		return nil, fmt.Errorf("getting terraform output failed: %w", err)
 	}
@@ -90,17 +121,27 @@ func (v *Vm) BakeLocal(
 	terraformDirResult = terraformDirResult.WithNewFile("inventory.yaml", inventory)
 
 	// RUN ANSIBLE
-	dag.Ansible().Execute(ctx, ansiblePlaybooks, dagger.AnsibleExecuteOpts{
-		Src:            terraformDirResult,
-		Inventory:      terraformDirResult.File("inventory.yaml"),
-		Parameters:     ansibleParameters,
-		VaultAppRoleID: vaultAppRoleID,
-		VaultSecretID:  vaultSecretID,
-		VaultURL:       vaultURL,
-		Requirements:   ansibleRequirementsFile,
-		SSHUser:        ansibleUser,
-		SSHPassword:    ansiblePassword,
-	})
+	ansibleSuccess, err := v.
+		ExecuteAnsible(
+			ctx,
+			terraformDirResult,
+			ansiblePlaybooks,
+			ansibleRequirementsFile,
+			terraformDirResult.File("inventory.yaml"),
+			ansibleParameters,
+			vaultAppRoleID,
+			vaultSecretID,
+			vaultURL,
+			ansibleUser,
+			ansiblePassword,
+		)
+	if err != nil {
+		return nil, fmt.Errorf("running ansible failed: %w", err)
+	}
+
+	if !ansibleSuccess {
+		return nil, fmt.Errorf("ansible execution failed")
+	}
 
 	// RETURN UPDATED WORKDIR WITH INVENTORY
 	return terraformDirResult, nil

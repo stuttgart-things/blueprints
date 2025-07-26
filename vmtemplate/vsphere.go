@@ -47,13 +47,16 @@ func (m *Vmtemplate) RunVsphereWorkflow(
 	// Folder in git repository
 	// +optional
 	gitWorkdir string,
+	// Folder in git repository
+	// +optional
+	testVmDir string,
 	// Ref to checkout in the Git repository
 	// +optional
+	// +default="test-vm"
 	gitRef string,
 	// Git authentication token
 	// +optional
 	gitToken *dagger.Secret) {
-
 	var configDir *dagger.Directory
 
 	// CLONE GIT REPOSITORY IF PROVIDED
@@ -97,6 +100,22 @@ func (m *Vmtemplate) RunVsphereWorkflow(
 	fmt.Println("VM Template Name:", vmTemplateName)
 
 	// CREATE TEST-VM FROM TEMPLATE
+	tfDir, error := m.CreateTestVM(
+		ctx,
+		configDir.Directory(testVmDir),
+		"apply",
+		"vault_addr="+vaultAddr+",vm_name=testvm-dagger,vsphere_vm_template="+vmTemplateName,
+		vaultRoleID,
+		vaultSecretID,
+		vaultToken,
+	)
+
+	fmt.Println("Terraform Directory Result:", tfDir)
+
+	if error != nil {
+		fmt.Println("Error creating test VM:", error)
+		return
+	}
 
 	// RUN ANSIBLE TESTS AGAINST THE TEST-VM
 

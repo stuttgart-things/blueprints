@@ -63,22 +63,37 @@ func (m *GoMicroservice) RunStaticStage(
 	if lintEnabled {
 		g.Go(func() error {
 			lintStart := time.Now()
-			lintOutput, err := dag.Go().Lint(
+			// Get the container reference first
+			lintContainer := dag.Go().Lint(
 				src,
 				dagger.GoLintOpts{Timeout: lintTimeout},
-			).Stdout(gctx)
+			)
 
-			stats.Lint.Duration = time.Since(lintStart).String()
-
+			// Capture both stdout and stderr
+			combinedOutput, err := lintContainer.Stdout(ctx)
 			if err != nil {
+				// Try to get more detailed output
+				if exitErr, ok := err.(*dagger.ExecError); ok {
+					combinedOutput = exitErr.Stderr + exitErr.Stdout
+				}
+
+				stats.Lint.Duration = time.Since(lintStart).String()
+
 				if lintCanFail {
-					stats.Lint.Findings = []string{fmt.Sprintf("Linting failed (non-fatal): %v", err)}
+					// Capture the detailed output
+					if combinedOutput != "" {
+						stats.Lint.Findings = strings.Split(getExecOutput(err), "\n")
+					} else {
+						stats.Lint.Findings = []string{fmt.Sprintf("Linting failed (non-fatal): %v", err)}
+					}
 					return nil
 				}
-				return fmt.Errorf("error running lint: %w", err)
+				return fmt.Errorf("error running lint: %s\n%w", combinedOutput, err)
 			}
 
-			stats.Lint.Findings = strings.Split(lintOutput, "\n")
+			// If no error, use the stdout
+			stats.Lint.Duration = time.Since(lintStart).String()
+			stats.Lint.Findings = strings.Split(combinedOutput, "\n")
 			return nil
 		})
 	}
@@ -146,4 +161,11 @@ func (m *GoMicroservice) RunStaticStage(
 		File("static-analysis-report.json")
 
 	return statsFile, nil
+}
+
+func getExecOutput(err error) string {
+	if execErr, ok := err.(*dagger.ExecError); ok {
+		return fmt.Sprintf("STDOUT:\n%s\n\nSTDERR:\n%s", execErr.Stdout, execErr.Stderr)
+	}
+	return err.Error()
 }

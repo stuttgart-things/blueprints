@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/stuttgart-things/blueprints/compare/v1.10.0...v1.10.1) (2025-07-26)
+
+
+### Bug Fixes
+
+* fix/fix-linting-output ([0e120af](https://github.com/stuttgart-things/blueprints/commit/0e120af2fe60e68097f238b6de28dee7d047e5ec))
+
 # [1.10.0](https://github.com/stuttgart-things/blueprints/compare/v1.9.0...v1.10.0) (2025-07-14)
 
 

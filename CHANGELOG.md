@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/stuttgart-things/blueprints/compare/v1.11.0...v1.11.1) (2025-07-28)
+
+
+### Bug Fixes
+
+* fix/add-security-import ([3229be0](https://github.com/stuttgart-things/blueprints/commit/3229be007d8590d44589ca0f19262958da5ea31a))
+
 # [1.11.0](https://github.com/stuttgart-things/blueprints/compare/v1.10.1...v1.11.0) (2025-07-28)
 
 

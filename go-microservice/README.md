@@ -42,7 +42,7 @@ run-build-stage \
 --src tests/go-microservice/ldflags/ \
 --ko-build=false \
 --bin-name demo \
---ldflags "-X main.Version=1.2.3 -X main.Commit=abc1234 -X main.BuildTime=2025-07-05T13:45:00Z" \
+--ldflags "main.Version=1.2.5; main.Commit=abc1234; main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 --progress plain -vv \
 export --path=/tmp/microservices/ldflags-test/
 
@@ -52,7 +52,7 @@ run-build-stage \
 --src tests/go-microservice/ldflags/ \
 --ko-build=true \
 --bin-name demo \
---ldflags "-X main.Version=1.2.3 -X main.Commit=abc1234 -X main.BuildTime=2025-07-05T13:45:00Z" \
+--ldflags "main.Version=1.2.5; main.Commit=abc1234; main.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 --token=env:GITHUB_TOKEN \
 --ko-push=true \
 --ko-repo ghcr.io/stuttgart-things/test \

@@ -35,6 +35,9 @@ func (m *GoMicroservice) RunBuildStage(
 	// +default="GITHUB_TOKEN"
 	tokenName string,
 	// +optional
+	// +default=""
+	packageName string,
+	// +optional
 	token *dagger.Secret,
 	// +optional
 	// +default="ko.local"
@@ -77,12 +80,13 @@ func (m *GoMicroservice) RunBuildStage(
 			binDir = dag.Go().BuildBinary(
 				src,
 				dagger.GoBuildBinaryOpts{
-					GoVersion:  goVersion,
-					Os:         os,
-					Arch:       arch,
-					GoMainFile: goMainFile,
-					BinName:    binName,
-					Ldflags:    ldflags,
+					GoVersion:   goVersion,
+					Os:          os,
+					Arch:        arch,
+					GoMainFile:  goMainFile,
+					BinName:     binName,
+					Ldflags:     ldflags,
+					PackageName: packageName,
 				})
 
 			// Force evaluation by getting directory ID

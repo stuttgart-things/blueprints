@@ -60,10 +60,10 @@ export VAULT_SECRET_ID=<REPLACEME>
 
 dagger call -m vmtemplate \
 run-vsphere-workflow \
---packer-config-dir ~/projects/stuttgart-things/packer/builds/ubuntu24-labda-vsphere/ \
---packer-config ubuntu24-base-os.pkr.hcl \
+--packer-config-dir /home/sthings/projects/stuttgart-things/packer/builds/ubuntu25-labul-vsphere-baseos \
+--packer-config ubuntu25-base-os.pkr.hcl \
 --packer-version 1.13.1 \
---vault-addr https://vault-vsphere.example.com:8200 \
+--vault-addr $(echo $VAULT_ADDR) \
 --vault-token env:VAULT_TOKEN \
 --vault-role-id env:VAULT_ROLE_ID \
 --vault-secret-id env:VAULT_SECRET_ID \

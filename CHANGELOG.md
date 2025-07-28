@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/stuttgart-things/blueprints/compare/v1.10.1...v1.11.0) (2025-07-28)
+
+
+### Features
+
+* feat/update-ldflags-package-go-micro ([afdc62d](https://github.com/stuttgart-things/blueprints/commit/afdc62d4345bb903c26128960d9925ef3d9c4127))
+
 ## [1.10.1](https://github.com/stuttgart-things/blueprints/compare/v1.10.0...v1.10.1) (2025-07-26)
 
 

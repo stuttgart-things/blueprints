@@ -1,15 +1,15 @@
 # stuttgart-things/blueprints
 
-collection of modular, reusable Dagger pipelines for automating build, test &amp; deployment workflows
+collection of modular, reusable Dagger pipelines for automating build, test &amp; deployment workflows.
 
-### 🧩 Modular Dagger Pipelines
+### Modular Dagger Pipelines
 
-| Module                 | Link                                                      | Description                                                                                      |
-|------------------------|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| **VM Module**          | [📘 vm/README.md](./vm/README.md)                         | Automates VM lifecycle with Terraform and Ansible, integrates Vault/SOPS.                       |
-| **VM-Template Module** | [📘 vmtemplate/README.md](./vmtemplate/README.md)         | Builds and tests VM templates using Packer, Vault secrets, and Git SCM workflows.               |
-| **Go Microservice**    | [📘 go-microservice/README.md](./go-microservice/README.md) | Executes a Go microservice CI pipeline with linting, testing, coverage analysis, and security scanning. |
-| **Kubernetes Microservice** | [📘 kubernetes-microservice/README.md](./kubernetes-microservice/README.md) | Builds and stages Kubernetes container images with support for insecure registries and platform targeting. |
+| Module                                                                 | Description                                                                                      |
+|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| **💻 [VM Module](./vm/README.md)**                                     | Automates VM lifecycle with Terraform and Ansible, integrates Vault/SOPS.                       |
+| **🖼️ [VM-Template Module](./vmtemplate/README.md)**                    | Builds and tests VM templates using Packer, Vault secrets, and Git SCM workflows.               |
+| **🚀 [Go Microservice](./go-microservice/README.md)**                   | Executes a Go microservice CI pipeline with linting, testing, coverage analysis, and security scanning. |
+| **☸️ [Kubernetes Microservice](./kubernetes-microservice/README.md)**  | Builds and stages Kubernetes container images with support for insecure registries and platform targeting. |
 
 
 ## LICENSE

@@ -49,6 +49,8 @@ dagger call -m vm bake-local \
 --ansible-playbooks "sthings.baseos.setup" \
 --ansible-user=env:ANSIBLE_USER \
 --ansible-password=env:ANSIBLE_PASSWORD \
+--ansible-wait-timeout=90 \
+--ansibleParameters="send_to_homerun=false" \
 --progress plain -vv \
 export --path=~/projects/terraform/vms/sthings-runner/
 ```

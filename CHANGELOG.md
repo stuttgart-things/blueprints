@@ -1,3 +1,11 @@
+# [1.12.0](https://github.com/stuttgart-things/blueprints/compare/v1.11.1...v1.12.0) (2025-09-01)
+
+
+### Features
+
+* feat/add-vm-timeout ([8919f77](https://github.com/stuttgart-things/blueprints/commit/8919f773266fe759712d401b31eaedcce51a4653))
+* feat/update-readme-vm ([107fcf7](https://github.com/stuttgart-things/blueprints/commit/107fcf7b6707e34c1dbb77b9e8070751f5cc5ef8))
+
 ## [1.11.1](https://github.com/stuttgart-things/blueprints/compare/v1.11.0...v1.11.1) (2025-07-28)
 
 

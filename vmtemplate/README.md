@@ -58,7 +58,9 @@ export VAULT_TOKEN=<REPLACEME>
 export VAULT_ROLE_ID=<REPLACEME>
 export VAULT_SECRET_ID=<REPLACEME>
 
-dagger call -m vmtemplate \
+# # github.com/stuttgart-things/blueprints/go-microservice@v1.11.1
+
+dagger call -m /home/sthings/projects/blueprints/go-microservice \
 run-vsphere-workflow \
 --packer-config-dir /home/sthings/projects/stuttgart-things/packer/builds/ubuntu25-labul-vsphere-baseos \
 --packer-config ubuntu25-base-os.pkr.hcl \

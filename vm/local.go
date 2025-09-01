@@ -4,6 +4,7 @@ import (
 	"context"
 	"dagger/vm/internal/dagger"
 	"fmt"
+	"time"
 )
 
 func (v *Vm) BakeLocal(
@@ -43,6 +44,9 @@ func (v *Vm) BakeLocal(
 	// +optional
 	// +default="default"
 	ansibleInventoryType string,
+	// +optional
+	// +default=30
+	ansibleWaitTimeout int,
 ) (*dagger.Directory, error) {
 	workDir := "/src"
 
@@ -117,6 +121,9 @@ func (v *Vm) BakeLocal(
 
 	// WRITE INVENTORY TO terraformDirResult
 	terraformDirResult = terraformDirResult.WithNewFile("inventory.yaml", inventory)
+
+	// SLEEP BEFORE ANSIBLE (GIVE MACHINES TIME TO BE READY)
+	time.Sleep(time.Duration(ansibleWaitTimeout) * time.Second)
 
 	// RUN ANSIBLE
 	ansibleSuccess, err := v.

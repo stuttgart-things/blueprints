@@ -57,8 +57,8 @@ func ParseIPsFromTfOutput(terraformVMOutput string) ([]string, error) {
 
 	var ips []string
 	for _, outer := range tfOutput.IP.Value {
-		if len(outer) > 0 {
-			ips = append(ips, outer[0])
+		for _, ip := range outer { // <-- instead of just outer[0]
+			ips = append(ips, ip)
 		}
 	}
 

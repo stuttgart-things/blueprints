@@ -35,8 +35,6 @@ dagger call -m vm bake-local \
 export --path=~/projects/terraform/vms/sthings-runner/
 ```
 
-</details>
-
 ```bash
 # TERRAFORM SECRETS FROM VAULT
 export SSH_USER=sthings
@@ -54,8 +52,6 @@ dagger call -m vm bake-local \
 --progress plain -vv \
 export --path=~/projects/terraform/vms/sthings-runner/
 ```
-
-<details><summary>APPLY OVER EXISTING WORKSPACE/DIR</summary>
 
 ```bash
 dagger call -m vm bake \

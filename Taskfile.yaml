@@ -53,6 +53,9 @@ tasks:
       - |
         echo "Running bake command for vm module - apply terraform code"
         rm -rf {{ .EXPORTED_TF_WORKSPACE }} || true
+      - |
+        mkdir -p {{ .EXPORTED_TF_WORKSPACE }} || true
+      - |
         dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
         --terraform-dir {{ .TF_CODE_TEST_DIR }} \
         --encrypted-file {{ .SOPS_ENCRYPTED_VARS }} \

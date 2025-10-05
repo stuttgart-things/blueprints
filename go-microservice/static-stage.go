@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"dagger/go-microservice/internal/dagger"
-	"dagger/go-microservice/security"
 	"dagger/go-microservice/stats"
 	"encoding/json"
 	"fmt"
@@ -37,9 +36,6 @@ func (m *GoMicroservice) RunStaticStage(
 	// +optional
 	ldflags string,
 	// +optional
-	// +default="2.22.1"
-	secureGoVersion string,
-	// +optional
 	// +default="false"
 	lintCanFail bool,
 	// +optional
@@ -48,9 +44,6 @@ func (m *GoMicroservice) RunStaticStage(
 	// +optional
 	// +default=true
 	lintEnabled bool,
-	// +optional
-	// +default=true
-	securityScan bool,
 	// +optional
 	// +default=true
 	test bool,
@@ -98,28 +91,6 @@ func (m *GoMicroservice) RunStaticStage(
 		})
 	}
 
-	// Security scan step
-	if securityScan {
-		g.Go(func() error {
-			securityStart := time.Now()
-			reportFile := dag.Go().SecurityScan(
-				src,
-				dagger.GoSecurityScanOpts{
-					SecureGoVersion: secureGoVersion,
-				})
-
-			reportContent, err := reportFile.Contents(gctx)
-			stats.SecurityScan.Duration = time.Since(securityStart).String()
-
-			if err != nil {
-				return fmt.Errorf("error reading security report: %w", err)
-			}
-
-			stats.SecurityScan.Findings = strings.Split(reportContent, "\n")
-			return nil
-		})
-	}
-
 	// Test step
 	if test {
 		g.Go(func() error {
@@ -136,7 +107,9 @@ func (m *GoMicroservice) RunStaticStage(
 				return fmt.Errorf("error running tests: %w", err)
 			}
 
-			stats.Test.Coverage = security.ExtractCoverage(testOutput)
+			// Set empty coverage since security package is removed
+			stats.Test.Coverage = ""
+			_ = testOutput // Use testOutput to avoid unused variable warning
 			return nil
 		})
 	}

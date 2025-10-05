@@ -33,15 +33,39 @@ const clusterTemplate = `{{- if eq (len .Hosts) 1 }}
 
 [additional_master_nodes]
 
-{{- else }}
-# MULTINODE-CLUSTER
+[workers]
+
+{{- else if eq (len .Hosts) 3 }}
+# 3-NODE CLUSTER
 [initial_master_node]
 {{- $first := index .Hosts 0 }}
 {{ $first.FQDN }} ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 
 [additional_master_nodes]
 {{- range $i, $host := .Hosts }}
-  {{- if gt $i 0 }}
+  {{- if and (gt $i 0) (le $i 2) }}
+{{ $host.FQDN }} ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+  {{- end }}
+{{- end }}
+
+[workers]
+
+{{- else }}
+# LARGE CLUSTER (4+ NODES)
+[initial_master_node]
+{{- $first := index .Hosts 0 }}
+{{ $first.FQDN }} ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[additional_master_nodes]
+{{- range $i, $host := .Hosts }}
+  {{- if and (gt $i 0) (le $i 2) }}
+{{ $host.FQDN }} ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+  {{- end }}
+{{- end }}
+
+[workers]
+{{- range $i, $host := .Hosts }}
+  {{- if gt $i 2 }}
 {{ $host.FQDN }} ansible_ssh_common_args='-o StrictHostKeyChecking=no'
   {{- end }}
 {{- end }}
@@ -57,7 +81,7 @@ func ParseIPsFromTfOutput(terraformVMOutput string) ([]string, error) {
 
 	var ips []string
 	for _, outer := range tfOutput.IP.Value {
-		for _, ip := range outer { // <-- instead of just outer[0]
+		for _, ip := range outer {
 			ips = append(ips, ip)
 		}
 	}

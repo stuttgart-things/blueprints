@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/stuttgart-things/blueprints/compare/v1.12.1...v1.13.0) (2025-10-05)
+
+
+### Features
+
+* feat/update-cluster-vm-inventory ([02d9960](https://github.com/stuttgart-things/blueprints/commit/02d9960c8d17b34c8f00dd4a7349e18a266afa86))
+
 ## [1.12.1](https://github.com/stuttgart-things/blueprints/compare/v1.12.0...v1.12.1) (2025-09-01)
 
 

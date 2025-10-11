@@ -1,14 +1,14 @@
 {
   "name": "vm",
-  "engineVersion": "v0.18.12",
+  "engineVersion": "v0.19.2",
   "sdk": {
     "source": "go"
   },
   "dependencies": [
     {
       "name": "ansible",
-      "source": "github.com/stuttgart-things/dagger/ansible@v0.23.1",
-      "pin": "e81911fc29af83ae52db3be7a0817a9caab9be51"
+      "source": "github.com/stuttgart-things/dagger/ansible@v0.34.0",
+      "pin": "49f18046e2b261b963d4aab2c90c26df8761e68c"
     },
     {
       "name": "git",

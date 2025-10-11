@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/stuttgart-things/blueprints/compare/v1.13.0...v1.14.0) (2025-10-11)
+
+
+### Features
+
+* feat/update-ansible-module-vm-moduel ([272be7a](https://github.com/stuttgart-things/blueprints/commit/272be7a260969f109d211db0905be074e095cd9a))
+
 # [1.13.0](https://github.com/stuttgart-things/blueprints/compare/v1.12.1...v1.13.0) (2025-10-05)
 
 

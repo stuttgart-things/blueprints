@@ -11,6 +11,8 @@ collection of modular, reusable Dagger pipelines for automating build, test &amp
 | **🚀 [Go Microservice](./go-microservice/README.md)**                   | Executes a Go microservice CI pipeline with linting, testing, coverage analysis, and security scanning. |
 | **☸️ [Kubernetes Microservice](./kubernetes-microservice/README.md)**  | Builds and stages Kubernetes container images with support for insecure registries and platform targeting. |
 
+| **📝 [Repository Linting](./repository-linting/README.md)** | Validates multiple technologies in a repository using Dagger. |
+
 
 ## LICENSE
 

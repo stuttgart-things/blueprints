@@ -1,0 +1,18 @@
+# Markdown linter configuration
+all
+
+# Exclude specific rules
+exclude_rule 'MD013' # Line length (we'll keep this to show violations)
+rule 'MD013', :line_length => 120
+
+# Allow inline HTML
+exclude_rule 'MD033'
+
+# Allow duplicate headers
+exclude_rule 'MD024'
+
+# Enforce consistent list marker style
+rule 'MD004', :style => :dash
+
+# Enforce consistent header style
+rule 'MD003', :style => :atx

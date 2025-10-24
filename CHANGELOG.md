@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/stuttgart-things/blueprints/compare/v1.14.0...v1.15.0) (2025-10-24)
+
+
+### Features
+
+* feat/add-linting ([0d79397](https://github.com/stuttgart-things/blueprints/commit/0d793978c08860a9b094de530838b49fd1829ce0))
+
 # [1.14.0](https://github.com/stuttgart-things/blueprints/compare/v1.13.0...v1.14.0) (2025-10-11)
 
 

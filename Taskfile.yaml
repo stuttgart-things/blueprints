@@ -1,10 +1,8 @@
 ---
 version: 3
-vars:
-  PROJECT_NAME:
-    sh: echo ${PWD##*/}
-  BRANCH:
-    sh: if [ $(git rev-parse --abbrev-ref HEAD) != "main" ]; then echo $(git rev-parse --abbrev-ref HEAD); else echo main ; fi
+includes:
+  git:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/platform-engineering-showcase/refs/heads/main/taskfiles/git.yaml
 
 dotenv: ['.env', '{{.HOME}}/.env']
 
@@ -16,6 +14,20 @@ tasks:
       - task: test-vmtemplate
       - task: test-vm
       - task: test-go-microservice
+      - task: test-repository-linting
+
+  test-repository-linting:
+    desc: Test repository-linting module
+    cmds:
+      - |
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --src {{ .CODE_TEST_DIR }} \
+        export --path={{ .EXPORT_PATH }}
+    vars:
+      MODULE: repository-linting
+      FUNCTION: validate-multiple-technologies
+      CODE_TEST_DIR: tests/repository-linting/test-repo
+      EXPORT_PATH: /tmp/all-findings.txt
 
   test-go-microservice:
     desc: Test go-microservice module
@@ -98,79 +110,12 @@ tasks:
       - pre-commit run -a
 
   release:
-    desc: bump new version
+    desc: release new version
     cmds:
-      - task: pr
+      - task: git:pr
       - npx semantic-release --dry-run
       - npx semantic-release --debug --no-ci
       - echo released version $(git describe --tags --abbrev=0)
-
-  switch-remote:
-    desc: Switch to remote branch
-    cmds:
-      - |
-        git fetch
-        branches=($(git branch -r | grep -v 'origin/HEAD' | sed 's|origin/||'))
-        branch=$(printf "%s\n" "${branches[@]}" | gum choose)
-        git switch -c ${branch} --track origin/${branch}
-        git branch && git status
-
-  switch-local:
-    desc: Switch to local branch
-    cmds:
-      - |
-        branches=$(git branch -a | grep -v 'remotes')
-        branch=$(printf "%s\n" "${branches[@]}" | gum choose)
-        git checkout ${branch} && git pull
-
-  branch:
-    desc: Create branch from main
-    cmds:
-      - git checkout main
-      - git branch
-      - git pull
-      - |
-        echo "Enter to be created (remote) branch:"
-        read BRANCH_NAME;
-        git checkout -b ${BRANCH_NAME}
-        git push origin ${BRANCH_NAME}
-      - git branch
-      - git branch --set-upstream-to=origin/main ${BRANCH_NAME}
-
-  commit:
-    desc: Commit + push code into branch
-    deps: [check]
-    cmds:
-      - rm -rf dist/
-      - git branch --set-upstream-to=origin/{{ .BRANCH }}
-      - git pull
-      - |
-        git add *
-        if [[ -n $(git status --porcelain) ]]; then
-          echo "committing changes"
-          echo "ENTER COMMIT MESSAGE"
-          COMMIT_MESSAGE=$(echo $(gum choose "feat: {{ .BRANCH }}" "fix: {{ .BRANCH }}" "BREAKING CHANGE: {{ .BRANCH }}" "ENTER CUSTOM COMMIT MESSAGE"))
-
-          if [ "$COMMIT_MESSAGE" == "ENTER CUSTOM COMMIT MESSAGE" ]; then
-            COMMIT_MESSAGE=$(echo $(gum input --placeholder "scope" --value "commit to {{ .BRANCH }}"))
-          fi
-
-          git commit --allow-empty -a -m "$(echo ${COMMIT_MESSAGE})"
-        else
-          echo "no changes"
-        fi
-        git push origin -u {{ .BRANCH }}
-
-  pr:
-    desc: Create pull request into main
-    deps: [test-all]
-    cmds:
-      - task: commit
-      - gh pr create -t "{{ .BRANCH }}" -b "{{ .BRANCH }} branch into main"
-      - sleep 20s
-      #- gh pr checks $(gh pr list | grep "^[^#;]" | grep '{{ .BRANCH }}' | awk '{print $1}') --watch
-      - gh pr merge $(gh pr list | grep "^[^#;]" | grep '{{ .BRANCH }}' | awk '{print $1}') --auto --rebase --delete-branch
-      - git checkout main && git pull
 
   do:
     desc: Select a task to run
@@ -178,4 +123,3 @@ tasks:
       - |
         task=$(yq e '.tasks | keys' Taskfile.yaml | sed 's/^- //' | gum choose)
         task ${task}
-# check: https://github.com/act3-ai/dagger/blob/main/release/main.go

@@ -1,3 +1,10 @@
+## [1.16.1](https://github.com/stuttgart-things/blueprints/compare/v1.16.0...v1.16.1) (2025-10-25)
+
+
+### Bug Fixes
+
+* fix/update-dagger-json ([9d21dd8](https://github.com/stuttgart-things/blueprints/commit/9d21dd8a5d905b07359b2e7aba37b1933a23796c))
+
 # [1.16.0](https://github.com/stuttgart-things/blueprints/compare/v1.15.0...v1.16.0) (2025-10-25)
 
 

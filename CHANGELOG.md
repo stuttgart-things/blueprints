@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/stuttgart-things/blueprints/compare/v1.15.0...v1.16.0) (2025-10-25)
+
+
+### Features
+
+* feat/add-linting-analyze-ai-func ([cfdd5f8](https://github.com/stuttgart-things/blueprints/commit/cfdd5f8ca74e88204442c518de617f3a478a2ec1))
+
 # [1.15.0](https://github.com/stuttgart-things/blueprints/compare/v1.14.0...v1.15.0) (2025-10-24)
 
 

@@ -111,6 +111,8 @@ tasks:
 
   release:
     desc: release new version
+    deps:
+      - test-all
     cmds:
       - task: git:pr
       - npx semantic-release --dry-run

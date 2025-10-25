@@ -1,16 +1,16 @@
-// A generated module for RepositoryLinting functions
+// RepositoryLinting Module
 //
-// This module has been generated via dagger init and serves as a reference to
-// basic module structure as you get started with Dagger.
+// This module provides advanced linting, validation, and AI-powered analysis for code repositories.
+// It supports multi-technology linting (YAML, Markdown, etc.), merges findings, and enables automated review workflows.
+// The module can analyze linting reports using AI agents to deliver actionable feedback and improvement suggestions.
 //
-// Two functions have been pre-created. You can modify, delete, or add to them,
-// as needed. They demonstrate usage of arguments and return types using simple
-// echo and grep commands. The functions can be called from the dagger CLI or
-// from one of the SDKs.
+// Key features:
+// - Validate and lint multiple file types in a repository
+// - Merge and summarize findings from different linters
+// - Use AI to analyze linting reports and generate human-readable reviews
+// - Integrate with Dagger pipelines for automated CI/CD quality gates
 //
-// The first line in this comment block is a short description line and the
-// rest is a long description with more detail on the module's purpose or usage,
-// if appropriate. All modules should have a short description.
+// Designed for extensibility and integration in modern DevOps and platform engineering environments.
 
 package main
 
@@ -20,7 +20,6 @@ import (
 )
 
 type RepositoryLinting struct{}
-
 
 func (m *RepositoryLinting) ValidateMultipleTechnologies(
 	ctx context.Context,
@@ -58,41 +57,45 @@ func (m *RepositoryLinting) ValidateMultipleTechnologies(
 		File(mergedOutputFile)
 }
 
-
-// LintYAML lints YAML files in the provided directory
-func (m *RepositoryLinting) LintYAML(
+// ANALYZE A LINTING REPORT FILE WITH AI AND RETURN A TEXT FILE WITH THE ANALYSIS
+func (m *RepositoryLinting) AnalyzeReport(
 	ctx context.Context,
+	reportFile *dagger.File,
 	// +optional
-	// +default=".yamllint"
-	configPath string,
-	// +optional
-	// +default="yamllint-findings.txt"
+	// +default="ai-analysis.txt"
 	outputFile string,
-	src *dagger.Directory) (*dagger.File) {
-	return dag.Linting().LintYaml(
-		src,
-		dagger.LintingLintYamlOpts{
-			ConfigPath:  configPath,
-			OutputFile: outputFile,
-		},
-	)
-}
+) (*dagger.File, error) {
 
-// LintYAML lints YAML files in the provided directory
-func (m *RepositoryLinting) LintMarkdown(
-	ctx context.Context,
-	// +optional
-	// +default=".mdlrc"
-	configPath string,
-	// +optional
-	// +default="markdown-findings.txt"
-	outputFile string,
-	src *dagger.Directory) (*dagger.File) {
-	return dag.Linting().LintMarkdown(
-		src,
-		dagger.LintingLintMarkdownOpts{
-			ConfigPath:  configPath,
-			OutputFile: outputFile,
-		},
-	)
+	// READ THE REPORT CONTENTS
+	reportContent, err := reportFile.Contents(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// PREPARE THE AI ENVIRONMENT
+	environment := dag.Env().
+		WithStringInput("report", reportContent, "the linting report to analyze").
+		WithStringOutput("analysis", "the AI-generated analysis of the report")
+
+	// AI AGENT PROMPT
+	work := dag.LLM().
+		WithEnv(environment).
+		WithPrompt(`
+			You are an expert code reviewer.
+			Analyze the following linting report and summarize the most important findings, improvement suggestions, and any critical issues.
+			Be concise and actionable.
+			Report:
+			$report
+		`)
+
+	// GET THE ANALYSIS RESULT
+	analysis, err := work.Env().Output("analysis").AsString(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// RETURN AS A NEW FILE
+	return dag.Directory().
+		WithNewFile(outputFile, analysis).
+		File(outputFile), nil
 }

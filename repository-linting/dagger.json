@@ -8,7 +8,7 @@
     {
       "name": "linting",
       "source": "github.com/stuttgart-things/dagger/linting@v0.36.0",
-      "pin": "065862a0d97418baed85591edcb679e50be23e57"
+  "pin": "065862a0d97418baed85591edcb679e50be23e57" // pragma: allowlist secret
     }
   ]
 }

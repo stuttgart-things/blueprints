@@ -1,41 +1,37 @@
 # stuttgart-things/blueprints
 
-collection of modular, reusable Dagger pipelines for automating build, test &amp; deployment workflows.
+**Blueprints** is a collection of modular, reusable Dagger pipelines for automating build, test, and deployment workflows in modern DevOps environments.
 
-### Modular Dagger Pipelines
+## Overview
 
-| Module                                                                 | Description                                                                                      |
-|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| **💻 [VM Module](./vm/README.md)**                                     | Automates VM lifecycle with Terraform and Ansible, integrates Vault/SOPS.                       |
-| **🖼️ [VM-Template Module](./vmtemplate/README.md)**                    | Builds and tests VM templates using Packer, Vault secrets, and Git SCM workflows.               |
-| **🚀 [Go Microservice](./go-microservice/README.md)**                   | Executes a Go microservice CI pipeline with linting, testing, coverage analysis, and security scanning. |
-| **☸️ [Kubernetes Microservice](./kubernetes-microservice/README.md)**  | Builds and stages Kubernetes container images with support for insecure registries and platform targeting. |
+These blueprints are designed for platform engineers, SREs, and developers who want to accelerate CI/CD, infrastructure automation, and code quality gates using Dagger.
 
-| **📝 [Repository Linting](./repository-linting/README.md)** | Validates multiple technologies in a repository using Dagger. |
+### Available Modules
 
+| Module | Description |
+|--------|-------------|
+| 💻 [VM Module](./vm/README.md) | Automate VM lifecycle with Terraform and Ansible, including Vault/SOPS integration. |
+| 🖼️ [VM-Template Module](./vmtemplate/README.md) | Build and test VM templates using Packer, Vault secrets, and Git workflows. |
+| 🚀 [Go Microservice](./go-microservice/README.md) | Run Go microservice CI pipelines: lint, test, coverage, and security scan. |
+| ☸️ [Kubernetes Microservice](./kubernetes-microservice/README.md) | Build and stage Kubernetes container images, supporting insecure registries and platform targeting. |
+| 📝 [Repository Linting](./repository-linting/README.md) | Validate and lint multiple technologies in a repository, merge findings, and analyze reports with AI. |
 
-## LICENSE
+## Getting Started
 
-<details><summary><b>APACHE 2.0</b></summary>
+1. Clone this repository.
+2. Install [Dagger](https://dagger.io/) and required dependencies.
+3. Explore each module's README for usage instructions and examples.
 
-Copyright 2023 patrick hermann.
+Example: Run AI-powered linting analysis
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-</details>
-
-```yaml
-Author Information
-------------------
-Patrick Hermann, stuttgart-things 06/2025
+```sh
+dagger call -m repository-linting analyze-report --report-file /tmp/all-findings.txt export --path=/tmp/ai.txt
 ```
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE) for details.
+
+## Author
+
+Patrick Hermann, stuttgart-things (2025)

@@ -123,5 +123,13 @@ tasks:
     desc: Select a task to run
     cmds:
       - |
-        task=$(yq e '.tasks | keys' Taskfile.yaml | sed 's/^- //' | gum choose)
-        task ${task}
+        # Extract task names (keep internal colons, remove only trailing colon)
+        task_name=$(task -l | awk '/^\*/ {print $2}' | sed 's/:$//' | gum choose)
+
+        # Run the selected task
+        [ -n "$task_name" ] && task "$task_name"
+
+  default:
+    desc: Default task is select & do (work)
+    cmds:
+      - task do

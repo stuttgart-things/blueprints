@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/stuttgart-things/blueprints/compare/v1.16.1...v1.17.0) (2025-10-27)
+
+
+### Features
+
+* feat/add-default-linting-profiles ([017ba19](https://github.com/stuttgart-things/blueprints/commit/017ba19e6d3d8e2ee5d8ce4e94aef15f6b6adbb5))
+
 ## [1.16.1](https://github.com/stuttgart-things/blueprints/compare/v1.16.0...v1.16.1) (2025-10-25)
 
 

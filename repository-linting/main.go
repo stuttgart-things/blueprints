@@ -40,8 +40,56 @@ func (m *RepositoryLinting) ValidateMultipleTechnologies(
 	mergedOutputFile string,
 	src *dagger.Directory) *dagger.File {
 
-	yamlReport := m.LintYAML(ctx, yamlConfigPath, yamlOutputFile, src)
-	markdownReport := m.LintMarkdown(ctx, markdownConfigPath, markdownOutputFile, src)
+	// Create default YAML linting config if not present
+	yamlConfig := `---
+extends: default
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  document-start: disable
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+  comments:
+    min-spaces-from-content: 1
+  indentation:
+    spaces: 2
+    indent-sequences: true
+`
+
+	// Create default Markdown linting config if not present
+	markdownConfig := `{
+  "default": true,
+  "MD013": false,
+  "MD033": false,
+  "MD041": false,
+  "line-length": false,
+  "no-inline-html": false,
+  "first-line-h1": false
+}
+`
+
+	// Check if config files exist, if not create them with defaults
+	srcWithConfigs := src
+
+	// Check and add YAML config if missing
+	yamlConfigFile := src.File(yamlConfigPath)
+	if _, err := yamlConfigFile.Contents(ctx); err != nil {
+		// Config doesn't exist, create it
+		srcWithConfigs = srcWithConfigs.WithNewFile(yamlConfigPath, yamlConfig)
+	}
+
+	// Check and add Markdown config if missing
+	markdownConfigFile := src.File(markdownConfigPath)
+	if _, err := markdownConfigFile.Contents(ctx); err != nil {
+		// Config doesn't exist, create it
+		srcWithConfigs = srcWithConfigs.WithNewFile(markdownConfigPath, markdownConfig)
+	}
+
+	// Run linting with the (potentially augmented) source directory
+	yamlReport := m.LintYAML(ctx, yamlConfigPath, yamlOutputFile, srcWithConfigs)
+	markdownReport := m.LintMarkdown(ctx, markdownConfigPath, markdownOutputFile, srcWithConfigs)
 
 	// Read the contents of both reports
 	yamlContent, _ := yamlReport.Contents(ctx)

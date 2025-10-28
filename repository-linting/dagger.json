@@ -6,6 +6,11 @@
   },
   "dependencies": [
     {
+      "name": "git",
+      "source": "github.com/stuttgart-things/dagger/git@v0.37.0",
+      "pin": "d07684b2b8c6ae69f0c87ef48dc697a30804c7ae"
+    },
+    {
       "name": "linting",
       "source": "github.com/stuttgart-things/dagger/linting@v0.36.0",
       "pin": "065862a0d97418baed85591edcb679e50be23e57"

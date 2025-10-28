@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/stuttgart-things/blueprints/compare/v1.18.0...v1.19.0) (2025-10-28)
+
+
+### Features
+
+* feat/update-ai-model-analze.linting ([d4534ff](https://github.com/stuttgart-things/blueprints/commit/d4534fff9e9e5e8619362abbb7b826a1f880826f))
+
 # [1.18.0](https://github.com/stuttgart-things/blueprints/compare/v1.17.0...v1.18.0) (2025-10-28)
 
 

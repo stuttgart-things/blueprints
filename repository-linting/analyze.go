@@ -93,6 +93,7 @@ func (m *RepositoryLinting) AnalyzeReport(
 	// +optional
 	// +default="ai-analysis.txt"
 	outputFile string,
+	model string,
 ) (*dagger.File, error) {
 
 	// READ THE REPORT CONTENTS
@@ -109,6 +110,7 @@ func (m *RepositoryLinting) AnalyzeReport(
 	// AI AGENT PROMPT
 	work := dag.LLM().
 		WithEnv(environment).
+		WithModel(model).
 		WithPrompt(`
 			You are an expert code reviewer.
 			Analyze the following linting report and summarize the most important findings, improvement suggestions, and any critical issues.

@@ -24,11 +24,17 @@ type RepositoryLinting struct{}
 func (m *RepositoryLinting) ValidateMultipleTechnologies(
 	ctx context.Context,
 	// +optional
+	// +default=true
+	enableYaml bool,
+	// +optional
 	// +default=".yamllint"
 	yamlConfigPath string,
 	// +optional
 	// +default="yamllint-findings.txt"
 	yamlOutputFile string,
+	// +optional
+	// +default=true
+	enableMarkdown bool,
 	// +optional
 	// +default=".mdlrc"
 	markdownConfigPath string,
@@ -73,77 +79,59 @@ rules:
 	// Check if config files exist, if not create them with defaults
 	srcWithConfigs := src
 
-	// Check and add YAML config if missing
-	yamlConfigFile := src.File(yamlConfigPath)
-	if _, err := yamlConfigFile.Contents(ctx); err != nil {
-		// Config doesn't exist, create it
-		srcWithConfigs = srcWithConfigs.WithNewFile(yamlConfigPath, yamlConfig)
+	// Check and add YAML config if missing and YAML linting is enabled
+	if enableYaml {
+		yamlConfigFile := src.File(yamlConfigPath)
+		if _, err := yamlConfigFile.Contents(ctx); err != nil {
+			// Config doesn't exist, create it
+			srcWithConfigs = srcWithConfigs.WithNewFile(yamlConfigPath, yamlConfig)
+		}
 	}
 
-	// Check and add Markdown config if missing
-	markdownConfigFile := src.File(markdownConfigPath)
-	if _, err := markdownConfigFile.Contents(ctx); err != nil {
-		// Config doesn't exist, create it
-		srcWithConfigs = srcWithConfigs.WithNewFile(markdownConfigPath, markdownConfig)
+	// Check and add Markdown config if missing and Markdown linting is enabled
+	if enableMarkdown {
+		markdownConfigFile := src.File(markdownConfigPath)
+		if _, err := markdownConfigFile.Contents(ctx); err != nil {
+			// Config doesn't exist, create it
+			srcWithConfigs = srcWithConfigs.WithNewFile(markdownConfigPath, markdownConfig)
+		}
 	}
 
-	// Run linting with the (potentially augmented) source directory
-	yamlReport := m.LintYAML(ctx, yamlConfigPath, yamlOutputFile, srcWithConfigs)
-	markdownReport := m.LintMarkdown(ctx, markdownConfigPath, markdownOutputFile, srcWithConfigs)
+	var yamlContent, markdownContent string
 
-	// Read the contents of both reports
-	yamlContent, _ := yamlReport.Contents(ctx)
-	markdownContent, _ := markdownReport.Contents(ctx)
+	// Run YAML linting if enabled
+	if enableYaml {
+		yamlReport := m.LintYAML(ctx, yamlConfigPath, yamlOutputFile, srcWithConfigs)
+		yamlContent, _ = yamlReport.Contents(ctx)
+	}
 
-	// Merge the reports with headers
-	mergedContent := "=== YAML Linting Results ===\n" + yamlContent +
-		"\n\n=== Markdown Linting Results ===\n" + markdownContent
+	// Run Markdown linting if enabled
+	if enableMarkdown {
+		markdownReport := m.LintMarkdown(ctx, markdownConfigPath, markdownOutputFile, srcWithConfigs)
+		markdownContent, _ = markdownReport.Contents(ctx)
+	}
+
+	// Build merged content based on which linters are enabled
+	mergedContent := ""
+
+	if enableYaml {
+		mergedContent += "=== YAML Linting Results ===\n" + yamlContent
+	}
+
+	if enableMarkdown {
+		if enableYaml {
+			mergedContent += "\n\n"
+		}
+		mergedContent += "=== Markdown Linting Results ===\n" + markdownContent
+	}
+
+	// If both are disabled, provide a message
+	if !enableYaml && !enableMarkdown {
+		mergedContent = "No linting technologies enabled. Set enableYaml and/or enableMarkdown to true."
+	}
 
 	// Return as a new file
 	return dag.Directory().
 		WithNewFile(mergedOutputFile, mergedContent).
 		File(mergedOutputFile)
-}
-
-// ANALYZE A LINTING REPORT FILE WITH AI AND RETURN A TEXT FILE WITH THE ANALYSIS
-func (m *RepositoryLinting) AnalyzeReport(
-	ctx context.Context,
-	reportFile *dagger.File,
-	// +optional
-	// +default="ai-analysis.txt"
-	outputFile string,
-) (*dagger.File, error) {
-
-	// READ THE REPORT CONTENTS
-	reportContent, err := reportFile.Contents(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// PREPARE THE AI ENVIRONMENT
-	environment := dag.Env().
-		WithStringInput("report", reportContent, "the linting report to analyze").
-		WithStringOutput("analysis", "the AI-generated analysis of the report")
-
-	// AI AGENT PROMPT
-	work := dag.LLM().
-		WithEnv(environment).
-		WithPrompt(`
-			You are an expert code reviewer.
-			Analyze the following linting report and summarize the most important findings, improvement suggestions, and any critical issues.
-			Be concise and actionable.
-			Report:
-			$report
-		`)
-
-	// GET THE ANALYSIS RESULT
-	analysis, err := work.Env().Output("analysis").AsString(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// RETURN AS A NEW FILE
-	return dag.Directory().
-		WithNewFile(outputFile, analysis).
-		File(outputFile), nil
 }

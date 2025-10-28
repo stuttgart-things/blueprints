@@ -104,6 +104,22 @@ tasks:
       SDK:
         sh: gum choose "go" "python"
 
+  install-module:
+    desc: Install a Dagger module into an existing module
+    cmds:
+      - cd {{ .EXISTING_MODULE }} && dagger install {{ .MODULE_TO_INSTALL }}
+    vars:
+      EXISTING_MODULE:
+        sh: |
+          gum choose $(ls -d */ \
+            | grep -vE '(^tests/|^vm/|^vmtemplate/)' \
+            | sed 's:/$::')
+      MODULE_TO_INSTALL:
+        sh: |
+          gum input \
+            --placeholder "Module to install (default: github.com/stuttgart-things/dagger/<MODULE>@v0.37.0)" \
+            --value "github.com/stuttgart-things/dagger/<MODULE>@v0.36.0"
+
   check:
     desc: "Run pre-commit hooks"
     cmds:

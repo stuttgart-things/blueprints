@@ -41,8 +41,13 @@ This command creates a labeled issue in the specified repository using your GitH
 You can use the AI-powered analysis function via Dagger CLI as follows:
 
 ```sh
+# EXAMPLE w/ OPENROUTER / MODEL
+export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+export OPENAI_API_KEY="sk-or-v1-b7#..." # pragma: allowlist secret
+
 dagger call -m repository-linting analyze-report \
 --report-file /tmp/all-findings.txt \
+--model="minimax/minimax-m2:free" \
 export --path=/tmp/ai.txt
 ```
 

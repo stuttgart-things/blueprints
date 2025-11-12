@@ -1,3 +1,11 @@
+# [1.20.0](https://github.com/stuttgart-things/blueprints/compare/v1.19.0...v1.20.0) (2025-11-12)
+
+
+### Features
+
+* feat/add-precommit-checks ([63e2626](https://github.com/stuttgart-things/blueprints/commit/63e2626de14f819ebd8ad65b3f5fd6c91ef2ba08))
+* feat/add-precommit-checks ([6a560f5](https://github.com/stuttgart-things/blueprints/commit/6a560f5f6c3836ada0e4f5c934d1aa6943309da4))
+
 # [1.19.0](https://github.com/stuttgart-things/blueprints/compare/v1.18.0...v1.19.0) (2025-10-28)
 
 

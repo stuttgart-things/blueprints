@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/stuttgart-things/blueprints/compare/v1.20.0...v1.21.0) (2025-11-15)
+
+
+### Features
+
+* feat/add-ai-gh-issue-creation ([5057d29](https://github.com/stuttgart-things/blueprints/commit/5057d29d98f01c0451e25d65e858223c5439f0a5))
+
 # [1.20.0](https://github.com/stuttgart-things/blueprints/compare/v1.19.0...v1.20.0) (2025-11-12)
 
 

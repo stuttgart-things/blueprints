@@ -70,3 +70,18 @@ dagger call -m repository-linting analyze-report-and-create-issue \
 ```
 
 **Important:** Never commit real secrets to your repository. Use environment variables, secret managers, or CI/CD vaults for sensitive data. Mark example lines with `# pragma: allowlist secret` to avoid false positives.
+
+### Create github issue w/ help of ai agent
+
+create a github issue with ai-enhanced formatting
+
+```bash
+export GEMINI_API_KEY="AIzaS..." # pragma: allowlist secret
+
+dagger call -m repository-linting \
+create-issue \
+--repository stuttgart-things/stuttgart-things \
+--token env:GITHUB_TOKEN \
+--content "add helo world go code" \
+--model="gemini-2.5-flash"
+```

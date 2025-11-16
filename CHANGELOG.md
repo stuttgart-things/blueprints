@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/stuttgart-things/blueprints/compare/v1.21.0...v1.22.0) (2025-11-16)
+
+
+### Features
+
+* feat/add-k8s-config ([066fd6b](https://github.com/stuttgart-things/blueprints/commit/066fd6b03bb67f584b56788161134e52d074a880))
+
 # [1.21.0](https://github.com/stuttgart-things/blueprints/compare/v1.20.0...v1.21.0) (2025-11-15)
 
 

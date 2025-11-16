@@ -1,6 +1,6 @@
 {
   "name": "kubernetes-microservice",
-  "engineVersion": "v0.18.12",
+  "engineVersion": "v0.19.6",
   "sdk": {
     "source": "go"
   },
@@ -16,9 +16,15 @@
       "pin": "41f188e601ad0a6cef3e70bf61bc318fe82eec71"
     },
     {
+      "name": "helm",
+      "source": "github.com/stuttgart-things/dagger/helm@v0.39.0",
+      "pin": "27c0b0ffe79ee2167c9a70f26d21dd0fc01636b5"
+    },
+    {
       "name": "trivy",
       "source": "github.com/stuttgart-things/dagger/trivy@v0.23.0",
       "pin": "41f188e601ad0a6cef3e70bf61bc318fe82eec71"
     }
-  ]
+  ],
+  "disableDefaultFunctionCaching": true
 }

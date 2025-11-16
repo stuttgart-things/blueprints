@@ -1,6 +1,24 @@
 # stuttgart-things/blueprints/kubernetes-microservice
 
 ```bash
+dagger call -m kubernetes-microservice generate-kubernetes-app-configuration \
+--prompt-scope "show me all ingress resources in the namespace minio" \
+--kube-config file://~/.kube/demo-infra \
+--model="gemini-2.5-flash" \
+--progress plain
+```
+
+```bash
+dagger call -m kubernetes-microservice \
+generate-kubernetes-app-configuration \
+--prompt-scope "in the namespace kube-system and in the namespace crossplane-system - how many pods are running in each namespace?" \
+--kube-config file://~/.kube/demo-infra \
+--model="gemini-2.5-flash" \
+--progress plain \
+export --path=/tmp/cluster-pods.txt
+```
+
+```bash
 # BAKE IMAGE w/o AUTH
 dagger call -m kubernetes-microservice \
 bake-image \

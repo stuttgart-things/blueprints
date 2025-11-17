@@ -1,6 +1,7 @@
 # stuttgart-things/blueprints/kubernetes-microservice
 
 ```bash
+# TALKS TO KUBERNETES
 dagger call -m kubernetes-microservice config \
 --prompt-scope "show me all ingress resources in the entire cluster" \
 --kube-config file://~/.kube/demo-infra \
@@ -9,12 +10,31 @@ dagger call -m kubernetes-microservice config \
 ```
 
 ```bash
+# TALKS TO KUBERNETES
 dagger call -m kubernetes-microservice config \
 --prompt-scope "in the namespace kube-system and in the namespace crossplane-system - how many pods are running in each namespace?" \
 --kube-config file://~/.kube/demo-infra \
 --model="gemini-2.5-flash" \
 --progress plain \
 export --path=/tmp/cluster-pods.txt
+```
+
+```bash
+# RENDERS HELMFILE
+dagger call -m kubernetes-microservice deploy-helmfile \
+--operation template \
+--src ../dagger/tests/helm/ \
+--progress plain
+```
+
+```bash
+# READS GIVEN HELMFILE; TALKS TO CLUSTER; GIVES POSSIBLE VALUES LIKE STORAGECLASS OR INGRESS-DOMAIN
+dagger call -m kubernetes-microservice analyze-helmfile \
+--src ../dagger/tests/helm/ \
+--kube-config file://~/.kube/demo-infra  \
+--model="gemini-2.5-flash" \
+--progress plain \
+export --path=/tmp/argocd.txt
 ```
 
 ```bash

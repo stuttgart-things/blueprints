@@ -1,16 +1,15 @@
 # stuttgart-things/blueprints/kubernetes-microservice
 
 ```bash
-dagger call -m kubernetes-microservice generate-kubernetes-app-configuration \
---prompt-scope "show me all ingress resources in the namespace minio" \
+dagger call -m kubernetes-microservice config \
+--prompt-scope "show me all ingress resources in the entire cluster" \
 --kube-config file://~/.kube/demo-infra \
 --model="gemini-2.5-flash" \
 --progress plain
 ```
 
 ```bash
-dagger call -m kubernetes-microservice \
-generate-kubernetes-app-configuration \
+dagger call -m kubernetes-microservice config \
 --prompt-scope "in the namespace kube-system and in the namespace crossplane-system - how many pods are running in each namespace?" \
 --kube-config file://~/.kube/demo-infra \
 --model="gemini-2.5-flash" \

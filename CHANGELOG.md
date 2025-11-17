@@ -1,3 +1,10 @@
+# [1.23.0](https://github.com/stuttgart-things/blueprints/compare/v1.22.0...v1.23.0) (2025-11-17)
+
+
+### Features
+
+* feat/update-kubernetes-module ([8aa3b1a](https://github.com/stuttgart-things/blueprints/commit/8aa3b1aa45496d93171ee5494b8bd69a4ad0aeb1))
+
 # [1.22.0](https://github.com/stuttgart-things/blueprints/compare/v1.21.0...v1.22.0) (2025-11-16)
 
 

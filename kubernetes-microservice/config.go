@@ -166,8 +166,7 @@ func (m *KubernetesMicroservice) Config(
 	clusterDataEnvironment := dag.Env().
 		WithStringInput("user_request", promptScope, "the user's original request").
 		WithStringInput("namespace", namespace, "optional namespace filter").
-		WithStringInput("kubectl_plan", commandsJSON, "the planned kubectl commands").
-		WithStringOutput("configuration", "the generated application configuration values")
+		WithStringInput("kubectl_plan", commandsJSON, "the planned kubectl commands")
 
 	// Add context file to analysis environment if provided
 	if contextContent != "" {
@@ -244,18 +243,15 @@ Be concise and data-driven.
 		WithPrompt(promptBuilder)
 
 	// Get the AI-generated configuration/response
-	// Try LastReply() first as the LLM generates direct output
+	// Use LastReply() to get the LLM's direct output
 	configuration, err := configWork.LastReply(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// If LastReply is empty, fall back to the environment output
+	// Check if we got valid output
 	if configuration == "" || configuration == "(no reply)" {
-		configuration, err = configWork.Env().Output("configuration").AsString(ctx)
-		if err != nil {
-			return nil, err
-		}
+		return nil, fmt.Errorf("LLM did not generate any analysis output")
 	}
 
 	// Return as a file

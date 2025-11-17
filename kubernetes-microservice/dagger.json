@@ -21,6 +21,11 @@
       "pin": "27c0b0ffe79ee2167c9a70f26d21dd0fc01636b5"
     },
     {
+      "name": "kubernetes",
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.40.0",
+      "pin": "5e08b6ace4d0c4b146ff2213f8e75b95a1625432"
+    },
+    {
       "name": "trivy",
       "source": "github.com/stuttgart-things/dagger/trivy@v0.23.0",
       "pin": "41f188e601ad0a6cef3e70bf61bc318fe82eec71"

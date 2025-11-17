@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/stuttgart-things/blueprints/compare/v1.23.0...v1.24.0) (2025-11-17)
+
+
+### Features
+
+* feat/add-helmfile-analyze ([f69363d](https://github.com/stuttgart-things/blueprints/commit/f69363d88af42305c80a6c76d83a693445989ffc))
+
 # [1.23.0](https://github.com/stuttgart-things/blueprints/compare/v1.22.0...v1.23.0) (2025-11-17)
 
 

@@ -160,3 +160,11 @@ execute-ansible \
 ```
 
 </details>
+
+<details><summary>GET TSHIRT SIZE</summary>
+
+```bash
+dagger call tshirt-size --config-file=vm_tshirt_sizes.yaml --size=medium
+```
+
+</details>

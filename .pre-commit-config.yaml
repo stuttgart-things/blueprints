@@ -35,6 +35,7 @@ repos:
         files: .*  # all files
         args: ["--exclude-files", "vm/dagger.json|tests/vm/terraform.tfvars.enc.json|repository-linting/dagger.json",
                "--exclude-files", "vmtemplate/dagger.json",
+               "--exclude-files", "configuration/dagger.json",
                "--exclude-files", "go-microservice/dagger.json",
                "--exclude-files", "kubernetes-microservice/dagger.json"
                ]

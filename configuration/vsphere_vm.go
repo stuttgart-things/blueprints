@@ -1,11 +1,30 @@
 package main
 
-import "context"
+import (
+	"context"
+	"dagger/configuration/internal/dagger"
+)
 
 func (v *Configuration) VsphereVm(
 	ctx context.Context,
-	// VM t-shirt size: small, medium, large, or xlarge
-	size string,
-) (string, error) {
+	src *dagger.Directory,
+	// +optional
+	configParameters,
+	// +optional
+	variablesFile,
+	// +optional
+	templatePaths string,
+) (*dagger.Directory, error) {
+
+	renderedTemplates := dag.Templating().Render(
+		src,
+		templatePaths,
+		dagger.TemplatingRenderOpts{
+			Variables:     configParameters,
+			VariablesFile: variablesFile,
+		},
+	)
+
+	return renderedTemplates, nil
 
 }

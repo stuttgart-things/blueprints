@@ -4,5 +4,11 @@
   "sdk": {
     "source": "go"
   },
-  "source": "."
+  "dependencies": [
+    {
+      "name": "templating",
+      "source": "github.com/stuttgart-things/dagger/templating@v0.45.0",
+      "pin": "28a31245c01b71aa85a3e62c3f09c9b14c9ba5be"
+    }
+  ]
 }

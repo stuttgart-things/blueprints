@@ -22,7 +22,10 @@ require (
 	go.opentelemetry.io/proto/otlp v1.8.0
 	golang.org/x/sync v0.17.0
 	google.golang.org/grpc v1.76.0
+	sigs.k8s.io/yaml v1.6.0
 )
+
+require go.yaml.in/yaml/v2 v2.4.2 // indirect
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect

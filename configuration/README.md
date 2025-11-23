@@ -9,6 +9,11 @@ dagger call -m configuration vsphere-vm \
 export --path=/tmp/vm/
 ```
 
+```bash
+dagger call -m configuration vsphere-vm --src ./ --template-paths "https://raw.githubusercontent.com/stuttgart-things/vsphere-vm/refs/heads/main/templates/vm.yaml.tmpl,https://raw.githubusercontent.com/stuttgart-things/vsphere-vm/refs/heads/main/templates/README.md.tmpl" --config-parameters "name=name=demo-infra1,count=4,ram=8192,template=sthings-u24,disk=64,cpu=8,firmware=bios,vm_folder=stuttgart-things/testing,datacenter=/LabUL,datastore=/LabUL/datastore/UL-ESX-SAS-02,resourcePool=/LabUL/host/Cluster-V6.5/Resources,network=/LabUL/network/LAB-10.31.103,useVault=false,vaultSecretPath=vsphere-labul"  export --path=/tmp/blubber5
+```
+
+
 </details>
 
 

@@ -6,9 +6,14 @@
   },
   "dependencies": [
     {
+      "name": "git",
+      "source": "github.com/stuttgart-things/dagger/git@v0.46.0",
+      "pin": "d64d59d9027ee4cfa12a3704ab8e4a09e53eb94e"
+    },
+    {
       "name": "templating",
-      "source": "github.com/stuttgart-things/dagger/templating@v0.45.0",
-      "pin": "28a31245c01b71aa85a3e62c3f09c9b14c9ba5be"
+      "source": "github.com/stuttgart-things/dagger/templating@v0.46.0",
+      "pin": "d64d59d9027ee4cfa12a3704ab8e4a09e53eb94e"
     }
   ]
 }

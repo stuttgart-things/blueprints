@@ -26,5 +26,4 @@ func (v *Configuration) VsphereVm(
 	)
 
 	return renderedTemplates, nil
-
 }

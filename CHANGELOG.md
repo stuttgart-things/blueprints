@@ -1,3 +1,16 @@
+# [1.25.0](https://github.com/stuttgart-things/blueprints/compare/v1.24.0...v1.25.0) (2025-11-24)
+
+
+### Features
+
+* feat/add-vm-config-generator ([3e1cc50](https://github.com/stuttgart-things/blueprints/commit/3e1cc50a67edd4da117994483aea0849781a18f6))
+* feat/add-vm-config-generator ([4595cf4](https://github.com/stuttgart-things/blueprints/commit/4595cf4d6fefaa52e619ba57b8cb9e71145885ca))
+* feat/add-vm-config-generator ([9a525e3](https://github.com/stuttgart-things/blueprints/commit/9a525e35937599012569e2fdc1cebeec6056807a))
+* feat/add-vm-config-generator ([dd0ec7e](https://github.com/stuttgart-things/blueprints/commit/dd0ec7ec6cd6201cd257703eb79bfb7e004d72b9))
+* feat/add-vm-config-generator ([ae43a09](https://github.com/stuttgart-things/blueprints/commit/ae43a091a1bd45e670d3e5c4fee3350497d8ec5e))
+* feat/add-vm-config-generator ([dd2790c](https://github.com/stuttgart-things/blueprints/commit/dd2790c0f57a5c4739cb1fc7ca63191c519aa8bc))
+* feat/add-vm-config-generator ([5c88c8a](https://github.com/stuttgart-things/blueprints/commit/5c88c8ad81a5b7ff0be76a2d82b4f2e1193998ef))
+
 # [1.24.0](https://github.com/stuttgart-things/blueprints/compare/v1.23.0...v1.24.0) (2025-11-17)
 
 

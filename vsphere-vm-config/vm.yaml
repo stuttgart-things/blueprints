@@ -1,7 +1,7 @@
-module "name=demo-infra1" {
+module "demo-infra1" {
   source   = "github.com/stuttgart-things/vsphere-vm?ref=v1.7.5-2.7.0"
   vm_count = 4
-  vsphere_vm_name = "name=demo-infra1"
+  vsphere_vm_name = "demo-infra1"
   vm_memory = 8192
   vsphere_vm_template = "sthings-u24"
   vm_disk_size = "64"
@@ -13,7 +13,7 @@ module "name=demo-infra1" {
   vsphere_resource_pool = "/LabUL/host/Cluster-V6.5/Resources"
   vsphere_network = "/LabUL/network/LAB-10.31.103"
   bootstrap = ["echo STUTTGART-THINGS"]
-  annotation = "VSPHERE-VM name=demo-infra1 sthings-u24 BUILD w/ TERRAFORM FOR STUTTGART-THINGS"
+  annotation = "VSPHERE-VM demo-infra1 sthings-u24 BUILD w/ TERRAFORM FOR STUTTGART-THINGS"
   vsphere_server   = var.vsphere_server
   vsphere_user     = var.vsphere_user
   vsphere_password = var.vsphere_password
@@ -48,5 +48,5 @@ variable "vsphere_password" {
 }
 
 output "ip" {
-  value = [module.name=demo-infra1.ip]
+  value = [module.demo-infra1.ip]
 }

@@ -1,4 +1,4 @@
-# name=demo-infra1 vm
+# demo-infra1 vm
 
 ## CREATE
 

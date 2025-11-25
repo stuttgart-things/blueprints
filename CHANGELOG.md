@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/stuttgart-things/blueprints/compare/v1.27.0...v1.28.0) (2025-11-25)
+
+
+### Features
+
+* feat/add-vm-config-profile ([6844a6a](https://github.com/stuttgart-things/blueprints/commit/6844a6af25aa6c143bda8ad42016e13fcd4ce7c7))
+
 # [1.27.0](https://github.com/stuttgart-things/blueprints/compare/v1.26.0...v1.27.0) (2025-11-25)
 
 

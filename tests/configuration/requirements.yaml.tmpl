@@ -1,0 +1,8 @@
+collections:
+{{- range $name, $version := .gitCollections }}
+  - name: {{ $name }}
+    version: {{ $version }}
+{{- end }}
+{{- range .artifactCollections }}
+  - name: {{ . }}
+{{- end }}

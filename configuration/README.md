@@ -48,6 +48,19 @@ export --path /tmp/ansible-output \
 
 </details>
 
+<details><summary>RENDER VM-README</summary>
+
+```bash
+dagger call -m configuration render-vm-readme \
+--src ./tests/configuration \
+--template-path README.md.tmpl \
+--data-files vm-ansible.yaml,other-vars.yaml \
+export --path /tmp/readme-output \
+-vv --progress plain
+```
+
+</details>
+
 <details><summary>GET TSHIRT SIZE</summary>
 
 ```bash

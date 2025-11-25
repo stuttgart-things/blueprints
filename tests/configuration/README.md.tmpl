@@ -1,0 +1,44 @@
+# {{ .vm }}
+
+## CREATE VM (Profile: {{ .profile }})
+
+{{- if .profile }}
+{{- $selectedProfile := index .profiles .profile }}
+
+```bash
+dagger call -m {{ .module }}@{{ .version }} {{ .function }} \
+{{- range .general.parameters }}
+  --{{ . }} \
+{{- end }}
+{{- range $selectedProfile.parameters }}
+  --{{ . }} \
+{{- end }}
+{{- if or $selectedProfile.ansibleVars $selectedProfile.optionalAnsibleVars }}
+  --ansibleParameters="{{- if $selectedProfile.ansibleVars.clusterName }}cluster_name={{ $selectedProfile.ansibleVars.clusterName }}{{- end }}{{- range $key, $value := $selectedProfile.ansibleVars }}{{- if ne $key "clusterName" }}{{- if $selectedProfile.ansibleVars.clusterName }} {{ end }}{{ $key }}={{ $value }}{{- end }}{{- end }}{{- range $key, $value := $selectedProfile.optionalAnsibleVars }}{{- if $value }} {{ $key }}={{ $value }}{{- end }}{{- end }}" \
+{{- end }}
+{{- if $selectedProfile.playbooks }}
+  --ansible-playbooks="{{ join "," $selectedProfile.playbooks }}" \
+{{- end }}
+  export --path={{ .exportPath }}
+```
+{{- else }}
+{{- range $profileName, $profileData := .profiles }}
+
+```bash
+dagger call -m {{ $.module }}@{{ $.version }} {{ $.function }} \
+{{- range $.general.parameters }}
+  --{{ . }} \
+{{- end }}
+{{- range $profileData.parameters }}
+  --{{ . }} \
+{{- end }}
+{{- if or $profileData.ansibleVars $profileData.optionalAnsibleVars }}
+  --ansibleParameters="{{- if $profileData.ansibleVars.clusterName }}cluster_name={{ $profileData.ansibleVars.clusterName }}{{- end }}{{- range $key, $value := $profileData.ansibleVars }}{{- if ne $key "clusterName" }}{{- if $profileData.ansibleVars.clusterName }} {{ end }}{{ $key }}={{ $value }}{{- end }}{{- end }}{{- range $key, $value := $profileData.optionalAnsibleVars }}{{- if $value }} {{ $key }}={{ $value }}{{- end }}{{- end }}" \
+{{- end }}
+{{- if $profileData.playbooks }}
+  --ansible-playbooks="{{ join "," $profileData.playbooks }}" \
+{{- end }}
+  export --path={{ $.exportPath }}
+```
+{{- end }}
+{{- end }}

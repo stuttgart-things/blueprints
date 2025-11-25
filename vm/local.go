@@ -4,7 +4,10 @@ import (
 	"context"
 	"dagger/vm/internal/dagger"
 	"fmt"
+	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 func (v *Vm) BakeLocal(
@@ -29,8 +32,6 @@ func (v *Vm) BakeLocal(
 	vaultToken *dagger.Secret,
 	// +optional
 	vaultURL *dagger.Secret,
-	// +optional
-	ansibleInventoryTemplate *dagger.File,
 	// +optional
 	ansiblePlaybooks string,
 	// +optional
@@ -150,4 +151,91 @@ func (v *Vm) BakeLocal(
 
 	// RETURN UPDATED WORKDIR WITH INVENTORY
 	return terraformDirResult, nil
+}
+
+// ProfileConfig represents the YAML structure from parameter-config.yaml
+type ProfileConfig struct {
+	Operation               string   `yaml:"operation"`
+	Variables               []string `yaml:"variables"`
+	AnsiblePlaybooks        []string `yaml:"ansiblePlaybooks"`
+	AnsibleParameters       []string `yaml:"ansibleParameters"`
+	AnsibleInventoryType    string   `yaml:"ansibleInventoryType"`
+	AnsibleWaitTimeout      int      `yaml:"ansibleWaitTimeout"`
+	EncryptedFile           string   `yaml:"encryptedFile"`
+	AnsibleRequirementsFile string   `yaml:"ansibleRequirementsFile"`
+}
+
+func (v *Vm) BakeLocalByProfile(
+	ctx context.Context,
+	src *dagger.Directory,
+	// +optional
+	profile *dagger.File,
+	// +optional
+	sopsKey *dagger.Secret,
+	// +optional
+	vaultRoleID *dagger.Secret,
+	// +optional
+	vaultSecretID *dagger.Secret,
+	// vaultToken
+	// +optional
+	vaultToken *dagger.Secret,
+	// +optional
+	vaultURL *dagger.Secret,
+	// +optional
+	ansibleUser *dagger.Secret,
+	// +optional
+	ansiblePassword *dagger.Secret,
+) (*dagger.Directory, error) {
+
+	// READ AND PARSE PROFILE
+	if profile == nil {
+		return nil, fmt.Errorf("profile file is required")
+	}
+
+	profileContent, err := profile.Contents(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("reading profile file failed: %w", err)
+	}
+
+	var config ProfileConfig
+	if err := yaml.Unmarshal([]byte(profileContent), &config); err != nil {
+		return nil, fmt.Errorf("parsing profile YAML failed: %w", err)
+	}
+
+	// CONVERT ARRAYS TO COMMA-SEPARATED STRINGS
+	variables := strings.Join(config.Variables, ",")
+	ansiblePlaybooks := strings.Join(config.AnsiblePlaybooks, ",")
+	ansibleParameters := strings.Join(config.AnsibleParameters, ",")
+
+	// GET FILE REFERENCES FROM CONFIG
+	var encryptedFile *dagger.File
+	if config.EncryptedFile != "" {
+		encryptedFile = src.File(config.EncryptedFile)
+	}
+
+	var ansibleRequirementsFile *dagger.File
+	if config.AnsibleRequirementsFile != "" {
+		ansibleRequirementsFile = src.File(config.AnsibleRequirementsFile)
+	}
+
+	// CALL BakeLocal WITH CONVERTED PARAMETERS
+	return v.BakeLocal(
+		ctx,
+		src,
+		config.Operation,
+		variables,
+		encryptedFile,
+		sopsKey,
+		vaultRoleID,
+		vaultSecretID,
+		vaultToken,
+		vaultURL,
+		ansiblePlaybooks,
+		ansibleRequirementsFile,
+		ansibleUser,
+		ansiblePassword,
+		ansibleParameters,
+		config.AnsibleInventoryType,
+		config.AnsibleWaitTimeout,
+	)
 }

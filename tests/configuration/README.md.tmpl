@@ -42,3 +42,17 @@ dagger call -m {{ $.module }}@{{ $.version }} {{ $.function }} \
 ```
 {{- end }}
 {{- end }}
+
+## DESTROY VM
+
+```bash
+dagger call -m {{ .module }}@{{ .version }} {{ .function }} \
+  --vault-url=env:VAULT_ADDR \
+  --vault-secret-id=env:VAULT_SECRET_ID \
+  --vault-role-id=env:VAULT_ROLE_ID \
+  --variables="vault_addr=$VAULT_ADDR" \
+  --terraform-dir=./ \
+  --progress=plain -vv \
+  --operation=destroy \
+  export --path={{ .exportPath }}
+```

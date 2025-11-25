@@ -1,3 +1,10 @@
+# [1.27.0](https://github.com/stuttgart-things/blueprints/compare/v1.26.0...v1.27.0) (2025-11-25)
+
+
+### Features
+
+* feat/add-readme-rendering ([7c1281a](https://github.com/stuttgart-things/blueprints/commit/7c1281acca55371f6c6eafafe5746dfd05b28ee6))
+
 # [1.26.0](https://github.com/stuttgart-things/blueprints/compare/v1.25.0...v1.26.0) (2025-11-25)
 
 

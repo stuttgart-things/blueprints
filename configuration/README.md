@@ -71,3 +71,41 @@ export --path=/tmp/vm/
 ```
 
 </details>
+
+
+
+
+
+## CREATE LOCAL CONFIG
+
+```bash
+dagger call -m configuration vsphere-vm \
+--src ./ \
+--config-parameters "name=demo3,count=4,ram=8192,template=sthings-u24,disk=64,cpu=8,firmware=bios,vm_folder=stuttgart-things/testing,datacenter=/LabUL,datastore=/LabUL/datastore/UL-ESX-SAS-02,resourcePool=/LabUL/host/Cluster-V6.5/Resources,network=/LabUL/network/LAB-10.31.103,useVault=false,vaultSecretPath=vsphere-labul" \
+--create-branch=false \
+--commit-config=false \
+--create-pull-request=false \
+export --path=/tmp/demo3
+```
+
+## CREATE ANSIBLE REQUIREMENTS
+
+```bash
+dagger call -m configuration create-ansible-requirement-files \
+--template-paths https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl \
+--data-file https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml \
+export --path /tmp/demo3 \
+-vv --progress plain
+```
+
+## RENDER README
+
+```bash
+dagger call -m configuration render-vm-readme \
+--src ./tests/configuration \
+--template-path README.md.tmpl \
+--data-files vm-ansible.yaml,other-vars.yaml \
+--config-parameters="vm=demo3,profile=baseos" \
+export --path /tmp/demo3 \
+-vv --progress plain
+```

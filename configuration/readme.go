@@ -23,6 +23,9 @@ func (v *Configuration) RenderVmReadme(
 	// Source directory containing template and variables files
 	src *dagger.Directory,
 	// +optional
+	// Configuration parameters as key=value pairs (comma-separated)
+	configParameters string,
+	// +optional
 	// Path to template file
 	// +default="README.md.tmpl"
 	templatePath string,
@@ -39,8 +42,11 @@ func (v *Configuration) RenderVmReadme(
 	// Split the comma-separated file paths
 	filePaths := strings.Split(dataFiles, ",")
 
-	// If only one file, use RenderFromFile directly
-	if len(filePaths) == 1 {
+	// Merge multiple YAML files
+	mergedData := make(map[string]interface{})
+
+	// If only one file and no configParameters, use RenderFromFile directly
+	if len(filePaths) == 1 && configParameters == "" {
 		renderedReadme := dag.Templating().RenderFromFile(
 			templatePath,
 			strings.TrimSpace(filePaths[0]),
@@ -51,9 +57,6 @@ func (v *Configuration) RenderVmReadme(
 		)
 		return renderedReadme, nil
 	}
-
-	// Merge multiple YAML files
-	mergedData := make(map[string]interface{})
 
 	for _, filePath := range filePaths {
 		filePath = strings.TrimSpace(filePath)
@@ -73,6 +76,23 @@ func (v *Configuration) RenderVmReadme(
 		// Merge data (later files override earlier ones)
 		for key, value := range data {
 			mergedData[key] = value
+		}
+	}
+
+	// Parse and add configParameters if provided (highest priority - overrides data files)
+	if configParameters != "" {
+		params := strings.Split(configParameters, ",")
+		for _, param := range params {
+			param = strings.TrimSpace(param)
+			if param == "" {
+				continue
+			}
+			parts := strings.SplitN(param, "=", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+				mergedData[key] = value
+			}
 		}
 	}
 

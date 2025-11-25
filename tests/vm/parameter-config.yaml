@@ -1,0 +1,15 @@
+---
+operation: apply
+variables:
+  - vault_addr=https://vault-vsphere.tiab.labda.sva.de:8200
+ansiblePlaybooks:
+  - "sthings.baseos.setup"
+ansibleParameters:
+  - "create_rke_user=false"
+  - "configure_rke_node=false"
+  - "install_docker=false"
+  - "install_docker_compose=false"
+ansibleInventoryType: default
+ansibleWaitTimeout: 90
+ansibleRequirementsFile: ./requirements.yml
+encryptedFile: ""

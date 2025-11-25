@@ -71,6 +71,40 @@ export --path=~/projects/terraform/vms/sthings-runner/
 
 </details>
 
+<details><summary>BAKE LOCAL BY PROFILE</summary>
+
+```bash
+cat <<EOF >> vm.yaml
+---
+operation: apply
+variables:
+  - vault_addr=https://vault-vsphere.tiab.labda.sva.de:8200
+ansiblePlaybooks:
+  - "sthings.baseos.setup"
+ansibleParameters: []
+ansibleInventoryType: default
+ansibleWaitTimeout: 30
+ansibleRequirementsFile: ./requirements.yaml
+encryptedFile: ""
+EOF
+```
+
+```bash
+dagger call -m vm bake-local-by-profile \
+--src ./ \
+--profile vm.yaml \
+--vault-secret-id env:VAULT_SECRET_ID \
+--vault-role-id env:VAULT_ROLE_ID \
+--ansible-user env:ANSIBLE_USER \
+--ansible-password env:ANSIBLE_PASSWORD \
+--progress plain -vv \
+export --path ./
+```
+
+
+</details>
+
+
 <details><summary>DESTROY</summary>
 
 ```bash

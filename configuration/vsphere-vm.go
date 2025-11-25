@@ -15,7 +15,7 @@ func (v *Configuration) VsphereVm(
 	// +optional
 	variablesFile,
 	// +optional
-	// +default="https://raw.githubusercontent.com/stuttgart-things/vsphere-vm/refs/heads/main/templates/vm.yaml.tmpl,https://raw.githubusercontent.com/stuttgart-things/vsphere-vm/refs/heads/main/templates/README.md.tmpl"
+	// +default="https://raw.githubusercontent.com/stuttgart-things/vsphere-vm/refs/heads/main/templates/vm.tf.tmpl,https://raw.githubusercontent.com/stuttgart-things/vsphere-vm/refs/heads/main/templates/README.md.tmpl"
 	templatePaths string,
 	// Repository in format "owner/repo"
 	// +optional

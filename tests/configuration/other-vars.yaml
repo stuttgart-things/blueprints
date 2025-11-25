@@ -1,0 +1,3 @@
+vm: martino
+profile: baseos #rke2
+exportPath: ./

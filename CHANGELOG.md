@@ -1,3 +1,10 @@
+# [1.26.0](https://github.com/stuttgart-things/blueprints/compare/v1.25.0...v1.26.0) (2025-11-25)
+
+
+### Features
+
+* feat/add-config-validation ([8ae2379](https://github.com/stuttgart-things/blueprints/commit/8ae23791dce7a8888f2dd837c3ff279cb613fd2d))
+
 # [1.25.0](https://github.com/stuttgart-things/blueprints/compare/v1.24.0...v1.25.0) (2025-11-24)
 
 

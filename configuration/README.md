@@ -48,14 +48,25 @@ export --path /tmp/ansible-output \
 
 </details>
 
-<details><summary>RENDER VM-README</summary>
+<details><summary>RENDER META INFORMATION</summary>
 
 ```bash
-dagger call -m configuration render-vm-readme \
+# RENDER README
+dagger call -m configuration render-metadata \
 --src ./tests/configuration \
 --template-path README.md.tmpl \
 --data-files vm-ansible.yaml,other-vars.yaml \
 export --path /tmp/readme-output \
+-vv --progress plain
+```
+
+```bash
+# RENDER EXECUTIONFILE
+dagger call -m configuration render-metadata \
+--src tests/vm \
+--template-path osaka-profile.yaml.tmpl \
+--data-files osaka-profile-vars.yaml \
+export --path /tmp/execution-output \
 -vv --progress plain
 ```
 
@@ -71,10 +82,6 @@ export --path=/tmp/vm/
 ```
 
 </details>
-
-
-
-
 
 ## CREATE LOCAL CONFIG
 

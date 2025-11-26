@@ -1,0 +1,15 @@
+---
+operation: {{ .operation }}
+variables:
+{{- range .variables }}
+  - {{ . }}
+{{- end }}
+ansiblePlaybooks:
+{{- range .ansiblePlaybooks }}
+  - "{{ . }}"
+{{- end }}
+ansibleParameters: []
+ansibleInventoryType: {{ .ansibleInventoryType }}
+ansibleWaitTimeout: {{ .ansibleWaitTimeout }}
+ansibleRequirementsFile: {{ .ansibleRequirementsFile }}
+encryptedFile: "{{ .encryptedFile }}"

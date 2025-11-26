@@ -1,3 +1,10 @@
+# [1.29.0](https://github.com/stuttgart-things/blueprints/compare/v1.28.0...v1.29.0) (2025-11-26)
+
+
+### Features
+
+* feat/add-executing-file ([b385d17](https://github.com/stuttgart-things/blueprints/commit/b385d170e0dabee919a1b7ebb9ce6f2918a72135))
+
 # [1.28.0](https://github.com/stuttgart-things/blueprints/compare/v1.27.0...v1.28.0) (2025-11-25)
 
 

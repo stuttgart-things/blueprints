@@ -18,8 +18,10 @@ general:
 
 profiles:
   baseos:
+    variables:
+      vault_addr: https://vault-vsphere.tiab.labda.sva.de:8200
     parameters:
-      - ansible-inventory-type=single
+      - ansible-inventory-type=default
     playbooks:
       - sthings.baseos.setup
     ansibleVars:

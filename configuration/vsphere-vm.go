@@ -134,7 +134,7 @@ func (v *Configuration) VsphereVm(
 
 	// CREATE BRANCH FOR RENDERED TEMPLATES
 	if createBranch {
-		dag.Git().CreateGithubBranch(
+		_, err := dag.Git().CreateGithubBranch(
 			ctx,
 			repository,
 			branchName,
@@ -143,23 +143,31 @@ func (v *Configuration) VsphereVm(
 				BaseBranch: baseBranch,
 			},
 		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create branch: %w", err)
+		}
 	}
 
-	// ADD FOLDER TO REPOSITORY/BRANCH
+	// 2. Fix the path construction
+	destinationPath := strings.TrimSuffix(destinationBasePath, "/") + "/" + destinationFolder
+	// 3. Use the fixed path
 	if commitConfig {
-		dag.Git().AddFolderToGithubBranch(
+		_, err := dag.Git().AddFolderToGithubBranch(
 			ctx,
 			repository,
 			branchName,
 			commitMessage,
 			token,
 			renderedTemplates,
-			destinationBasePath+"/"+destinationFolder,
+			destinationPath,
 			dagger.GitAddFolderToGithubBranchOpts{
 				AuthorName:  authorName,
 				AuthorEmail: authorEmail,
 			},
 		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to add folder to branch: %w", err)
+		}
 	}
 
 	// CREATE PR FOR BRANCH WITH RENDERED TEMPLATES

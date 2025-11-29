@@ -48,6 +48,12 @@ func (v *Vm) BakeLocal(
 	// +optional
 	// +default=30
 	ansibleWaitTimeout int,
+	// +optional
+	// +default=3
+	terraformMaxRetries int,
+	// +optional
+	// +default=10
+	terraformRetryDelay int,
 ) (*dagger.Directory, error) {
 	workDir := "/src"
 
@@ -75,20 +81,43 @@ func (v *Vm) BakeLocal(
 				decryptedContent)
 	}
 
-	// RUN TERRAFORM
-	terraformDirResult, error := v.
-		ExecuteTerraform(
-			ctx,
-			ctr.Directory(workDir),
-			operation,
-			variables,
-			vaultRoleID,
-			vaultSecretID,
-			vaultToken,
-		)
+	// RUN TERRAFORM WITH RETRY LOGIC
+	var terraformDirResult *dagger.Directory
+	var terraformErr error
 
-	if error != nil {
-		return nil, fmt.Errorf("running terraform failed: %w", error)
+	maxRetries := terraformMaxRetries
+	if maxRetries <= 0 {
+		maxRetries = 3
+	}
+	retryDelay := time.Duration(terraformRetryDelay) * time.Second
+	if retryDelay <= 0 {
+		retryDelay = 10 * time.Second
+	}
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		terraformDirResult, terraformErr = v.
+			ExecuteTerraform(
+				ctx,
+				ctr.Directory(workDir),
+				operation,
+				variables,
+				vaultRoleID,
+				vaultSecretID,
+				vaultToken,
+			)
+
+		if terraformErr == nil {
+			break
+		}
+
+		if attempt < maxRetries {
+			fmt.Printf("Terraform attempt %d/%d failed: %v. Retrying in %v...\n", attempt, maxRetries, terraformErr, retryDelay)
+			time.Sleep(retryDelay)
+		}
+	}
+
+	if terraformErr != nil {
+		return nil, fmt.Errorf("running terraform failed after %d attempts: %w", maxRetries, terraformErr)
 	}
 
 	// IF OPERATION IS NOT APPLY, RETURN EARLY
@@ -163,6 +192,8 @@ type ProfileConfig struct {
 	AnsibleWaitTimeout      int      `yaml:"ansibleWaitTimeout"`
 	EncryptedFile           string   `yaml:"encryptedFile"`
 	AnsibleRequirementsFile string   `yaml:"ansibleRequirementsFile"`
+	TerraformMaxRetries     int      `yaml:"terraformMaxRetries"`
+	TerraformRetryDelay     int      `yaml:"terraformRetryDelay"`
 }
 
 func (v *Vm) BakeLocalByProfile(
@@ -218,6 +249,16 @@ func (v *Vm) BakeLocalByProfile(
 		ansibleRequirementsFile = src.File(config.AnsibleRequirementsFile)
 	}
 
+	// SET DEFAULTS FOR RETRY PARAMETERS IF NOT IN PROFILE
+	maxRetries := config.TerraformMaxRetries
+	if maxRetries <= 0 {
+		maxRetries = 3
+	}
+	retryDelay := config.TerraformRetryDelay
+	if retryDelay <= 0 {
+		retryDelay = 10
+	}
+
 	// CALL BakeLocal WITH CONVERTED PARAMETERS
 	return v.BakeLocal(
 		ctx,
@@ -237,5 +278,7 @@ func (v *Vm) BakeLocalByProfile(
 		ansibleParameters,
 		config.AnsibleInventoryType,
 		config.AnsibleWaitTimeout,
+		maxRetries,
+		retryDelay,
 	)
 }

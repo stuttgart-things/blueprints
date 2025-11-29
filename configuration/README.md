@@ -3,7 +3,7 @@
 <details><summary>CREATE VSPHERE CONFIG</summary>
 
 ```bash
-# Example with all parameters specified
+# EXAMPLE WITH ALL PARAMETERS SPECIFIED
 dagger call -m configuration vsphere-vm \
 --src ./ \
 --config-parameters "name=demo-infra1,count=4,ram=8192,template=sthings-u24,disk=64,cpu=8,firmware=bios,vm_folder=stuttgart-things/testing,datacenter=/LabUL,datastore=/LabUL/datastore/UL-ESX-SAS-02,resourcePool=/LabUL/host/Cluster-V6.5/Resources,network=/LabUL/network/LAB-10.31.103,useVault=false,vaultSecretPath=vsphere-labul" \
@@ -22,15 +22,15 @@ dagger call -m configuration vsphere-vm \
 --create-pull-request=true \
 export --path=./demo-infra1
 
-# Minimal example (auto-generates branch name, commit message, destination folder, PR title/body)
+# MINIMAL EXAMPLE
 dagger call -m configuration vsphere-vm \
 --src ./ \
 --config-parameters "name=demo-infra1,count=4,ram=8192,template=sthings-u24,disk=64,cpu=8,firmware=bios,vm_folder=stuttgart-things/testing,datacenter=/LabUL,datastore=/LabUL/datastore/UL-ESX-SAS-02,resourcePool=/LabUL/host/Cluster-V6.5/Resources,network=/LabUL/network/LAB-10.31.103,useVault=false,vaultSecretPath=vsphere-labul" \
 --token=env:GITHUB_TOKEN \
 --repository "stuttgart-things/blueprints" \
---create-branch=true \
---commit-config=true \
---create-pull-request=true \
+--create-branch=false \
+--commit-config=false \
+--create-pull-request=false \
 export --path=./demo-infra1
 ```
 
@@ -82,6 +82,10 @@ export --path=/tmp/vm/
 ```
 
 </details>
+
+
+
+
 
 ## CREATE LOCAL CONFIG
 

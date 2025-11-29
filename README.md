@@ -15,7 +15,7 @@ These blueprints are designed for platform engineers, SREs, and developers who w
 | 🚀 [Go Microservice](./go-microservice/README.md) | Run Go microservice CI pipelines: lint, test, coverage, and security scan. |
 | ☸️ [Kubernetes Microservice](./kubernetes-microservice/README.md) | Build and stage Kubernetes container images, supporting insecure registries and platform targeting. |
 | 📝 [Repository Linting](./repository-linting/README.md) | Validate and lint multiple technologies in a repository, merge findings, and analyze reports with AI. |
-| 📝 [Configuration](./configuration/README.md) | This module provides functions for configuration management tasks including |
+| 📝 [Configuration](./configuration/README.md) | This module provides functions for configuration management rendering |
 
 ## Getting Started
 

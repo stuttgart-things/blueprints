@@ -1,3 +1,10 @@
+## [1.30.1](https://github.com/stuttgart-things/blueprints/compare/v1.30.0...v1.30.1) (2025-11-29)
+
+
+### Bug Fixes
+
+* fix/update-vsphere-pr ([eaf4ebb](https://github.com/stuttgart-things/blueprints/commit/eaf4ebb5b0861407dc28d50bb11f901739100bf7))
+
 # [1.30.0](https://github.com/stuttgart-things/blueprints/compare/v1.29.0...v1.30.0) (2025-11-29)
 
 

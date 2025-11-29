@@ -12,8 +12,8 @@
     },
     {
       "name": "git",
-      "source": "github.com/stuttgart-things/dagger/git@v0.49.8",
-      "pin": "b9ca65215cae2299c0035e23284096f103ad1f70"
+      "source": "github.com/stuttgart-things/dagger/git@v0.49.10",
+      "pin": "ca2576307debb4b2f38d74ed2886106c3ba1ca06"
     },
     {
       "name": "templating",

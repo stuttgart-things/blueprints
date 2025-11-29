@@ -1,3 +1,10 @@
+# [1.30.0](https://github.com/stuttgart-things/blueprints/compare/v1.29.0...v1.30.0) (2025-11-29)
+
+
+### Features
+
+* feat/add-tf-retries ([d806c2b](https://github.com/stuttgart-things/blueprints/commit/d806c2b13159918529492c961ae9e8636ad11c1a))
+
 # [1.29.0](https://github.com/stuttgart-things/blueprints/compare/v1.28.0...v1.29.0) (2025-11-26)
 
 

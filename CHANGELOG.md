@@ -1,3 +1,10 @@
+# [1.31.0](https://github.com/stuttgart-things/blueprints/compare/v1.30.1...v1.31.0) (2025-11-30)
+
+
+### Features
+
+* feat/add-requirements-execution-vm ([0d43fd6](https://github.com/stuttgart-things/blueprints/commit/0d43fd60cb267361ce592a99fdafed6bf79cae49))
+
 ## [1.30.1](https://github.com/stuttgart-things/blueprints/compare/v1.30.0...v1.30.1) (2025-11-29)
 
 

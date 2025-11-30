@@ -1,0 +1,5 @@
+# blueprint vm
+
+## CREATE
+
+## DESTROY

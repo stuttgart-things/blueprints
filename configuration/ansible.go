@@ -10,11 +10,11 @@ func (v *Configuration) CreateAnsibleRequirementFiles(
 	// +optional
 	src *dagger.Directory,
 	// +optional
-	// +default="requirements.yaml.tmpl"
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
 	templatePaths string,
 	// Path to YAML or JSON file containing template data (supports HTTPS URLs)
 	// +optional
-	// +default="data.yaml"
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
 	dataFile string,
 	// +optional
 	// +default=false
@@ -32,5 +32,4 @@ func (v *Configuration) CreateAnsibleRequirementFiles(
 	)
 
 	return renderedRequirementsFile, nil
-
 }

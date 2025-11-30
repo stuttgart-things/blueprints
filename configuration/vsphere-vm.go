@@ -34,6 +34,24 @@ func (v *Configuration) VsphereVm(
 	// +default="false"
 	createBranch bool,
 	// +optional
+	// +default="true"
+	renderAnsibleRequirements bool,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
+	ansibleRequirementsTemplate string,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
+	ansibleRequirementsData string,
+	// +optional
+	// +default="true"
+	renderExecutionfile bool,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/blueprints/refs/heads/main/tests/vm/execution-vars.yaml"
+	executionfileData string,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/blueprints/refs/heads/main/tests/vm/execution.yaml.tmpl"
+	executionfileTemplate string,
+	// +optional
 	// +default="false"
 	commitConfig bool,
 	// +optional
@@ -146,6 +164,41 @@ func (v *Configuration) VsphereVm(
 		if err != nil {
 			return nil, fmt.Errorf("failed to create branch: %w", err)
 		}
+	}
+
+	// RENDER ANSIBLE REQUIREMENTS IF REQUESTED
+	if renderAnsibleRequirements {
+		ansibleReqs, err := v.CreateAnsibleRequirementFiles(
+			ctx,
+			src,
+			ansibleRequirementsTemplate,
+			ansibleRequirementsData,
+			true,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create ansible requirements: %w", err)
+		}
+
+		// ADD Requirements to rendered Templates
+		renderedTemplates = renderedTemplates.WithDirectory("ansible", ansibleReqs)
+	}
+
+	// RENDER EXECUTION FILE IF REQUESTED
+	if renderExecutionfile {
+		executionFile, err := v.RenderMetadata(
+			ctx,
+			src,
+			"",
+			executionfileTemplate,
+			executionfileData,
+			false,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to render execution file: %w", err)
+		}
+
+		// ADD Executionfile to rendered Templates
+		renderedTemplates = renderedTemplates.WithDirectory(".", executionFile)
 	}
 
 	// 2. Fix the path construction

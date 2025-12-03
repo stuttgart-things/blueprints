@@ -39,6 +39,10 @@ func (m *Vm) ExecuteAnsible(
 	requirementsData string,
 ) (bool, error) {
 
+	if src == nil {
+		src = dag.Directory()
+	}
+
 	// IF NO INVENTORY FILE PROVIDED BUT HOSTS ARE GIVEN, CREATE SIMPLE INVENTORY
 	if inventory == nil && hosts != "" {
 		inventoryContent := "[all]\n"

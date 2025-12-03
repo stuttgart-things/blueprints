@@ -5,8 +5,9 @@
 ```bash
 dagger call -m configuration \
 render-flux-kustomization \
---oci-source ghcr.io/stuttgart-things/kcl-flux-instance \ -vv --progress plain
-```cd ~µ/
+--oci-source ghcr.io/stuttgart-things/kcl-flux-instance \
+ -vv --progress plain
+```
 
 ```bash
 dagger call -m configuration \

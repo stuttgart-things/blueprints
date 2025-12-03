@@ -20,6 +20,14 @@ func (v *Configuration) RenderFluxKustomization(
 	// +optional
 	// +default="main.k"
 	entrypoint string,
+	// Output file name for rendered Kustomization
+	// +optional
+	// +default="kustomization"
+	fileName string,
+	// Output file name for rendered Kustomization
+	// +optional
+	// +default="yaml"
+	fileExtension string,
 	// Repository in format "owner/repo"
 	// +optional
 	repository string,
@@ -71,7 +79,7 @@ func (v *Configuration) RenderFluxKustomization(
 
 	// CREATE DIRECTORY WITH RENDERED OUTPUT
 	outputDir := dag.Directory().
-		WithNewFile("rendered-output.yaml", renderedContent)
+		WithNewFile(fileName+"."+fileExtension, renderedContent)
 
 	// CREATE BRANCH FOR RENDERED TEMPLATES
 	if createBranch {
@@ -106,12 +114,12 @@ func (v *Configuration) RenderFluxKustomization(
 		}
 	}
 
+	// APPLY TO CLUSTER
 	if applyToCluster {
-
 		dag.Kubernetes().Kubectl(ctx,
 			dagger.KubernetesKubectlOpts{
 				Operation:       "apply",
-				SourceFile:      outputDir.File("rendered-output.yaml"),
+				SourceFile:      outputDir.File(fileName + "." + fileExtension),
 				KubeConfig:      kubeConfig,
 				Namespace:       namespace,
 				AdditionalFlags: "",

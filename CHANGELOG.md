@@ -1,3 +1,12 @@
+# [1.32.0](https://github.com/stuttgart-things/blueprints/compare/v1.31.0...v1.32.0) (2025-12-03)
+
+
+### Features
+
+* feat/add-kcl-config ([97122d4](https://github.com/stuttgart-things/blueprints/commit/97122d4c7f56f2951e62f7252b56549eda816dc7))
+* feat/add-kcl-config ([c7fe98b](https://github.com/stuttgart-things/blueprints/commit/c7fe98b6f47a4a6e08d83a128f1bf59fd1279fcd))
+* feat/add-kcl-config ([3b74215](https://github.com/stuttgart-things/blueprints/commit/3b7421562293bfffb9983de42c137685754ef141))
+
 # [1.31.0](https://github.com/stuttgart-things/blueprints/compare/v1.30.1...v1.31.0) (2025-11-30)
 
 

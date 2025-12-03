@@ -49,6 +49,12 @@ func (v *Vm) BakeLocal(
 	// +default=30
 	ansibleWaitTimeout int,
 	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
+	requirementsTemplate string,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
+	requirementsData string,
+	// +optional
 	// +default=3
 	terraformMaxRetries int,
 	// +optional
@@ -163,13 +169,17 @@ func (v *Vm) BakeLocal(
 			ansiblePlaybooks,
 			ansibleRequirementsFile,
 			terraformDirResult.File("inventory.yaml"),
+			"",
 			ansibleParameters,
 			vaultRoleID,
 			vaultSecretID,
 			vaultURL,
 			ansibleUser,
 			ansiblePassword,
+			requirementsTemplate,
+			requirementsData,
 		)
+
 	if err != nil {
 		return nil, fmt.Errorf("running ansible failed: %w", err)
 	}
@@ -216,6 +226,12 @@ func (v *Vm) BakeLocalByProfile(
 	ansibleUser *dagger.Secret,
 	// +optional
 	ansiblePassword *dagger.Secret,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
+	requirementsTemplate string,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
+	requirementsData string,
 ) (*dagger.Directory, error) {
 
 	// READ AND PARSE PROFILE
@@ -278,6 +294,8 @@ func (v *Vm) BakeLocalByProfile(
 		ansibleParameters,
 		config.AnsibleInventoryType,
 		config.AnsibleWaitTimeout,
+		requirementsTemplate,
+		requirementsData,
 		maxRetries,
 		retryDelay,
 	)

@@ -1,3 +1,10 @@
+# [1.33.0](https://github.com/stuttgart-things/blueprints/compare/v1.32.0...v1.33.0) (2025-12-03)
+
+
+### Features
+
+* feat/add-ansible-module ([56e4cb2](https://github.com/stuttgart-things/blueprints/commit/56e4cb24190286fceb845a753fc37d3c92e9b98c))
+
 # [1.32.0](https://github.com/stuttgart-things/blueprints/compare/v1.31.0...v1.32.0) (2025-12-03)
 
 

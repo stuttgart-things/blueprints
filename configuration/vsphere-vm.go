@@ -150,22 +150,6 @@ func (v *Configuration) VsphereVm(
 		},
 	)
 
-	// CREATE BRANCH FOR RENDERED TEMPLATES
-	if createBranch {
-		_, err := dag.Git().CreateGithubBranch(
-			ctx,
-			repository,
-			branchName,
-			token,
-			dagger.GitCreateGithubBranchOpts{
-				BaseBranch: baseBranch,
-			},
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create branch: %w", err)
-		}
-	}
-
 	// RENDER ANSIBLE REQUIREMENTS IF REQUESTED
 	if renderAnsibleRequirements {
 		ansibleReqs, err := v.CreateAnsibleRequirementFiles(
@@ -181,6 +165,22 @@ func (v *Configuration) VsphereVm(
 
 		// ADD Requirements to rendered Templates
 		renderedTemplates = renderedTemplates.WithDirectory("ansible", ansibleReqs)
+	}
+
+	// CREATE BRANCH FOR RENDERED TEMPLATES
+	if createBranch {
+		_, err := dag.Git().CreateGithubBranch(
+			ctx,
+			repository,
+			branchName,
+			token,
+			dagger.GitCreateGithubBranchOpts{
+				BaseBranch: baseBranch,
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create branch: %w", err)
+		}
 	}
 
 	// RENDER EXECUTION FILE IF REQUESTED

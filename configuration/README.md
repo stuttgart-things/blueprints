@@ -1,5 +1,27 @@
 # stuttgart-things/blueprints/configuration
 
+<details><summary>RENDER-FLUX-KUSTOMIZATION</summary>
+
+```bash
+dagger call -m configuration \
+render-flux-kustomization \
+--oci-source ghcr.io/stuttgart-things/kcl-flux-instance \ -vv --progress plain
+```cd ~µ/
+
+```bash
+dagger call -m configuration \
+render-flux-kustomization \
+--oci-source ghcr.io/stuttgart-things/kcl-flux-instance \
+--token=env:GITHUB_TOKEN \
+--branch-name=test \
+--create-branch=true \
+--commit-changes=true \
+--repository stuttgart-things/dagger \
+-vv --progress plain
+```
+
+</details>
+
 <details><summary>CREATE VSPHERE CONFIG</summary>
 
 ```bash

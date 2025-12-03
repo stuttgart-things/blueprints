@@ -17,6 +17,7 @@ render-flux-kustomization \
 --branch-name=test \
 --create-branch=true \
 --commit-changes=true \
+--file-name=flux-instance \
 --repository stuttgart-things/dagger \
 -vv --progress plain
 ```

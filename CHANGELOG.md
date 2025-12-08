@@ -1,3 +1,10 @@
+# [1.34.0](https://github.com/stuttgart-things/blueprints/compare/v1.33.0...v1.34.0) (2025-12-08)
+
+
+### Features
+
+* feat/update-ansible-exec-inventory ([7649318](https://github.com/stuttgart-things/blueprints/commit/7649318cc3a5676a105202f1c377afa94354ec23))
+
 # [1.33.0](https://github.com/stuttgart-things/blueprints/compare/v1.32.0...v1.33.0) (2025-12-03)
 
 

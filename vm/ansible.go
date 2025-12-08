@@ -37,18 +37,33 @@ func (m *Vm) ExecuteAnsible(
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
 	requirementsData string,
+	// Inventory type: "simple" (default [all] group) or "cluster" (master/worker groups)
+	// +optional
+	// +default="simple"
+	inventoryType string,
 ) (bool, error) {
 
 	if src == nil {
 		src = dag.Directory()
 	}
 
-	// IF NO INVENTORY FILE PROVIDED BUT HOSTS ARE GIVEN, CREATE SIMPLE INVENTORY
+	// IF NO INVENTORY FILE PROVIDED BUT HOSTS ARE GIVEN, CREATE INVENTORY
 	if inventory == nil && hosts != "" {
-		inventoryContent := "[all]\n"
-		// Split comma-separated hosts and add to inventory
-		for _, host := range splitHosts(hosts) {
-			inventoryContent += host + "\n"
+		var inventoryContent string
+		var err error
+
+		if inventoryType == "cluster" {
+			// Create cluster inventory with master/worker groups
+			inventoryContent, err = CreateClusterAnsibleInventoryFromHosts(hosts)
+			if err != nil {
+				return false, err
+			}
+		} else {
+			// Create simple inventory with [all] group
+			inventoryContent = "[all]\n"
+			for _, host := range splitHosts(hosts) {
+				inventoryContent += host + "\n"
+			}
 		}
 
 		// Create inventory file from content

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"text/template"
 
 	"gopkg.in/yaml.v2"
@@ -148,4 +149,40 @@ func CreateClusterAnsibleInventory(terraformVMOutput string) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+// CreateClusterAnsibleInventoryFromHosts converts comma-separated hosts to cluster inventory
+func CreateClusterAnsibleInventoryFromHosts(hostsString string) (string, error) {
+	var hosts []Host
+
+	// Split comma-separated hosts
+	for _, host := range splitHostsForInventory(hostsString) {
+		hosts = append(hosts, Host{FQDN: host})
+	}
+
+	data := TemplateData{Hosts: hosts}
+
+	tmpl, err := template.New("inventory").Parse(clusterTemplate)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
+// splitHostsForInventory splits comma-separated hosts (helper for inventory.go)
+func splitHostsForInventory(hosts string) []string {
+	var result []string
+	for _, host := range strings.Split(hosts, ",") {
+		host = strings.TrimSpace(host)
+		if host != "" {
+			result = append(result, host)
+		}
+	}
+	return result
 }

@@ -60,6 +60,10 @@ func (v *Vm) BakeLocal(
 	// +optional
 	// +default=10
 	terraformRetryDelay int,
+	// Inventory type: "simple" (default [all] group) or "cluster" (master/worker groups)
+	// +optional
+	// +default="simple"
+	inventoryType string,
 ) (*dagger.Directory, error) {
 	workDir := "/src"
 
@@ -178,6 +182,7 @@ func (v *Vm) BakeLocal(
 			ansiblePassword,
 			requirementsTemplate,
 			requirementsData,
+			inventoryType,
 		)
 
 	if err != nil {
@@ -232,6 +237,10 @@ func (v *Vm) BakeLocalByProfile(
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
 	requirementsData string,
+	// Inventory type: "simple" (default [all] group) or "cluster" (master/worker groups)
+	// +optional
+	// +default="simple"
+	inventoryType string,
 ) (*dagger.Directory, error) {
 
 	// READ AND PARSE PROFILE
@@ -298,5 +307,6 @@ func (v *Vm) BakeLocalByProfile(
 		requirementsData,
 		maxRetries,
 		retryDelay,
+		inventoryType,
 	)
 }

@@ -188,7 +188,7 @@ func (v *Configuration) VsphereVm(
 		executionFile, err := v.RenderMetadata(
 			ctx,
 			src,
-			"",
+			configParameters,
 			executionfileTemplate,
 			executionfileData,
 			false,

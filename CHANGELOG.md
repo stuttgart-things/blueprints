@@ -1,3 +1,10 @@
+## [1.34.1](https://github.com/stuttgart-things/blueprints/compare/v1.34.0...v1.34.1) (2025-12-09)
+
+
+### Bug Fixes
+
+* fix/add-config-vsphere-parameters-executionfile ([0a9c8d1](https://github.com/stuttgart-things/blueprints/commit/0a9c8d140be27eb8b073eb6b7bf8e3071e05a3ff))
+
 # [1.34.0](https://github.com/stuttgart-things/blueprints/compare/v1.33.0...v1.34.0) (2025-12-08)
 
 

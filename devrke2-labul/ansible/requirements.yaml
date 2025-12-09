@@ -1,0 +1,24 @@
+---
+collections:
+  - name: ansible.netcommon
+    version: 8.0.1
+  - name: ansible.posix
+    version: 2.1.0
+  - name: awx.awx
+    version: 24.6.1
+  - name: community.crypto
+    version: 3.0.3
+  - name: community.docker
+    version: 4.7.0
+  - name: community.general
+    version: 12.1.0
+  - name: community.hashi_vault
+    version: 7.0.0
+  - name: community.vmware
+    version: 5.7.2
+  - name: kubernetes.core
+    version: 6.0.0
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-container-25.5.816.tar.gz/sthings-container-25.5.816.tar.gz
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-baseos-25.3.760.tar.gz/sthings-baseos-25.3.760.tar.gz
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-awx-25.4.506.tar.gz/sthings-awx-25.4.506.tar.gz
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-rke-25.1.991.tar.gz/sthings-rke-25.1.991.tar.gz

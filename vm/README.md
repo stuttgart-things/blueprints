@@ -207,7 +207,6 @@ execute-ansible \
 --vaultSecretID env:VAULT_SECRET_ID \
 --vaultURL env:VAULT_ADDR \
 -vv --progress plain
-
 ```
 
 </details>

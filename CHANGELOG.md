@@ -1,3 +1,10 @@
+## [1.34.2](https://github.com/stuttgart-things/blueprints/compare/v1.34.1...v1.34.2) (2025-12-12)
+
+
+### Bug Fixes
+
+* fix/update-config-creation ([fe075dd](https://github.com/stuttgart-things/blueprints/commit/fe075ddfe5c8db68273d1467fb0c7261eaf33fef))
+
 ## [1.34.1](https://github.com/stuttgart-things/blueprints/compare/v1.34.0...v1.34.1) (2025-12-09)
 
 

@@ -1,0 +1,11 @@
+---
+operation: apply
+variables:
+  - vault_addr=https://vault-vsphere.tiab.labda.sva.de:8200
+ansiblePlaybooks:
+  - "sthings.baseos.setup"
+ansibleParameters: []
+ansibleInventoryType: default
+ansibleWaitTimeout: 30
+ansibleRequirementsFile: ./requirements.yaml
+encryptedFile: ""

@@ -61,10 +61,26 @@ func (v *Configuration) RenderMetadata(
 	for _, filePath := range filePaths {
 		filePath = strings.TrimSpace(filePath)
 
-		// Read the file content
-		fileContent, err := src.File(filePath).Contents(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+		var fileContent string
+		var err error
+
+		// Check if filePath is a URL
+		if strings.HasPrefix(filePath, "http://") || strings.HasPrefix(filePath, "https://") {
+			// Download from URL
+			fileContent, err = dag.Container().
+				From("cgr.dev/chainguard/wolfi-base").
+				WithExec([]string{"apk", "add", "curl"}).
+				WithExec([]string{"curl", "-fsSL", filePath}).
+				Stdout(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to download file from %s: %w", filePath, err)
+			}
+		} else {
+			// Read from local directory
+			fileContent, err = src.File(filePath).Contents(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file %s: %w", filePath, err)
+			}
 		}
 
 		// Parse YAML content

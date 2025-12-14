@@ -1,17 +1,5 @@
 # stuttgart-things/blueprints/vm
 
-## 📊 Diagram: VM Provisioning Flow
-
-```mermaid
-flowchart TD
-    enc[terraform.tfvars.enc.json] --> A[SOPS Decrypt]
-    A --> plain[terraform.tfvars.json]
-    plain --> B[Terraform Apply]
-    B --> infra[Infrastructure Created]
-    infra --> C[Generate Ansible Inventory YAML]
-    C --> out[inventory.yaml]
-```
-
 ## FUNCTIONS
 
 <details><summary>BAKE LOCAL</summary>
@@ -27,7 +15,6 @@ dagger call -m vm execute-ansible \
 ```
 
 </details>
-
 
 ## WORKFLOWS
 
@@ -197,6 +184,8 @@ output-terraform-run \
 <details><summary>RUN ANSIBLE</summary>
 
 ```bash
+# EXAMPLE 1
+
 dagger call -m vm \
 execute-ansible \
 --src . \
@@ -207,6 +196,20 @@ execute-ansible \
 --vaultSecretID env:VAULT_SECRET_ID \
 --vaultURL env:VAULT_ADDR \
 -vv --progress plain
+```
+
+```bash
+# EXAMPLE 2
+
+dagger call -m github.com/stuttgart-things/blueprints/vm@v1.34.0 execute-ansible \
+--playbooks "sthings.rke.k3s" \
+--hosts "192.168.1.40" \
+--ssh-user=env:SSH_USER \
+--ssh-password=env:SSH_PASSWORD \
+--parameters="install_k3s=true k3s_state=present k3s_k8s_version=1.34.2 k3s_release_kind=k3s1 cluster_setup=singlenode install_cillium=true deploy_helm_charts=true install_helm_diff=true cilium_lbrange_start_ip=192.168.1.80 cilium_lbrange_stop_ip=192.168.1.80 ingress_service_type=ClusterIP" \
+--requirements requirements.yaml \
+--inventoryType="cluster" \
+--progress plain -vv
 ```
 
 </details>

@@ -1,0 +1,19 @@
+{
+  "name": "crossplane-configuration",
+  "engineVersion": "v0.19.8",
+  "sdk": {
+    "source": "go"
+  },
+  "dependencies": [
+    {
+      "name": "crossplane",
+      "source": "github.com/stuttgart-things/dagger/crossplane@v0.59.0",
+      "pin": "d3c9a4012383155ad5b8a54d5e9ea394fcb2a091"
+    },
+    {
+      "name": "templating",
+      "source": "github.com/stuttgart-things/dagger/templating@v0.63.0",
+      "pin": "7238809bbf195ee5367194ad8b29f2b7829d6f23"
+    }
+  ]
+}

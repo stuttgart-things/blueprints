@@ -22,10 +22,10 @@ var PackageFiles = []TemplateDestination{
 		Template:    Claim,
 		Destination: "examples/claim.yaml",
 	},
-	// {
-	// 	Template:    Functions,
-	// 	Destination: "examples/functions.yaml",
-	// },
+	{
+		Template:    Functions,
+		Destination: "examples/functions.yaml",
+	},
 	// {
 	// 	Template:    Composition,
 	// 	Destination: "apis/composition.yaml",
@@ -163,10 +163,10 @@ spec:
   crossplane:
     version: ">={{ .crossplaneVersion }}"
   dependsOn:
-    - provider: xpkg.upbound.io/crossplane-contrib/provider-helm
-      version: ">=v0.19.0"
-    - provider: xpkg.upbound.io/crossplane-contrib/provider-kubernetes
-      version: ">=v0.14.1"
+    {{- range .dependencies }}
+    - provider: {{ .provider }}
+      version: "{{ .version }}"
+    {{- end }}
 `
 
 var Readme = `# {{ .claimKind }}

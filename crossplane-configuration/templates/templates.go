@@ -26,18 +26,18 @@ var PackageFiles = []TemplateDestination{
 		Template:    Functions,
 		Destination: "examples/functions.yaml",
 	},
-	// {
-	// 	Template:    Composition,
-	// 	Destination: "apis/composition.yaml",
-	// },
-	// {
-	// 	Template:    Readme,
-	// 	Destination: "README.md",
-	// },
-	// {
-	// 	Template:    Definition,
-	// 	Destination: "apis/definition.yaml",
-	// },
+	{
+		Template:    Composition,
+		Destination: "apis/composition.yaml",
+	},
+	{
+		Template:    Readme,
+		Destination: "README.md",
+	},
+	{
+		Template:    Definition,
+		Destination: "apis/definition.yaml",
+	},
 	{
 		Template:    Configuration,
 		Destination: "crossplane.yaml",
@@ -69,7 +69,7 @@ apiVersion: {{ .compositionApiVersion }}
 kind: Composition
 metadata:
   labels:
-    crossplane.io/xrd: {{ .plural }}.{{ .apiGroup }}
+    crossplane.io/xrd: {{ .xrdPlural }}.{{ .apiGroup }}
   name: {{ .name }}
 spec:
   compositeTypeRef:
@@ -108,42 +108,25 @@ spec:
 `
 
 var Definition = `---
-apiVersion: apiextensions.crossplane.io/v1
+apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
-  name: {{ .plural }}.{{ .apiGroup }}
+  name: {{ .xrdPlural }}.{{ .apiGroup}}
 spec:
   group: {{ .apiGroup }}
+  defaultCompositeDeletePolicy: {{ .xrdDeletePolicy }}
+  scope: {{ .xrdScope }}
   names:
     kind: {{ .kind }}
-    plural: {{ .plural }}
-  claimNames:
-    kind: {{ .claimKind }}
-    plural: {{ .claimPlural }}
+    plural: {{ .xrdPlural }}
+    singular: {{ .xrdSingular }}
   versions:
     - name: v1alpha1
       served: true
       referenceable: true
       schema:
         openAPIV3Schema:
-          description: A {{ .claimKind }} is a composite resource that represents
           type: object
-          properties:
-            spec:
-              type: object
-              properties:
-                <REPLACE_ME>:
-                  type: string
-                  default: <REPLACE_ME>
-                  description: <REPLACE_ME>
-            status:
-              description: A Status represents the observed state
-              properties:
-                <REPLACE_ME>:
-                  description: Freeform field containing status information
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-              type: object
 `
 
 var Configuration = `---

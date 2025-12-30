@@ -31,6 +31,8 @@ func (m *CrossplaneConfiguration) Create(
 		"crossplaneVersion": "2.13.0",
 		"claimNamespace":    "default",
 		"claimName":         "demo",
+		"xrdScope":          "Namespaced",
+		"xrdDeletePolicy":   "Foreground",
 	}
 
 	// Parse and merge additional variables from comma-separated string

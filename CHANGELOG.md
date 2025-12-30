@@ -1,3 +1,10 @@
+# [1.36.0](https://github.com/stuttgart-things/blueprints/compare/v1.35.0...v1.36.0) (2025-12-30)
+
+
+### Features
+
+* fix/update-vars-configuration-templates ([a369b52](https://github.com/stuttgart-things/blueprints/commit/a369b520297986329a02690a41a457c381d6ade7))
+
 # [1.35.0](https://github.com/stuttgart-things/blueprints/compare/v1.34.2...v1.35.0) (2025-12-30)
 
 

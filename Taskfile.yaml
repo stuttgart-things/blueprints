@@ -9,12 +9,46 @@ dotenv: ['.env', '{{.HOME}}/.env']
 tasks:
   test-all:
     desc: Run all tests
-    deps: [check]
+    deps: ['git:check']
     cmds:
+      - task: test-crossplane-configuration
       - task: test-vmtemplate
       - task: test-vm
       - task: test-go-microservice
       - task: test-repository-linting
+      - task: test-crossplane-configuration
+
+  test-crossplane-configuration:
+    desc: Test crossplane-configuration module
+    cmds:
+      - |
+        mkdir -p /tmp/apps || true
+      - |
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --name openebs \
+        --defaults-file {{ .DEFAULTS_FILE }} \
+        --variables-file {{ .VARIABLES_FILE }} \
+        --variables='{{ .VARIABLES }}' \
+        --progress plain -vv \
+        export --path={{ .EXPORT_PATH }}
+      - |
+        echo "✓ Configuration generated successfully"
+        echo "Output location: {{ .EXPORT_PATH }}"
+      - |
+        echo ""
+        echo "Generated files:"
+        if command -v tree &> /dev/null; then
+          tree {{ .EXPORT_PATH }}
+        else
+          find {{ .EXPORT_PATH }} -type f | sort
+        fi
+    vars:
+      MODULE: crossplane-configuration
+      FUNCTION: create
+      DEFAULTS_FILE: ./tests/crossplane-configuration/defaults.yaml
+      VARIABLES_FILE: ./tests/crossplane-configuration/openebs-variables.yaml
+      VARIABLES: 'crossplaneVersion=4.13.0,functions=[{"Name":"function-patch-and-transform","ApiVersion":"pt.fn.crossplane.io/v1beta1","PackageURL":"xpkg.upbound.io/function-patch-and-transform","Version":"v0.1.0"},{"Name":"function-go-templating","ApiVersion":"gotemplating.fn.crossplane.io/v1beta1","PackageURL":"xpkg.upbound.io/function-go-templating","Version":"v0.1.0"}]'
+      EXPORT_PATH: /tmp/apps/openebs
 
   test-repository-linting:
     desc: Test repository-linting module
@@ -119,11 +153,6 @@ tasks:
           gum input \
             --placeholder "Module to install (default: github.com/stuttgart-things/dagger/<MODULE>@v0.37.0)" \
             --value "github.com/stuttgart-things/dagger/<MODULE>@v0.36.0"
-
-  check:
-    desc: "Run pre-commit hooks"
-    cmds:
-      - pre-commit run -a
 
   release:
     desc: release new version

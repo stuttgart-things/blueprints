@@ -46,11 +46,12 @@ var PackageFiles = []TemplateDestination{
 
 var Claim = `---
 apiVersion: {{ .apiGroup }}/{{ .apiVersion }}
-kind: {{ .claimKind }}
+kind: {{ .kind }}
 metadata:
   name: {{ .claimName }}
   namespace: {{ .claimNamespace }}
 spec:
+  # add spec fields here
 `
 
 var Functions = `---{{- range .functions }}
@@ -127,6 +128,7 @@ spec:
       schema:
         openAPIV3Schema:
           type: object
+      # add spec fields here
 `
 
 var Configuration = `---
@@ -139,9 +141,9 @@ metadata:
     meta.crossplane.io/source: {{ .source }}
     meta.crossplane.io/license: {{ .license }}
     meta.crossplane.io/description: |
-      deploys {{ .claimKind }} w/ crossplane
+      manages lifecycle of {{ .kind }} w/ crossplane
     meta.crossplane.io/readme: |
-      deploys {{ .claimKind }} w/ crossplane
+      manages lifecycle of {{ .kind }} w/ crossplane
 spec:
   crossplane:
     version: ">={{ .crossplaneVersion }}"
@@ -152,10 +154,4 @@ spec:
     {{- end }}
 `
 
-var Readme = `# {{ .claimKind }}
-
-// ## PROVIDER-CONFIG
-
-// ### CREATE KUBECONFIG AS A SECRET FROM LOCAL FILE
-
-`
+var Readme = "# {{ .claimKind }}\n\nThis Crossplane Configuration provisions a `{{ .kind }}` Composite Resource Definition (XRD) along with a Composition and an example Claim.\n\n## DEV\n\n```bash\ncrossplane render examples/claim.yaml \\\napis/composition.yaml \\\nexamples/functions.yaml \\\n--include-function-results\n```\n\n"

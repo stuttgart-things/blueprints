@@ -1,3 +1,13 @@
+# [1.35.0](https://github.com/stuttgart-things/blueprints/compare/v1.34.2...v1.35.0) (2025-12-30)
+
+
+### Features
+
+* feat/add-crossplane-blueprint ([a25ebb3](https://github.com/stuttgart-things/blueprints/commit/a25ebb3c4c331aa698a457e05ee734ceac99dfa3))
+* feat/add-crossplane-blueprint ([701ba2a](https://github.com/stuttgart-things/blueprints/commit/701ba2ac888ef82a22e213714f711cdcefbcd473))
+* feat/add-crossplane-blueprint ([59127ae](https://github.com/stuttgart-things/blueprints/commit/59127ae1b9f5e3518a8fb36f2d053b32509f4097))
+* feat/add-crossplane-blueprint ([44849d9](https://github.com/stuttgart-things/blueprints/commit/44849d937d0507e9f48b45bc98117a55112e24e9))
+
 ## [1.34.2](https://github.com/stuttgart-things/blueprints/compare/v1.34.1...v1.34.2) (2025-12-12)
 
 

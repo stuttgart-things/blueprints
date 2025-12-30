@@ -7,15 +7,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 func (m *CrossplaneConfiguration) Create(
 	ctx context.Context,
 	name string,
 	// +optional
-	variables string,
+	defaultsFile *dagger.File,
 	// +optional
-	dependencies string,
+	variablesFile *dagger.File,
+	// +optional
+	variables string,
 ) (*dagger.Directory, error) {
 
 	packageName := "test"
@@ -33,44 +37,60 @@ func (m *CrossplaneConfiguration) Create(
 		"claimName":         "demo",
 		"xrdScope":          "Namespaced",
 		"xrdDeletePolicy":   "Foreground",
+		"dependencies": []map[string]string{
+			{
+				"provider": "xpkg.upbound.io/crossplane-contrib/provider-helm",
+				"version":  ">=v0.19.0",
+			},
+		},
 	}
 
-	// Parse and merge additional variables from comma-separated string
+	// Parse defaults from YAML file first (lowest priority)
+	if defaultsFile != nil {
+		content, err := defaultsFile.Contents(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("read defaults file: %w", err)
+		}
+
+		var yamlData map[string]interface{}
+		if err := yaml.Unmarshal([]byte(content), &yamlData); err != nil {
+			return nil, fmt.Errorf("parse defaults YAML: %w", err)
+		}
+
+		// Merge defaults into data map
+		for key, value := range yamlData {
+			if value != nil {
+				data[key] = value
+			}
+		}
+	}
+
+	// Parse variables from YAML file (middle priority)
+	if variablesFile != nil {
+		content, err := variablesFile.Contents(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("read variables file: %w", err)
+		}
+
+		var yamlData map[string]interface{}
+		if err := yaml.Unmarshal([]byte(content), &yamlData); err != nil {
+			return nil, fmt.Errorf("parse variables YAML: %w", err)
+		}
+
+		// Merge YAML data into data map
+		for key, value := range yamlData {
+			if value != nil {
+				data[key] = value
+			}
+		}
+	}
+
+	// Parse and merge additional variables from comma-separated string (highest priority)
 	if variables != "" {
 		// Parse variables with support for JSON values
 		// Strategy: find key= patterns and extract value until next key= or end
 		parseVariables(variables, data)
 	}
-
-	// Parse dependencies from comma-separated string
-	var deps []map[string]string
-	if dependencies != "" {
-		pairs := strings.Split(dependencies, ",")
-		for _, pair := range pairs {
-			parts := strings.SplitN(pair, "=", 2)
-			if len(parts) == 2 {
-				provider := strings.TrimSpace(parts[0])
-				version := strings.TrimSpace(parts[1])
-				deps = append(deps, map[string]string{
-					"provider": provider,
-					"version":  version,
-				})
-			}
-		}
-	} else {
-		// Default dependencies if none provided
-		deps = []map[string]string{
-			{
-				"provider": "xpkg.upbound.io/crossplane-contrib/provider-helm",
-				"version":  ">=v0.19.0",
-			},
-			{
-				"provider": "xpkg.upbound.io/crossplane-contrib/provider-kubernetes",
-				"version":  ">=v0.14.1",
-			},
-		}
-	}
-	data["dependencies"] = deps
 
 	xplane := dag.Container().
 		From("alpine:latest").

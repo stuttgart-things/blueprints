@@ -1,0 +1,4 @@
+package main
+
+// CREATE KIND CLUSTER w/ ANSIBLE
+// RETURN KUBECONFIG

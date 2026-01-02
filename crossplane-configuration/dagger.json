@@ -11,6 +11,16 @@
       "pin": "d3c9a4012383155ad5b8a54d5e9ea394fcb2a091"
     },
     {
+      "name": "kcl",
+      "source": "github.com/stuttgart-things/dagger/kcl@v0.66.0",
+      "pin": "215785f29a9a2dda89efa4672cb3c9eab59dc408"
+    },
+    {
+      "name": "kubernetes",
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.68.0",
+      "pin": "4b7a9104a164f0bdbbfaae328ca067d98f70662c"
+    },
+    {
       "name": "templating",
       "source": "github.com/stuttgart-things/dagger/templating@v0.63.0",
       "pin": "7238809bbf195ee5367194ad8b29f2b7829d6f23"

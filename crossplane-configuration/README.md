@@ -53,8 +53,19 @@ These are rendered into the generated `crossplane.yaml` configuration file.
 <summary><b>Click to expand</b></summary>
 
 ```bash
+# RENDER AND DEPLOY
 dagger call -m ./crossplane-configuration add-cluster \
 --clusterName=pat4 \
+--kubeconfig-cluster file:///home/sthings/.kube/kind-dev \
+--kubeconfig-crossplane-cluster file:///home/sthings/.kube/xplane \
+--progress plain -vv
+```
+
+```bash
+# JST RENDER
+dagger call -m ./crossplane-configuration add-cluster \
+--clusterName=pat4 \
+--deploy-to-cluster=false \
 --kubeconfig-cluster file:///home/sthings/.kube/kind-dev \
 --kubeconfig-crossplane-cluster file:///home/sthings/.kube/xplane \
 export --path=./output.yaml \

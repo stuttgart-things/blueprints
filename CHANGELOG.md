@@ -1,3 +1,11 @@
+# [1.40.0](https://github.com/stuttgart-things/blueprints/compare/v1.39.0...v1.40.0) (2026-01-03)
+
+
+### Features
+
+* fix/remove-unness-kubeconfig ([28fdbc8](https://github.com/stuttgart-things/blueprints/commit/28fdbc8a266396b3777f7f25e164bb0f571225a7))
+* main ([eef0888](https://github.com/stuttgart-things/blueprints/commit/eef0888c0b6b9a9f55c1fb6295fda234b6d7cd5a))
+
 # [1.39.0](https://github.com/stuttgart-things/blueprints/compare/v1.38.0...v1.39.0) (2026-01-03)
 
 

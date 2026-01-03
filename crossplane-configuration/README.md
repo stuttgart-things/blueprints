@@ -55,7 +55,9 @@ These are rendered into the generated `crossplane.yaml` configuration file.
 ```bash
 dagger call -m ./crossplane-configuration add-cluster \
 --clusterName=pat4 \
---kubeconfig-cluster file:///home/sthings/.kube/kind-dev \ --kubeconfig-crossplane-cluster file:///home/sthings/.kube/xplane \ export --path=./output.yaml \
+--kubeconfig-cluster file:///home/sthings/.kube/kind-dev \
+--kubeconfig-crossplane-cluster file:///home/sthings/.kube/xplane \
+export --path=./output.yaml \
 --progress plain -vv
 ```
 

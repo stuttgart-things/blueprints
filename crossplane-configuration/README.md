@@ -61,7 +61,54 @@ export --path=./output.yaml \
 --progress plain -vv
 ```
 
-</details>1
+</details>
+
+### Render Kubeconfig Secret
+
+<details>
+<summary><b>Click to expand</b></summary>
+
+Create a Kubernetes Secret manifest with an encoded kubeconfig for use with Crossplane:
+
+```bash
+dagger call -m crossplane-configuration render-kubeconfig-secret \
+  --kubeconfig-file=file://~/.kube/config \
+  --secret-name=kubeconfig-cicd \
+  --secret-namespace=crossplane-system \
+  --secret-key=config \
+  export --path=./secret.yaml
+```
+
+**What this does:**
+- Reads the kubeconfig file from the specified path
+- Base64 encodes the kubeconfig content
+- Renders a Kubernetes Secret manifest
+- Outputs the rendered secret YAML
+
+**Parameters:**
+- `--kubeconfig-file` - Path to the kubeconfig file (supports `file://` prefix)
+- `--secret-name` - Name for the Kubernetes Secret (e.g., `kubeconfig-cicd`)
+- `--secret-namespace` - Namespace where the secret will be created (e.g., `crossplane-system`)
+- `--secret-key` - Key name in the secret's data field (e.g., `config`, `sthings-cicd`)
+
+**Example output (secret.yaml):**
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubeconfig-cicd
+  namespace: crossplane-system
+data:
+  config: LS0tIGFwaVZlcnNpb246IHYxCmtpbmQ6IENvbmZpZwoK...
+type: Opaque
+```
+
+You can then apply this secret to your Crossplane cluster:
+```bash
+kubectl apply -f secret.yaml
+```
+
+</details>
 
 ### Basic Usage with Defaults and Variables File
 

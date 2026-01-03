@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"dagger/crossplane-configuration/internal/dagger"
+	"dagger/crossplane-configuration/templates"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -171,4 +174,61 @@ func (m *CrossplaneConfiguration) AddCluster(
 	}
 
 	return mergedConfigFile.File("/merged.yaml")
+}
+
+// RenderKubeconfigSecret renders a Kubernetes Secret manifest with encoded kubeconfig
+// Input: kubeconfig file
+// Parameters: secretName, secretNamespace, secretKey
+// Output: rendered secret file
+func (m *CrossplaneConfiguration) RenderKubeconfigSecret(
+	ctx context.Context,
+	kubeconfigFile *dagger.Secret,
+	secretName string,
+	secretNamespace string,
+	secretKey string,
+) (*dagger.File, error) {
+	// Read kubeconfig secret content
+	kubeconfigContent, err := kubeconfigFile.Plaintext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("read kubeconfig secret: %w", err)
+	}
+
+	// Encode kubeconfig to base64
+	kubeconfigBase64 := base64.StdEncoding.EncodeToString([]byte(kubeconfigContent))
+
+	// Create data map for template rendering
+	data := map[string]interface{}{
+		"secretName":       secretName,
+		"secretNamespace":  secretNamespace,
+		"secretKey":        secretKey,
+		"kubeconfigBase64": kubeconfigBase64,
+	}
+
+	// Marshal data to JSON for templating
+	varsJSON, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("marshal template variables: %w", err)
+	}
+
+	// Render the KubeconfigSecret template
+	rendered, err := dag.Templating().RenderInline(
+		ctx,
+		templates.KubeconfigSecret,
+		dagger.TemplatingRenderInlineOpts{
+			Variables:  string(varsJSON),
+			StrictMode: true,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("render kubeconfig secret template: %w", err)
+	}
+
+	// Create and return the secret file
+	secretFile := dag.Container().
+		From("alpine:latest").
+		WithNewFile("/secret.yaml", rendered).
+		WithoutEntrypoint().
+		File("/secret.yaml")
+
+	return secretFile, nil
 }

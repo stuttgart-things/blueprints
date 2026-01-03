@@ -155,3 +155,14 @@ spec:
 `
 
 var Readme = "# {{ .claimKind }}\n\nThis Crossplane Configuration provisions a `{{ .kind }}` Composite Resource Definition (XRD) along with a Composition and an example Claim.\n\n## DEV\n\n```bash\ncrossplane render examples/claim.yaml \\\napis/composition.yaml \\\nexamples/functions.yaml \\\n--include-function-results\n```\n\n"
+
+var KubeconfigSecret = `---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .secretName }}
+  namespace: {{ .secretNamespace }}
+data:
+  {{ .secretKey }}: {{ .kubeconfigBase64 }}
+type: Opaque
+`

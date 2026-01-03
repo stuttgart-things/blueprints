@@ -27,6 +27,7 @@ func (m *CrossplaneConfiguration) AddCluster(
 	parametersFile *dagger.File,
 	// Kubeconfig secret to create secret from
 	kubeconfigCluster *dagger.Secret,
+	// +optional
 	// Kubeconfig secret crossplane cluster
 	kubeconfigCrossplaneCluster *dagger.Secret,
 	// +optional

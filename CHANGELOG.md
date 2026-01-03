@@ -1,3 +1,12 @@
+# [1.37.0](https://github.com/stuttgart-things/blueprints/compare/v1.36.0...v1.37.0) (2026-01-03)
+
+
+### Features
+
+* feat/add-kind-cluster ([62d20be](https://github.com/stuttgart-things/blueprints/commit/62d20be6464b7324253076fa84aab46d64df3ab8))
+* feat/add-kind-cluster ([2089158](https://github.com/stuttgart-things/blueprints/commit/2089158caa75b53cf0d250eb27ac8051009795d5))
+* feat/add-kind-cluster ([4671eeb](https://github.com/stuttgart-things/blueprints/commit/4671eeb0a8b6d421774d30a66dc1dfee2de37783))
+
 # [1.36.0](https://github.com/stuttgart-things/blueprints/compare/v1.35.0...v1.36.0) (2025-12-30)
 
 

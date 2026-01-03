@@ -1,3 +1,10 @@
+# [1.39.0](https://github.com/stuttgart-things/blueprints/compare/v1.38.0...v1.39.0) (2026-01-03)
+
+
+### Features
+
+* feat/update-kubeconfig-render ([9e25477](https://github.com/stuttgart-things/blueprints/commit/9e254775888ca613ff044e6e458b55617262d584))
+
 # [1.38.0](https://github.com/stuttgart-things/blueprints/compare/v1.37.0...v1.38.0) (2026-01-03)
 
 

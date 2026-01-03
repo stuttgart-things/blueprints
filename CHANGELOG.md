@@ -1,3 +1,10 @@
+# [1.38.0](https://github.com/stuttgart-things/blueprints/compare/v1.37.0...v1.38.0) (2026-01-03)
+
+
+### Features
+
+* feat/add-kubeconfig-secret-rendering ([6f909e7](https://github.com/stuttgart-things/blueprints/commit/6f909e7d9653332f35cd09cf289117a6339828eb))
+
 # [1.37.0](https://github.com/stuttgart-things/blueprints/compare/v1.36.0...v1.37.0) (2026-01-03)
 
 

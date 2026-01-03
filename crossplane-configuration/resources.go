@@ -32,83 +32,96 @@ func (m *CrossplaneConfiguration) AddCluster(
 	// +optional
 	// +default="true"
 	useClusterProviderConfig bool,
+	// +optional
+	// +default="true"
+	deployToCluster bool,
 ) *dagger.File {
 
-	// CHECK IF SECRET EXISTS AND DELETE IF NEEDED
-	secretExists, err := dag.Kubernetes().
-		CheckResourceStatus(
-			ctx,
-			"secret",
-			clusterName,
-			crossplaneNamespace,
-			kubeconfigCrossplaneCluster,
-		)
+	// RENDER KUBECONFIG SECRET
+	secretFile, err := m.RenderKubeconfigSecret(
+		ctx,
+		kubeconfigCluster,
+		clusterName,
+		crossplaneNamespace,
+		"config",
+	)
 
 	if err != nil {
 		panic(err)
 	}
 
-	if secretExists {
+	fmt.Println("Kubeconfig Secret Rendered Successfully")
 
-		deletionStatus, err := dag.Kubernetes().
-			Command(
+	// CHECK IF SECRET EXISTS AND DELETE IF NEEDED (only if deploying)
+	if deployToCluster {
+		secretExists, err := dag.Kubernetes().
+			CheckResourceStatus(
 				ctx,
-				dagger.KubernetesCommandOpts{
-					Operation:    "delete",
-					ResourceKind: "secret " + clusterName,
-					Namespace:    crossplaneNamespace,
-					KubeConfig:   kubeconfigCrossplaneCluster,
-				},
+				"secret",
+				clusterName,
+				crossplaneNamespace,
+				kubeconfigCrossplaneCluster,
 			)
 
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println("Existing Kubeconfig Secret Deleted: ", deletionStatus)
+		if secretExists {
 
-	}
+			deletionStatus, err := dag.Kubernetes().
+				Command(
+					ctx,
+					dagger.KubernetesCommandOpts{
+						Operation:    "delete",
+						ResourceKind: "secret " + clusterName,
+						Namespace:    crossplaneNamespace,
+						KubeConfig:   kubeconfigCrossplaneCluster,
+					},
+				)
 
-	// CREATE SECRET
-	status, err := dag.Kubernetes().
-		CreateKubeconfigSecret(
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Println("Existing Kubeconfig Secret Deleted: ", deletionStatus)
+
+		}
+
+		// APPLY SECRET FILE
+		secretApplyStatus, err := dag.Kubernetes().Kubectl(
 			ctx,
-			kubeconfigCluster,
-			dagger.KubernetesCreateKubeconfigSecretOpts{
-				Namespace:         crossplaneNamespace,
-				SecretName:        clusterName,
-				KubeConfigCluster: kubeconfigCrossplaneCluster,
+			dagger.KubernetesKubectlOpts{
+				Operation:       "apply",
+				SourceFile:      secretFile,
+				URLSource:       "",
+				KustomizeSource: "",
+				Namespace:       crossplaneNamespace,
+				KubeConfig:      kubeconfigCrossplaneCluster,
+				ServerSide:      false,
+				AdditionalFlags: "",
 			},
 		)
 
-	if err != nil {
-		panic(err)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Kubeconfig Secret Applied: ", secretApplyStatus)
+	} else {
+		fmt.Println("Skipping secret deployment (deployToCluster=false)")
 	}
 
-	fmt.Println("Kubeconfig Secret Status: ", status)
-
-	// READ SECRET KEY OF KUBECONFIG
-	keyNameRaw, err := dag.Kubernetes().
-		Command(
-			ctx,
-			dagger.KubernetesCommandOpts{
-				Operation:         "get",
-				ResourceKind:      "secret " + clusterName + " -o json",
-				Namespace:         crossplaneNamespace,
-				KubeConfig:        kubeconfigCrossplaneCluster,
-				AdditionalCommand: "jq -r '.data | keys[0]'",
-			})
-
-	if err != nil {
-		panic(err)
-	}
-
-	keyName := strings.TrimSpace(keyNameRaw)
+	// SET SECRET KEY (using hardcoded "config" since we rendered with it)
+	keyName := "config"
 	fmt.Println("Kubeconfig Secret Key Name: ", keyName)
 
 	// LOOP THROUGH PROVIDERS
 	providerList := strings.Split(providers, ",")
 	var configFiles []*dagger.File
+
+	// Add secret file to the beginning of config files for merging
+	configFiles = append(configFiles, secretFile)
 
 	for _, provider := range providerList {
 		provider = strings.TrimSpace(provider)
@@ -137,25 +150,29 @@ func (m *CrossplaneConfiguration) AddCluster(
 					Entrypoint:     "main.k",
 				})
 
-		// APPLY RENDERED CONFIG TO CLUSTER
-		applyStatus, err := dag.Kubernetes().Kubectl(
-			ctx,
-			dagger.KubernetesKubectlOpts{
-				Operation:       "apply",                     // kubectl operation
-				SourceFile:      configFile,                  // your rendered YAML from KCL
-				URLSource:       "",                          // not used here
-				KustomizeSource: "",                          // not used here
-				Namespace:       crossplaneNamespace,         // namespace to apply into
-				KubeConfig:      kubeconfigCrossplaneCluster, // kubeconfig secret
-				ServerSide:      false,                       // set true if you want --server-side
-				AdditionalFlags: "",                          // e.g., "--dry-run=client -o yaml" if needed
-			},
-		)
-		if err != nil {
-			panic(err)
-		}
+		// APPLY RENDERED CONFIG TO CLUSTER (only if deploying)
+		if deployToCluster {
+			applyStatus, err := dag.Kubernetes().Kubectl(
+				ctx,
+				dagger.KubernetesKubectlOpts{
+					Operation:       "apply",                     // kubectl operation
+					SourceFile:      configFile,                  // your rendered YAML from KCL
+					URLSource:       "",                          // not used here
+					KustomizeSource: "",                          // not used here
+					Namespace:       crossplaneNamespace,         // namespace to apply into
+					KubeConfig:      kubeconfigCrossplaneCluster, // kubeconfig secret
+					ServerSide:      false,                       // set true if you want --server-side
+					AdditionalFlags: "",                          // e.g., "--dry-run=client -o yaml" if needed
+				},
+			)
+			if err != nil {
+				panic(err)
+			}
 
-		fmt.Println("Applied Cluster Resources for "+provider+": ", applyStatus)
+			fmt.Println("Applied Cluster Resources for "+provider+": ", applyStatus)
+		} else {
+			fmt.Println("Skipping application of " + provider + " (deployToCluster=false)")
+		}
 
 		// Store config file for merging
 		configFiles = append(configFiles, configFile)

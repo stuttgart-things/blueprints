@@ -37,5 +37,7 @@ repos:
                "--exclude-files", "vmtemplate/dagger.json",
                "--exclude-files", "configuration/dagger.json",
                "--exclude-files", "go-microservice/dagger.json",
+               "--exclude-files", "presentations/dagger.json",
+               "--exclude-files", "kubernetes-deployment/dagger.json",
                "--exclude-files", "kubernetes-microservice/dagger.json"
                ]

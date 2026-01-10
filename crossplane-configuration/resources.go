@@ -64,11 +64,8 @@ func (m *CrossplaneConfiguration) AddCluster(
 				kubeconfigCrossplaneCluster,
 			)
 
-		if err != nil {
-			panic(err)
-		}
-
-		if secretExists {
+		// If error, assume secret doesn't exist (continue anyway)
+		if err == nil && secretExists {
 
 			deletionStatus, err := dag.Kubernetes().
 				Command(
@@ -86,7 +83,8 @@ func (m *CrossplaneConfiguration) AddCluster(
 			}
 
 			fmt.Println("Existing Kubeconfig Secret Deleted: ", deletionStatus)
-
+		} else if err != nil {
+			fmt.Println("Secret doesn't exist yet (CheckResourceStatus error), will create new one: ", err)
 		}
 
 		// APPLY SECRET FILE

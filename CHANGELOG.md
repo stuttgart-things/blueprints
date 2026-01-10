@@ -1,3 +1,10 @@
+# [1.42.0](https://github.com/stuttgart-things/blueprints/compare/v1.41.0...v1.42.0) (2026-01-10)
+
+
+### Features
+
+* fefeat/add-k8s-deployment ([e2f6db9](https://github.com/stuttgart-things/blueprints/commit/e2f6db9d13555bfdf4623adce786f1e32a42ba5a))
+
 # [1.41.0](https://github.com/stuttgart-things/blueprints/compare/v1.40.0...v1.41.0) (2026-01-10)
 
 

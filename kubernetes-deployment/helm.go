@@ -2,18 +2,17 @@ package main
 
 import (
 	"context"
-	"dagger/kubernetes-microservice/internal/dagger"
+
+	"dagger/kubernetes-deployment/internal/dagger"
 )
 
-func (m *KubernetesMicroservice) DeployHelmfile(
+func (m *KubernetesDeployment) DeployHelmfile(
 	ctx context.Context,
+	// +optional
 	src *dagger.Directory,
 	// +optional
-	// +default="./"
-	pathHelmfile string,
-	// +optional
 	// +default="helmfile.yaml"
-	helmfileName string,
+	HelmfileRef string,
 	// +optional
 	// +default="apply"
 	operation string,
@@ -36,10 +35,9 @@ func (m *KubernetesMicroservice) DeployHelmfile(
 
 	return dag.Helm().HelmfileOperation(
 		ctx,
-		src,
 		dagger.HelmHelmfileOperationOpts{
-			PathHelmfile:         pathHelmfile,
-			HelmfileName:         helmfileName,
+			Src:                  src,
+			HelmfileRef:          HelmfileRef,
 			Operation:            operation,
 			RegistrySecret:       registrySecret,
 			KubeConfig:           kubeConfig,

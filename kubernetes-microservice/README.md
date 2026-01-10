@@ -20,14 +20,6 @@ export --path=/tmp/cluster-pods.txt
 ```
 
 ```bash
-# RENDERS HELMFILE
-dagger call -m kubernetes-microservice deploy-helmfile \
---operation template \
---src ../dagger/tests/helm/ \
---progress plain
-```
-
-```bash
 # READS GIVEN HELMFILE; TALKS TO CLUSTER; GIVES POSSIBLE VALUES LIKE STORAGECLASS OR INGRESS-DOMAIN
 dagger call -m kubernetes-microservice analyze-helmfile \
 --src ../dagger/tests/helm/ \

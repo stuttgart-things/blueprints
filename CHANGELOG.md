@@ -1,3 +1,10 @@
+# [1.41.0](https://github.com/stuttgart-things/blueprints/compare/v1.40.0...v1.41.0) (2026-01-10)
+
+
+### Features
+
+* feat/add-hugo-init ([68f9580](https://github.com/stuttgart-things/blueprints/commit/68f9580c6359994da8595be7af512c073e82b679))
+
 # [1.40.0](https://github.com/stuttgart-things/blueprints/compare/v1.39.0...v1.40.0) (2026-01-03)
 
 

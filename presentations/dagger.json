@@ -1,0 +1,14 @@
+{
+  "name": "presentations",
+  "engineVersion": "v0.19.8",
+  "sdk": {
+    "source": "go"
+  },
+  "dependencies": [
+    {
+      "name": "templating",
+      "source": "github.com/stuttgart-things/dagger/templating@v0.70.0",
+      "pin": "65455222342fd3546dbe4971859a967d48bed70d"
+    }
+  ]
+}

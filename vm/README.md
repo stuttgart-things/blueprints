@@ -2,7 +2,7 @@
 
 ## FUNCTIONS
 
-<details><summary>BAKE LOCAL</summary>
+<details><summary>RUN ANSIBLE</summary>
 
 ```bash
 # JUST RUN ANSIBLE w/o src, inventory file or requirements file
@@ -13,6 +13,18 @@ dagger call -m vm execute-ansible \
 --ssh-password=env:SSH_PASSWORD \
 --progress plain -vv
 ```
+
+```bash
+dagger call -m vm execute-ansible \
+--playbooks "sthings.baseos.setup,sthings.container.kind_xplane" \
+--hosts "10.31.103.27" \
+--ssh-user=env:SSH_USER \
+--ssh-password=env:SSH_PASSWORD \
+--requirements /tmp/requirements.yaml \
+--progress plain -vv
+
+```
+
 
 </details>
 

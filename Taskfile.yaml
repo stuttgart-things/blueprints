@@ -2,7 +2,9 @@
 version: 3
 includes:
   git:
-    taskfile: https://raw.githubusercontent.com/stuttgart-things/platform-engineering-showcase/refs/heads/main/taskfiles/git.yaml
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/git/git.yaml
+  dagger:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/dagger/modules.yaml
 
 dotenv: ['.env', '{{.HOME}}/.env']
 
@@ -125,18 +127,6 @@ tasks:
       SOPS_ENCRYPTED_VARS: tests/{{ .MODULE }}/terraform.tfvars.enc.json
       EXPORTED_TF_WORKSPACE: /tmp/terraform/vms/dagger/
       SOPS_KEY: env:SOPS_AGE_KEY
-
-  create:
-    desc: Create new dagger module
-    cmds:
-      - dagger init --sdk={{ .SDK }} --source=./{{ .MODULE_NAME }} --name={{ .MODULE_NAME }}
-      - jq '.source = "."' dagger.json > tmp.json && mv tmp.json dagger.json
-      - mv dagger.json ./{{ .MODULE_NAME }}/dagger.json
-    vars:
-      MODULE_NAME:
-        sh: gum input --placeholder "Module name"
-      SDK:
-        sh: gum choose "go" "python"
 
   install-module:
     desc: Install a Dagger module into an existing module

@@ -17,8 +17,8 @@
     },
     {
       "name": "kubernetes",
-      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.68.0",
-      "pin": "4b7a9104a164f0bdbbfaae328ca067d98f70662c"
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.70.0",
+      "pin": "65455222342fd3546dbe4971859a967d48bed70d"
     },
     {
       "name": "templating",

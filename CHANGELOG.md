@@ -1,3 +1,10 @@
+# [1.43.0](https://github.com/stuttgart-things/blueprints/compare/v1.42.0...v1.43.0) (2026-01-11)
+
+
+### Features
+
+* feat/add-crd-install ([cf2228a](https://github.com/stuttgart-things/blueprints/commit/cf2228ae7b52e794e576d52461b232c74a78aa01))
+
 # [1.42.0](https://github.com/stuttgart-things/blueprints/compare/v1.41.0...v1.42.0) (2026-01-10)
 
 

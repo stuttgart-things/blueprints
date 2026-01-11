@@ -16,3 +16,11 @@ dagger call -m kubernetes-deployment apply-manifests \
   --kube-config file:///home/sthings/.kube/xplane \
   --progress plain -vv
 ```
+
+```bash
+# APPLY MULTIPLE CRDS AT ONCE
+dagger call -m kubernetes-deployment install-custom-resource-definitions \
+--kustomize-sources "https://github.com/stuttgart-things/helm/infra/crds/cilium,https://github.com/stuttgart-things/helm/infra/crds/cert-manager" \
+--kube-config file:///home/sthings/.kube/xplane \
+--progress plain
+```

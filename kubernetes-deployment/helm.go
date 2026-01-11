@@ -31,6 +31,10 @@ func (m *KubernetesDeployment) DeployHelmfile(
 	// +optional
 	// +default="approle"
 	vaultAuthMethod string,
+	// Comma-separated key=value pairs for --state-values-set
+	// (e.g., "issuerName=cluster-issuer-approle,domain=demo.example.com")
+	// +optional
+	stateValues string,
 ) error {
 
 	return dag.Helm().HelmfileOperation(
@@ -41,6 +45,7 @@ func (m *KubernetesDeployment) DeployHelmfile(
 			Operation:            operation,
 			RegistrySecret:       registrySecret,
 			KubeConfig:           kubeConfig,
+			StateValues:          stateValues,
 			VaultAppRoleID:       vaultAppRoleID,
 			VaultSecretID:        vaultSecretID,
 			VaultURL:             vaultURL,

@@ -1,3 +1,10 @@
+# [1.44.0](https://github.com/stuttgart-things/blueprints/compare/v1.43.0...v1.44.0) (2026-01-11)
+
+
+### Features
+
+* feat/add-helm-state-values ([61ceef1](https://github.com/stuttgart-things/blueprints/commit/61ceef1b2acacc3dcd380372e21f92bbeef8cb82))
+
 # [1.43.0](https://github.com/stuttgart-things/blueprints/compare/v1.42.0...v1.43.0) (2026-01-11)
 
 

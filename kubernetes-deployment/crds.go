@@ -6,42 +6,39 @@ import (
 	"strings"
 )
 
-func (m *KubernetesDeployment) ApplyManifests(
+func (m *KubernetesDeployment) InstallCustomResourceDefinitions(
 	ctx context.Context,
 	// +optional
-	// +default="*.yaml"
-	manifestPattern string,
-	// +optional
-	sourceFiles string,
+	kustomizeSources string,
 	// +optional
 	// +default=""
 	sourceURLs string,
 	// +optional
 	// +default="apply"
 	operation string,
+	// Use server-side apply (only valid with apply operation)
+	// +optional
+	// +default=true
+	serverSide bool,
 	// +optional
 	kubeConfig *dagger.Secret,
-	// +optional
-	// +default="default"
-	namespace string,
 ) (string, error) {
 	var results []string
 
-	// Parse sourceFiles (comma-separated)
-	files := strings.Split(sourceFiles, ",")
-	for _, file := range files {
-		file = strings.TrimSpace(file)
-		if file == "" {
+	// Parse kustomizeSources (comma-separated)
+	kustomizes := strings.Split(kustomizeSources, ",")
+	for _, kustomize := range kustomizes {
+		kustomize = strings.TrimSpace(kustomize)
+		if kustomize == "" {
 			continue
 		}
-		// Convert file path to dagger.File
 		result, err := dag.Kubernetes().Kubectl(
 			ctx,
 			dagger.KubernetesKubectlOpts{
-				Operation:  operation,
-				SourceFile: dag.CurrentModule().Source().File(file),
-				KubeConfig: kubeConfig,
-				Namespace:  namespace,
+				Operation:       operation,
+				KustomizeSource: kustomize,
+				KubeConfig:      kubeConfig,
+				ServerSide:      serverSide,
 			},
 		)
 		if err != nil {
@@ -63,7 +60,7 @@ func (m *KubernetesDeployment) ApplyManifests(
 				Operation:  operation,
 				URLSource:  url,
 				KubeConfig: kubeConfig,
-				Namespace:  namespace,
+				ServerSide: serverSide,
 			},
 		)
 		if err != nil {

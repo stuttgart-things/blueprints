@@ -20,7 +20,7 @@ func (m *GoMicroservice) RunStaticStage(
 	// +default="500s"
 	lintTimeout string,
 	// +optional
-	// +default="1.25.4"
+	// +default="1.25.5"
 	goVersion string,
 	// +optional
 	// +default="linux"

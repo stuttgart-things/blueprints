@@ -1,14 +1,14 @@
 {
   "name": "go-microservice",
-  "engineVersion": "v0.19.6",
+  "engineVersion": "v0.19.8",
   "sdk": {
     "source": "go"
   },
   "dependencies": [
     {
       "name": "go",
-      "source": "github.com/stuttgart-things/dagger/go@v0.38.1",
-      "pin": "5d1d38ebb4760cef6147135d867e37cf26701771"
+      "source": "github.com/stuttgart-things/dagger/go@v0.71.0",
+      "pin": "7c8aed11ba08645e6cba3513a3aae5f2945aadd1"
     }
   ],
   "disableDefaultFunctionCaching": true

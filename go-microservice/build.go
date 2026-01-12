@@ -15,7 +15,7 @@ func (m *GoMicroservice) RunBuildStage(
 	ctx context.Context,
 	src *dagger.Directory,
 	// +optional
-	// +default="1.25.4"
+	// +default="1.25.5"
 	goVersion string,
 	// +optional
 	// +default="linux"
@@ -55,6 +55,9 @@ func (m *GoMicroservice) RunBuildStage(
 	// +default=true
 	buildBinary bool,
 	// +optional
+	// +default="alpine"
+	variant string,
+	// +optional
 	// +default=true
 	koBuild bool,
 	// +optional
@@ -87,6 +90,7 @@ func (m *GoMicroservice) RunBuildStage(
 					BinName:     binName,
 					Ldflags:     ldflags,
 					PackageName: packageName,
+					Variant:     variant,
 				})
 
 			// Force evaluation by getting directory ID

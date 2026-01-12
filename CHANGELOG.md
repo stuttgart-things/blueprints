@@ -1,3 +1,10 @@
+# [1.46.0](https://github.com/stuttgart-things/blueprints/compare/v1.45.0...v1.46.0) (2026-01-12)
+
+
+### Features
+
+* feat/update-go-255 ([ed69395](https://github.com/stuttgart-things/blueprints/commit/ed69395f9c4375e9a65e6aeb49a3ec12d8cd4b55))
+
 # [1.45.0](https://github.com/stuttgart-things/blueprints/compare/v1.44.0...v1.45.0) (2026-01-12)
 
 

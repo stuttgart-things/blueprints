@@ -1,0 +1,17 @@
+---
+slides:
+  intro:
+    desc: welcome, target vision, expectation alignment
+    duration: 25
+    order: 00
+    file: intro.md
+  backstage:
+    desc: overview of atruvia idp backstage setup
+    duration: 60
+    order: 02
+    file: https://raw.githubusercontent.com/stuttgart-things/docs/refs/heads/main/presentations/idp/home/backstage.md
+  functions:
+    desc: deep dive into atruvia idp backstage functions
+    duration: 25
+    order: 01
+    file: hello/functions.md

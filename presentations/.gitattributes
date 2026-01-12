@@ -3,3 +3,7 @@ Copyright © 2025 Patrick Hermann patrick.hermann@sva.de
 */
 
 package templates
+/dagger.gen.go linguist-generated
+/internal/dagger/** linguist-generated
+/internal/querybuilder/** linguist-generated
+/internal/telemetry/** linguist-generated

@@ -1,3 +1,10 @@
+# [1.45.0](https://github.com/stuttgart-things/blueprints/compare/v1.44.0...v1.45.0) (2026-01-12)
+
+
+### Features
+
+* feat/add-server-init-presentation ([3a6d7b3](https://github.com/stuttgart-things/blueprints/commit/3a6d7b3fe7c4b1e67fd7daf11e14fbbac1503b11))
+
 # [1.44.0](https://github.com/stuttgart-things/blueprints/compare/v1.43.0...v1.44.0) (2026-01-11)
 
 

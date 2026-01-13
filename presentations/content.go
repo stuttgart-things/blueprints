@@ -28,10 +28,14 @@ func (m *Presentations) AddContent(
 	// Define the structure to unmarshal YAML
 	var presentation struct {
 		Slides map[string]struct {
-			Desc     string `yaml:"desc"`
-			Duration int    `yaml:"duration"`
-			Order    int    `yaml:"order"`
-			File     string `yaml:"file"`
+			Desc            string `yaml:"desc"`
+			Duration        int    `yaml:"duration"`
+			Order           int    `yaml:"order"`
+			File            string `yaml:"file"`
+			BackgroundColor string `yaml:"background-color"`
+			Type            string `yaml:"type"`
+			Transition      string `yaml:"transition"`
+			TransitionSpeed string `yaml:"transition-speed"`
 		} `yaml:"slides"`
 	}
 
@@ -52,28 +56,72 @@ func (m *Presentations) AddContent(
 		// Generate target filename: order-key.md
 		targetName := fmt.Sprintf("%02d-%s.md", slide.Order, key)
 
-		var fileContent *dagger.File
+		// Read the content from the file (either local or URL)
+		var content string
 
-		// Check if the file is a URL or local path
 		if strings.HasPrefix(slide.File, "http://") || strings.HasPrefix(slide.File, "https://") {
 			// Download file from URL
-			fileContent = dag.HTTP(slide.File)
+			httpFile := dag.HTTP(slide.File)
+			content, err = httpFile.Contents(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to download slide from URL %s: %w", slide.File, err)
+			}
 		} else {
 			// Get file from source directory
-			fileContent = src.File(slide.File)
+			file := src.File(slide.File)
+			content, err = file.Contents(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read slide file %s: %w", slide.File, err)
+			}
 		}
 
-		// Read the file content
-		content, err := fileContent.Contents(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read slide file %s: %w", slide.File, err)
+		// Extract just the markdown content (remove existing shortcodes and front matter)
+		markdownContent := extractMarkdownContent(content)
+
+		// Set defaults if values are empty
+		backgroundColor := slide.BackgroundColor
+		if backgroundColor == "" {
+			backgroundColor = "#FFFFFF" // default white
 		}
 
-		// Update or add weight in the front matter
-		updatedContent := updateFrontMatterWeight(content, slide.Order)
+		slideType := slide.Type
+		if slideType == "" {
+			slideType = "slide"
+		}
 
-		// Add file to output directory with the updated content
-		outputDir = outputDir.WithNewFile(targetName, updatedContent)
+		transition := slide.Transition
+		if transition == "" {
+			transition = "fade"
+		}
+
+		transitionSpeed := slide.TransitionSpeed
+		if transitionSpeed == "" {
+			transitionSpeed = "default"
+		}
+
+		// Generate the complete slide content
+		generatedContent := fmt.Sprintf(`+++
+weight = %d
++++
+
+{{< slide id=%s background-color="%s" type="%s" transition="%s" transition-speed="%s" >}}
+
+{{%% section %%}}
+
+%s
+
+{{%% /section %%}}`,
+			slide.Order,
+			key,
+			backgroundColor,
+			slideType,
+			transition,
+			transitionSpeed,
+			strings.TrimSpace(markdownContent),
+		)
+
+		// Add file to output directory
+		outputDir = outputDir.WithNewFile(targetName, generatedContent)
 	}
 
 	return outputDir, nil
@@ -116,4 +164,34 @@ func updateFrontMatterWeight(content string, weight int) string {
 
 	// Create new content with front matter
 	return fmt.Sprintf("+++\nweight = %d\n+++\n%s", weight, content[contentStart:])
+}
+
+// extractMarkdownContent extracts just the markdown content, removing
+// existing front matter and slide/section shortcodes
+func extractMarkdownContent(content string) string {
+	// Remove front matter (between +++ markers)
+	frontMatterRegex := regexp.MustCompile(`(?s)^\+\+\+\n.*?\n\+\+\+\n`)
+	content = frontMatterRegex.ReplaceAllString(content, "")
+
+	// Remove slide shortcode (could be single or multi-line)
+	// Match {{< slide ... >}} with any content in between
+	slideShortcodeRegex := regexp.MustCompile(`(?s)\{\{<\s*slide[^>]*>\}\}`)
+	content = slideShortcodeRegex.ReplaceAllString(content, "")
+
+	// Remove section shortcodes
+	content = strings.ReplaceAll(content, "{{% section %}}", "")
+	content = strings.ReplaceAll(content, "{{% /section %}}", "")
+
+	// Clean up extra empty lines
+	lines := strings.Split(content, "\n")
+	var cleaned []string
+	for _, line := range lines {
+		if strings.TrimSpace(line) != "" || len(cleaned) == 0 || strings.TrimSpace(cleaned[len(cleaned)-1]) != "" {
+			cleaned = append(cleaned, line)
+		}
+	}
+
+	// Trim leading/trailing whitespace
+	result := strings.TrimSpace(strings.Join(cleaned, "\n"))
+	return result
 }

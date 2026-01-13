@@ -1,3 +1,11 @@
+# [1.47.0](https://github.com/stuttgart-things/blueprints/compare/v1.46.0...v1.47.0) (2026-01-13)
+
+
+### Features
+
+* feat/add-slide-weight ([4985280](https://github.com/stuttgart-things/blueprints/commit/4985280a1099e19bc56bbff0a5f91238cfdea6ec))
+* feat/add-slide-weight ([d60727a](https://github.com/stuttgart-things/blueprints/commit/d60727abc69f8d114f9dab0612b619380f8f24fb))
+
 # [1.46.0](https://github.com/stuttgart-things/blueprints/compare/v1.45.0...v1.46.0) (2026-01-12)
 
 

@@ -1,3 +1,11 @@
+# [1.48.0](https://github.com/stuttgart-things/blueprints/compare/v1.47.0...v1.48.0) (2026-01-15)
+
+
+### Features
+
+* add-slide-content-render ([37e079b](https://github.com/stuttgart-things/blueprints/commit/37e079badef5fe4f4258c70dd50976f9d6f71860))
+* fix/ordering-slides-weight ([cf14fd2](https://github.com/stuttgart-things/blueprints/commit/cf14fd239be7c7b78f47f176e84c66533e9189e8))
+
 # [1.47.0](https://github.com/stuttgart-things/blueprints/compare/v1.46.0...v1.47.0) (2026-01-13)
 
 

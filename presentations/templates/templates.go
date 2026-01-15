@@ -9,6 +9,9 @@ type TemplateDestination struct {
 	Destination string
 }
 
+var slide = `{{ .slideContent }}"
+`
+
 var hugoTomlTmpl = `baseURL = "{{ .BaseURL }}"
 languageCode = "{{ .LanguageCode }}"
 title = "{{ .Title }}"

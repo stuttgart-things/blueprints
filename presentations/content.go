@@ -31,6 +31,7 @@ func (m *Presentations) AddContent(
 			Duration        int    `yaml:"duration"`
 			Order           int    `yaml:"order"`
 			File            string `yaml:"file"`
+			Content         string `yaml:"content"`
 			BackgroundColor string `yaml:"background-color"`
 			Type            string `yaml:"type"`
 			Transition      string `yaml:"transition"`
@@ -47,35 +48,42 @@ func (m *Presentations) AddContent(
 
 	// Process each slide
 	for key, slide := range presentation.Slides {
-		// Skip if file is not defined
-		if slide.File == "" {
+		// Skip if neither file nor content is defined
+		if slide.File == "" && slide.Content == "" {
 			continue
 		}
 
 		// Generate target filename: order-key.md
 		targetName := fmt.Sprintf("%02d-%s.md", slide.Order, key)
 
-		// Read the content from the file (either local or URL)
-		var content string
+		var markdownContent string
 
-		if strings.HasPrefix(slide.File, "http://") || strings.HasPrefix(slide.File, "https://") {
-			// Download file from URL
-			httpFile := dag.HTTP(slide.File)
-			content, err = httpFile.Contents(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to download slide from URL %s: %w", slide.File, err)
-			}
+		if slide.Content != "" {
+			// Use inline content directly
+			markdownContent = strings.TrimSpace(slide.Content)
 		} else {
-			// Get file from source directory
-			file := src.File(slide.File)
-			content, err = file.Contents(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read slide file %s: %w", slide.File, err)
-			}
-		}
+			// Read the content from the file (either local or URL)
+			var content string
 
-		// Extract just the markdown content (remove existing shortcodes and front matter)
-		markdownContent := extractMarkdownContent(content)
+			if strings.HasPrefix(slide.File, "http://") || strings.HasPrefix(slide.File, "https://") {
+				// Download file from URL
+				httpFile := dag.HTTP(slide.File)
+				content, err = httpFile.Contents(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("failed to download slide from URL %s: %w", slide.File, err)
+				}
+			} else {
+				// Get file from source directory
+				file := src.File(slide.File)
+				content, err = file.Contents(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read slide file %s: %w", slide.File, err)
+				}
+			}
+
+			// Extract just the markdown content (remove existing shortcodes and front matter)
+			markdownContent = extractMarkdownContent(content)
+		}
 
 		// Set defaults if values are empty
 		backgroundColor := slide.BackgroundColor

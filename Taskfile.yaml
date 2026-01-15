@@ -19,6 +19,8 @@ tasks:
       - task: test-go-microservice
       - task: test-repository-linting
       - task: test-crossplane-configuration
+      - task: test-presentation-init
+      - task: test-presentation-add-content
 
   test-crossplane-configuration:
     desc: Test crossplane-configuration module
@@ -168,3 +170,65 @@ tasks:
     desc: Default task is select & do (work)
     cmds:
       - task do
+
+  test-presentation-init:
+    desc: Test presentation init module
+    cmds:
+      - |
+        echo "Running init command for presentation module"
+        rm -rf {{ .EXPORT_PATH }} || true
+      - |
+        mkdir -p {{ .EXPORT_PATH }} || true
+      - |
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --name {{ .PRESENTATION_NAME }} \
+        --progress plain -vv \
+        export --path={{ .EXPORT_PATH }}
+      - |
+        echo "✓ Presentation initialized successfully"
+        echo "Output location: {{ .EXPORT_PATH }}"
+      - |
+        echo ""
+        echo "Generated files:"
+        if command -v tree &> /dev/null; then
+          tree {{ .EXPORT_PATH }}
+        else
+          find {{ .EXPORT_PATH }} -type f | sort
+        fi
+    vars:
+      MODULE: presentations
+      FUNCTION: init
+      PRESENTATION_NAME: test-presentation
+      EXPORT_PATH: /tmp/presentations/{{ .PRESENTATION_NAME }}
+
+  test-presentation-add-content:
+    desc: Test presentation add-content module
+    cmds:
+      - |
+        echo "Running add-content command for presentation module"
+        rm -rf {{ .EXPORT_PATH }} || true
+      - |
+        mkdir -p {{ .EXPORT_PATH }} || true
+      - |
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --src {{ .SOURCE_DIR }} \
+        --presentation-file {{ .CONFIG_FILE }} \
+        --progress plain -vv \
+        export --path={{ .EXPORT_PATH }}
+      - |
+        echo "✓ Content added successfully"
+        echo "Output location: {{ .EXPORT_PATH }}"
+      - |
+        echo ""
+        echo "Generated slide files:"
+        if command -v tree &> /dev/null; then
+          tree {{ .EXPORT_PATH }}
+        else
+          find {{ .EXPORT_PATH }} -type f -name "*.md" | sort
+        fi
+    vars:
+      MODULE: presentations
+      FUNCTION: add-content
+      SOURCE_DIR: tests/presentations
+      CONFIG_FILE: tests/presentations/presentation.yaml
+      EXPORT_PATH: /tmp/presentations/slides

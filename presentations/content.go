@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode"
 
 	"gopkg.in/yaml.v3"
 )
@@ -100,6 +99,8 @@ func (m *Presentations) AddContent(
 		}
 
 		// Generate the complete slide content
+		// Weight is always (order + 1) * 10, so 0->10, 1->20, etc.
+		weight := (slide.Order + 1) * 10
 		generatedContent := fmt.Sprintf(`+++
 weight = %d
 +++
@@ -111,7 +112,7 @@ weight = %d
 %s
 
 {{%% /section %%}}`,
-			slide.Order,
+			weight,
 			key,
 			backgroundColor,
 			slideType,
@@ -125,45 +126,6 @@ weight = %d
 	}
 
 	return outputDir, nil
-}
-
-// updateFrontMatterWeight updates or adds the weight in the front matter
-func updateFrontMatterWeight(content string, weight int) string {
-	// Regular expression to find the front matter weight line
-	// Matches "weight = <any number>" in the front matter
-	weightPattern := regexp.MustCompile(`(?m)^(weight\s*=\s*)\d+(\s*)$`)
-
-	// Regular expression to find the front matter boundaries
-	// Matches the entire front matter section between +++ markers
-	frontMatterPattern := regexp.MustCompile(`(?s)^\+\+\+\n(.*?)\n\+\+\+\n`)
-
-	// Check if weight already exists
-	if weightPattern.MatchString(content) {
-		// Replace existing weight with the new one
-		return weightPattern.ReplaceAllString(content, fmt.Sprintf("weight = %d", weight))
-	}
-
-	// Check if front matter exists
-	matches := frontMatterPattern.FindStringSubmatch(content)
-	if matches != nil {
-		// Front matter exists, add weight line to it
-		frontMatter := matches[1]
-		updatedFrontMatter := fmt.Sprintf("%s\nweight = %d", frontMatter, weight)
-		return strings.Replace(content, matches[1], updatedFrontMatter, 1)
-	}
-
-	// No front matter found, create new front matter with weight
-	// Find where the content actually starts (skip any leading whitespace)
-	contentStart := 0
-	for i, r := range content {
-		if !unicode.IsSpace(r) {
-			contentStart = i
-			break
-		}
-	}
-
-	// Create new content with front matter
-	return fmt.Sprintf("+++\nweight = %d\n+++\n%s", weight, content[contentStart:])
 }
 
 // extractMarkdownContent extracts just the markdown content, removing

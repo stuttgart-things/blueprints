@@ -1,17 +1,28 @@
 ---
 slides:
-  intro:
-    desc: welcome, target vision, expectation alignment
-    duration: 25
-    order: 00
-    file: intro.md
   backstage:
     desc: overview of atruvia idp backstage setup
     duration: 60
-    order: 02
+    order: 01
+    background-color: "#EA1282FF"
+    type: "slide"
+    transition: "zoom"
+    transition-speed: "fast"
     file: https://raw.githubusercontent.com/stuttgart-things/docs/refs/heads/main/presentations/idp/home/backstage.md
-  functions:
-    desc: deep dive into atruvia idp backstage functions
+  handson2:
+    desc: "HANDSON: Deep dive into atruvia idp backstage functions"
     duration: 25
     order: 01
     file: hello/functions.md
+    background-color: "#E32020FF"
+    transition: "fade"
+  filler:
+    desc: Custom inline content example
+    order: 02
+    duration: 10
+    background-color: "#0066CC"
+    transition: "slide"
+    content: |
+      # HANDS ON NOW
+
+      Let's get practical!

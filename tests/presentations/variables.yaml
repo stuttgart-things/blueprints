@@ -1,0 +1,34 @@
+Title: IDP
+
+Reveal:
+  Outputs:
+    - Reveal
+  Hugo:
+    History: true
+    SlideNumber: true
+    CustomTheme: reveal-hugo/themes/robot-lung.css
+    Margin: 0.2
+    Mermaid: true
+    HighlightTheme: color-brewer
+    Transition: slide
+    TransitionSpeed: fast
+    Templates:
+      Hotpink:
+        Class: hotpink
+        Background: "#FF4081"
+
+Slide:
+  ID: agenda
+  BackgroundColor: "#9FE2BF"
+  Type: slide
+  Transition: zoom
+  TransitionSpeed: fast
+  BackgroundImage: ""
+  BackgroundSize: ""
+
+Section:
+  Spacer: ""
+  Content: |
+    ### How to Build an Internal Developer Portal
+
+    <img src="https://attachments-cdn-s.coub.com/coub_storage/coub/simple/cw_timeline_pic/7e14911f5a8/c1bec6bfed315483bad44/med_1587503875_image.jpg" alt="Alt Text" width="700"/>

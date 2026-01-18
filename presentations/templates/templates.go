@@ -51,15 +51,23 @@ class = "{{ .Reveal.Hugo.Templates.Hotpink.Class }}"
 background = "{{ .Reveal.Hugo.Templates.Hotpink.Background }}"
 +++
 
-{{ "<" }}{{ "<" }} slide id={{ .Slide.ID }} background-color="{{ .Slide.BackgroundColor }}" type="{{ .Slide.Type }}" transition="{{ .Slide.Transition }}" transition-speed="{{ .Slide.TransitionSpeed }}" background-image="{{ .Slide.BackgroundImage }}" background-size="{{ .Slide.BackgroundSize }}" {{ ">" }}{{ ">" }}
+{{ "{{" }}< slide
+id={{ .Slide.ID }}
+background-color="{{ .Slide.BackgroundColor }}"
+type="{{ .Slide.Type }}"
+transition="{{ .Slide.Transition }}"
+transition-speed="{{ .Slide.TransitionSpeed }}"
+background-image="{{ .Slide.BackgroundImage }}"
+background-size="{{ .Slide.BackgroundSize }}"
+>{{ "}}" }}
 
-{{ "<" }}{{ "%" }} section {{ "%" }}{{ ">" }}
+{{ "{{" }}% section %{{ "}}" }}
 
 {{ .Section.Spacer }}
 
 {{ .Section.Content }}
 
-{{ "<" }}{{ "%" }} /section {{ "%" }}{{ ">" }}
+{{ "{{" }}% /section %{{ "}}" }}
 `
 
 var PresentationFiles = []TemplateDestination{

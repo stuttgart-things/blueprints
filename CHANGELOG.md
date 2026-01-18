@@ -1,3 +1,10 @@
+# [1.49.0](https://github.com/stuttgart-things/blueprints/compare/v1.48.0...v1.49.0) (2026-01-18)
+
+
+### Features
+
+* fix/variables-merge-presentation ([d6277b4](https://github.com/stuttgart-things/blueprints/commit/d6277b43ed1c464a88648bc0ba296d72a08b674a))
+
 # [1.48.0](https://github.com/stuttgart-things/blueprints/compare/v1.47.0...v1.48.0) (2026-01-15)
 
 

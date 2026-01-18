@@ -1,3 +1,10 @@
+## [1.49.1](https://github.com/stuttgart-things/blueprints/compare/v1.49.0...v1.49.1) (2026-01-18)
+
+
+### Bug Fixes
+
+* fix/fix-vars-intro-slide-tpl ([e554dba](https://github.com/stuttgart-things/blueprints/commit/e554dbac8cfec76262b78fcf25a0a68124d097e5))
+
 # [1.49.0](https://github.com/stuttgart-things/blueprints/compare/v1.48.0...v1.49.0) (2026-01-18)
 
 

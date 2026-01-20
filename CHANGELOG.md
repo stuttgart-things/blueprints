@@ -1,3 +1,10 @@
+# [1.50.0](https://github.com/stuttgart-things/blueprints/compare/v1.49.1...v1.50.0) (2026-01-20)
+
+
+### Features
+
+* fix/rendering-index-presentation-slide ([0836a5c](https://github.com/stuttgart-things/blueprints/commit/0836a5c0483b49b9d0b311b5e82a1cfb0874f2b3))
+
 ## [1.49.1](https://github.com/stuttgart-things/blueprints/compare/v1.49.0...v1.49.1) (2026-01-18)
 
 

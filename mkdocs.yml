@@ -1,0 +1,18 @@
+site_name: Blueprints
+site_description: Modular Dagger pipelines for automating build, test, and deployment workflows
+
+nav:
+  - Home: index.md
+  - Modules:
+    - Configuration: modules/configuration.md
+    - Crossplane Configuration: modules/crossplane-configuration.md
+    - Go Microservice: modules/go-microservice.md
+    - Kubernetes Deployment: modules/kubernetes-deployment.md
+    - Kubernetes Microservice: modules/kubernetes-microservice.md
+    - Presentations: modules/presentations.md
+    - Repository Linting: modules/repository-linting.md
+    - VM: modules/vm.md
+    - VM Template: modules/vmtemplate.md
+
+plugins:
+  - techdocs-core

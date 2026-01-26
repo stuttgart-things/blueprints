@@ -1,3 +1,10 @@
+# [1.51.0](https://github.com/stuttgart-things/blueprints/compare/v1.50.0...v1.51.0) (2026-01-26)
+
+
+### Features
+
+* feat/add-scan-to-image-bakery ([b2edca7](https://github.com/stuttgart-things/blueprints/commit/b2edca703a3b97a2b7df98a1927193277ce615ea))
+
 # [1.50.0](https://github.com/stuttgart-things/blueprints/compare/v1.49.1...v1.50.0) (2026-01-20)
 
 

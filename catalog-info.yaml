@@ -6,7 +6,7 @@ metadata:
   description: Modular Dagger pipelines for automating build, test, and deployment workflows
   annotations:
     github.com/project-slug: stuttgart-things/blueprints
-    backstage.io/techdocs-ref: dir:.
+    backstage.io/techdocs-ref: url:https://github.com/stuttgart-things/blueprints/tree/main
     backstage.io/source-location: url:https://github.com/stuttgart-things/blueprints
   tags:
     - dagger

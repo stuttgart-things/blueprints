@@ -1,0 +1,37 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: blueprints
+  description: Modular Dagger pipelines for automating build, test, and deployment workflows
+  annotations:
+    github.com/project-slug: stuttgart-things/blueprints
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/source-location: url:https://github.com/stuttgart-things/blueprints
+  tags:
+    - dagger
+    - ci-cd
+    - pipelines
+    - automation
+    - devops
+    - terraform
+    - ansible
+    - kubernetes
+    - crossplane
+  links:
+    - url: https://github.com/stuttgart-things/blueprints
+      title: GitHub Repository
+      icon: github
+spec:
+  type: library
+  lifecycle: production
+  owner: platform-team
+  system: platform-engineering
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: platform-engineering
+  description: Platform Engineering tooling and infrastructure
+spec:
+  owner: platform-team

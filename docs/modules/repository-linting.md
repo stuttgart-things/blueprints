@@ -43,7 +43,7 @@ Analyze a linting report with AI:
 ```bash
 # Set up OpenRouter
 export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
-export OPENAI_API_KEY="sk-or-v1-..."
+export OPENAI_API_KEY="sk-or-v1-..."  # pragma: allowlist secret
 
 dagger call -m repository-linting analyze-report \
   --report-file /tmp/all-findings.txt \
@@ -57,7 +57,7 @@ Analyze report and create an issue automatically:
 
 ```bash
 export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
-export OPENAI_API_KEY="sk-or-v1-..."
+export OPENAI_API_KEY="sk-or-v1-..."  # pragma: allowlist secret
 
 dagger call -m repository-linting analyze-report-and-create-issue \
   --report-file /tmp/platform-engineering-showcase-lint-findings.txt \
@@ -71,7 +71,7 @@ dagger call -m repository-linting analyze-report-and-create-issue \
 Create a GitHub issue with AI-enhanced formatting:
 
 ```bash
-export GEMINI_API_KEY="AIzaS..."
+export GEMINI_API_KEY="AIzaS..."  # pragma: allowlist secret
 
 dagger call -m repository-linting create-issue \
   --repository stuttgart-things/stuttgart-things \

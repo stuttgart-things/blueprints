@@ -66,10 +66,47 @@ dagger call -m ./crossplane-configuration add-cluster \
 dagger call -m ./crossplane-configuration add-cluster \
 --clusterName=pat4 \
 --deploy-to-cluster=false \
---kubeconfig-crossplane-cluster file:///home/sthings/.kube/xplane \
+--kubeconfig-cluster file:///home/sthings/.kube/xplane \
 export --path=/tmp/output.yaml \
 --progress plain -vv
 ```
+
+```bash
+# RENDER WITH SOPS ENCRYPTION
+# First, set the AGE public key:
+export AGE_PUB="age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Then call with encryption enabled:
+dagger call -m ./crossplane-configuration add-cluster \
+--clusterName=pat4 \
+--deploy-to-cluster=false \
+--kubeconfig-cluster file:///home/sthings/.kube/xplane \
+--encrypt-with-sops=true \
+--age-public-key=env:AGE_PUB \
+export --path=/tmp/output.yaml \
+--progress plain -vv
+```
+
+```bash
+# RENDER WITH SOPS ENCRYPTION AND CUSTOM SOPS CONFIG
+# Use a custom .sops.yaml config file for encryption rules:
+export SOPS_AGE_PUBLIC_KEY="age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+dagger call -m ./crossplane-configuration add-cluster \
+--clusterName=pat4 \
+--deploy-to-cluster=false \
+--kubeconfig-cluster file:///home/sthings/.kube/xplane \
+--encrypt-with-sops=true \
+--age-public-key=env:SOPS_AGE_PUBLIC_KEY \
+--sops-config=file://.sops.yaml \
+export --path=/tmp/output.yaml \
+--progress plain -vv
+```
+
+**SOPS Parameters:**
+- `--encrypt-with-sops` - Enable SOPS encryption for the output (default: false)
+- `--age-public-key` - AGE public key for encryption (required when encryption is enabled)
+- `--sops-config` - Optional path to a custom `.sops.yaml` config file
 
 </details>
 

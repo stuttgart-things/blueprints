@@ -36,6 +36,15 @@ func (m *CrossplaneConfiguration) AddCluster(
 	// +optional
 	// +default="true"
 	deployToCluster bool,
+	// +optional
+	// +default="false"
+	encryptWithSops bool,
+	// +optional
+	// AGE public key for SOPS encryption
+	agePublicKey *dagger.Secret,
+	// +optional
+	// SOPS config file (.sops.yaml)
+	sopsConfig *dagger.File,
 ) *dagger.File {
 
 	// RENDER KUBECONFIG SECRET
@@ -189,7 +198,24 @@ func (m *CrossplaneConfiguration) AddCluster(
 			WithExec([]string{"sh", "-c", fmt.Sprintf("cat /config-%d.yaml >> /merged.yaml", i)})
 	}
 
-	return mergedConfigFile.File("/merged.yaml")
+	mergedFile := mergedConfigFile.File("/merged.yaml")
+
+	// ENCRYPT WITH SOPS (if enabled)
+	if encryptWithSops {
+		encryptedFile := dag.Sops().Encrypt(
+			agePublicKey,
+			mergedFile,
+			dagger.SopsEncryptOpts{
+				FileExtension: "yaml",
+				SopsConfig:    sopsConfig,
+			},
+		)
+
+		fmt.Println("Merged config encrypted with SOPS")
+		return encryptedFile
+	}
+
+	return mergedFile
 }
 
 // RenderKubeconfigSecret renders a Kubernetes Secret manifest with encoded kubeconfig

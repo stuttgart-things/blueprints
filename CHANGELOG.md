@@ -1,3 +1,13 @@
+# [1.52.0](https://github.com/stuttgart-things/blueprints/compare/v1.51.0...v1.52.0) (2026-01-30)
+
+
+### Features
+
+* feat/add-mkdocs ([b094772](https://github.com/stuttgart-things/blueprints/commit/b0947724f87ebaeb09b758360f26ee130eb54ff3))
+* feat/add-sops-crossplane-config ([c1eae54](https://github.com/stuttgart-things/blueprints/commit/c1eae546a202d82d046c4787c905b56a49662e62))
+* main ([8bae3f7](https://github.com/stuttgart-things/blueprints/commit/8bae3f743b6f3d037616754fd9588baf99db3c3d))
+* main ([287c26b](https://github.com/stuttgart-things/blueprints/commit/287c26b08dc49c0b273c5f82975f8134b77bf9bc))
+
 # [1.51.0](https://github.com/stuttgart-things/blueprints/compare/v1.50.0...v1.51.0) (2026-01-26)
 
 

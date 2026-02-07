@@ -1,3 +1,10 @@
+## [1.52.1](https://github.com/stuttgart-things/blueprints/compare/v1.52.0...v1.52.1) (2026-02-07)
+
+
+### Bug Fixes
+
+* fix/update-vm-tf-inv ([3d4006c](https://github.com/stuttgart-things/blueprints/commit/3d4006cd7bf646a4ac4d2f07d4ced8beae0c9471))
+
 # [1.52.0](https://github.com/stuttgart-things/blueprints/compare/v1.51.0...v1.52.0) (2026-01-30)
 
 

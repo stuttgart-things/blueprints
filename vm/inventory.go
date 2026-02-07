@@ -22,8 +22,41 @@ type TemplateData struct {
 // TerraformOutput represents the structure of the input JSON.
 type TerraformOutput struct {
 	IP struct {
-		Value [][]string `json:"value"`
+		Value StringList `json:"value"`
 	} `json:"ip"`
+}
+
+// StringList is a helper that unmarshals either ["10.0.0.1", "10.0.0.2"] or [["10.0.0.1"], ["10.0.0.2"]]
+// and also tolerates a single string value "10.0.0.1".
+type StringList struct {
+	Values []string
+}
+
+func (sl *StringList) UnmarshalJSON(b []byte) error {
+	// Try flat array of strings
+	var flat []string
+	if err := json.Unmarshal(b, &flat); err == nil {
+		sl.Values = flat
+		return nil
+	}
+
+	// Try nested array of arrays of strings
+	var nested [][]string
+	if err := json.Unmarshal(b, &nested); err == nil {
+		for _, inner := range nested {
+			sl.Values = append(sl.Values, inner...)
+		}
+		return nil
+	}
+
+	// Try single string
+	var single string
+	if err := json.Unmarshal(b, &single); err == nil {
+		sl.Values = []string{single}
+		return nil
+	}
+
+	return fmt.Errorf("unsupported ip.value JSON shape: %s", string(b))
 }
 
 const clusterTemplate = `{{- if eq (len .Hosts) 1 }}
@@ -80,14 +113,7 @@ func ParseIPsFromTfOutput(terraformVMOutput string) ([]string, error) {
 		return nil, fmt.Errorf("JSON parse error: %w", err)
 	}
 
-	var ips []string
-	for _, outer := range tfOutput.IP.Value {
-		for _, ip := range outer {
-			ips = append(ips, ip)
-		}
-	}
-
-	return ips, nil
+	return tfOutput.IP.Value.Values, nil
 }
 
 // CreateDefaultAnsibleInventory converts Terraform output to Ansible YAML.

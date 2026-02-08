@@ -24,6 +24,10 @@ func (v *Vm) BakeLocal(
 	// +optional
 	sopsKey *dagger.Secret,
 	// +optional
+	awsAccessKeyID *dagger.Secret,
+	// +optional
+	awsSecretAccessKey *dagger.Secret,
+	// +optional
 	vaultRoleID *dagger.Secret,
 	// +optional
 	vaultSecretID *dagger.Secret,
@@ -73,6 +77,14 @@ func (v *Vm) BakeLocal(
 		return nil, fmt.Errorf("container init failed: %w", err)
 	}
 	ctr = ctr.WithDirectory(workDir, terraformDir).WithWorkdir(workDir)
+
+	// Inject AWS creds for S3-compatible backend
+	if awsAccessKeyID != nil {
+		ctr = ctr.WithSecretVariable("AWS_ACCESS_KEY_ID", awsAccessKeyID)
+	}
+	if awsSecretAccessKey != nil {
+		ctr = ctr.WithSecretVariable("AWS_SECRET_ACCESS_KEY", awsSecretAccessKey)
+	}
 
 	// OPTIONAL SOPS DECRYPTION
 	if encryptedFile != nil {
@@ -219,6 +231,10 @@ func (v *Vm) BakeLocalByProfile(
 	// +optional
 	sopsKey *dagger.Secret,
 	// +optional
+	awsAccessKeyID *dagger.Secret,
+	// +optional
+	awsSecretAccessKey *dagger.Secret,
+	// +optional
 	vaultRoleID *dagger.Secret,
 	// +optional
 	vaultSecretID *dagger.Secret,
@@ -292,6 +308,8 @@ func (v *Vm) BakeLocalByProfile(
 		variables,
 		encryptedFile,
 		sopsKey,
+		awsAccessKeyID,
+		awsSecretAccessKey,
 		vaultRoleID,
 		vaultSecretID,
 		vaultToken,

@@ -72,6 +72,7 @@ export --path=~/projects/terraform/vms/sthings-runner/
 ```
 
 ```bash
+# Bake + S3 STATE
 dagger call -m vm bake \
 --terraform-dir ~/projects/terraform/vms/sthings-runner/ \
 --encrypted-file /home/sthings/projects/stuttgart-things/terraform/secrets/labda-terraform.tfvars.enc.json \
@@ -81,6 +82,8 @@ dagger call -m vm bake \
 --ansible-password=env:SSH_PASSWORD \
 --ansible-parameters "send_to_homerun=false" \
 --ansible-playbooks "sthings.baseos.setup" \
+--awsAccessKeyID env:AWS_ACCESS_KEY_ID \
+--awsSecretAccessKey env:AWS_SECRET_ACCESS_KEY \
 -vv --progress plain \
 export --path=~/projects/terraform/vms/sthings-runner/
 ```

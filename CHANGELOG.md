@@ -1,3 +1,10 @@
+# [1.53.0](https://github.com/stuttgart-things/blueprints/compare/v1.52.1...v1.53.0) (2026-02-08)
+
+
+### Features
+
+* cu-enabled-scorpion ([b28f0ab](https://github.com/stuttgart-things/blueprints/commit/b28f0aba69c32cfdfe5684143f07bd878166fbb8))
+
 ## [1.52.1](https://github.com/stuttgart-things/blueprints/compare/v1.52.0...v1.52.1) (2026-02-07)
 
 

@@ -1,3 +1,10 @@
+# [1.54.0](https://github.com/stuttgart-things/blueprints/compare/v1.53.0...v1.54.0) (2026-02-08)
+
+
+### Features
+
+* fix/add-readme-s3 ([290b223](https://github.com/stuttgart-things/blueprints/commit/290b223075f9902db91b507c250201470f0477c5))
+
 # [1.53.0](https://github.com/stuttgart-things/blueprints/compare/v1.52.1...v1.53.0) (2026-02-08)
 
 

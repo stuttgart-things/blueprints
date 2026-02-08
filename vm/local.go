@@ -149,11 +149,13 @@ func (v *Vm) BakeLocal(
 		return terraformDirResult, nil
 	}
 
-	// GET TERRAFORM OUTPUT
+	// GET TERRAFORM OUTPUT (WITH AWS CREDS FOR REMOTE BACKEND)
 	tfOutput, err := v.
-		OutputTerraformRun(
+		OutputTerraformRunWithCreds(
 			ctx,
 			terraformDirResult,
+			awsAccessKeyID,
+			awsSecretAccessKey,
 		)
 	if err != nil {
 		return nil, fmt.Errorf("getting terraform output failed: %w", err)

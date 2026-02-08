@@ -79,10 +79,10 @@ func (v *Vm) BakeLocal(
 	ctr = ctr.WithDirectory(workDir, terraformDir).WithWorkdir(workDir)
 
 	// Inject AWS creds for S3-compatible backend
-	if awsAccessKeyID != nil {
+	if awsAccessKeyID != nil { // pragma: allowlist secret
 		ctr = ctr.WithSecretVariable("AWS_ACCESS_KEY_ID", awsAccessKeyID)
 	}
-	if awsSecretAccessKey != nil {
+	if awsSecretAccessKey != nil { // pragma: allowlist secret
 		ctr = ctr.WithSecretVariable("AWS_SECRET_ACCESS_KEY", awsSecretAccessKey)
 	}
 
@@ -123,6 +123,8 @@ func (v *Vm) BakeLocal(
 				ctr.Directory(workDir),
 				operation,
 				variables,
+				awsAccessKeyID,
+				awsSecretAccessKey,
 				vaultRoleID,
 				vaultSecretID,
 				vaultToken,

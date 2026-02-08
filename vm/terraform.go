@@ -14,6 +14,11 @@ func (m *Vm) ExecuteTerraform(
 	// +optional
 	// e.g., "cpu=4,ram=4096,storage=100"
 	variables string,
+	// AWS S3/MinIO credentials
+	// +optional
+	awsAccessKeyID *dagger.Secret,
+	// +optional
+	awsSecretAccessKey *dagger.Secret,
 	// vaultRoleID
 	// +optional
 	vaultRoleID *dagger.Secret,
@@ -32,6 +37,8 @@ func (m *Vm) ExecuteTerraform(
 			dagger.TerraformExecuteOpts{
 				Operation:     operation,
 				Variables:     variables,
+				AwsAccessKeyID:    awsAccessKeyID,
+				AwsSecretAccessKey: awsSecretAccessKey,
 				VaultRoleID:   vaultRoleID,
 				VaultSecretID: vaultSecretID,
 				VaultToken:    vaultToken,

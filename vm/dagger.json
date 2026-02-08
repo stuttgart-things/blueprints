@@ -1,6 +1,6 @@
 {
   "name": "vm",
-  "engineVersion": "v0.19.7",
+  "engineVersion": "v0.19.11",
   "sdk": {
     "source": "go"
   },
@@ -31,8 +31,8 @@
     },
     {
       "name": "terraform",
-      "source": "github.com/stuttgart-things/dagger/terraform@v0.23.0",
-      "pin": "41f188e601ad0a6cef3e70bf61bc318fe82eec71"
+      "source": "github.com/stuttgart-things/dagger/terraform@v0.78.0",
+      "pin": "1f29d165993a7915d7769e8e4337dceb7844ce58"
     }
   ],
   "disableDefaultFunctionCaching": true

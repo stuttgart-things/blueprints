@@ -27,11 +27,3 @@ spec:
   lifecycle: production
   owner: platform-team
   system: platform-engineering
----
-apiVersion: backstage.io/v1alpha1
-kind: System
-metadata:
-  name: platform-engineering
-  description: Platform Engineering tooling and infrastructure
-spec:
-  owner: platform-team

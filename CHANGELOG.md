@@ -1,3 +1,10 @@
+# [1.55.0](https://github.com/stuttgart-things/blueprints/compare/v1.54.0...v1.55.0) (2026-02-09)
+
+
+### Features
+
+* fix/fix-tf-remote-state-bug ([aebda45](https://github.com/stuttgart-things/blueprints/commit/aebda45da94ce4004cd10ad0fdaec6c92d147276))
+
 # [1.54.0](https://github.com/stuttgart-things/blueprints/compare/v1.53.0...v1.54.0) (2026-02-08)
 
 

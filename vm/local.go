@@ -191,6 +191,7 @@ func (v *Vm) BakeLocal(
 			terraformDirResult.File("inventory.yaml"),
 			"",
 			ansibleParameters,
+			nil,
 			vaultRoleID,
 			vaultSecretID,
 			vaultURL,

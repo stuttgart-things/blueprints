@@ -15,6 +15,7 @@ dagger call -m vm execute-ansible \
 ```
 
 ```bash
+# MULTIPLE PLAYS
 dagger call -m vm execute-ansible \
 --playbooks "sthings.baseos.setup,sthings.container.kind_xplane" \
 --hosts "10.31.103.27" \
@@ -22,9 +23,55 @@ dagger call -m vm execute-ansible \
 --ssh-password=env:SSH_PASSWORD \
 --requirements /tmp/requirements.yaml \
 --progress plain -vv
-
 ```
 
+```bash
+# PROVIDE PLAY FROM SRC
+dagger call -m vm execute-ansible \
+--src "." \
+--playbooks test-play.yaml \
+--playbooks "sthings.baseos.setup,sthings.container.kind_xplane" \
+--hosts "10.31.103.27" \
+--ssh-user=env:SSH_USER \
+--ssh-password=env:SSH_PASSWORD \
+--requirements /tmp/requirements.yaml \
+--progress plain -vv
+```
+
+
+```bash
+# PROVIDE PLAY FROM SRC + VARS FILE
+cat <<'EOF' > ./vars.yaml
+execute_baseos: false
+install_ansible: true
+install_binaries: false
+EOF
+
+cat <<'EOF' > ./test-play.yaml
+---
+- name: Base setup
+  ansible.builtin.import_playbook: sthings.baseos.setup
+  when: execute_baseos | default(true) | bool
+
+- name: Install binaries
+  ansible.builtin.import_playbook: sthings.baseos.binaries
+  when: install_binaries | default(true) | bool
+
+- name: Install ansible
+  ansible.builtin.import_playbook: sthings.baseos.ansible
+  when: install_ansible | default(true) | bool
+EOF
+
+dagger call -m vm execute-ansible \
+--src "." \
+--playbooks test-play.yaml \
+--playbooks "sthings.baseos.setup,sthings.container.kind_xplane" \
+--hosts "10.31.103.27" \
+--ssh-user=env:SSH_USER \
+--ssh-password=env:SSH_PASSWORD \
+--requirements /tmp/requirements.yaml \
+--progress plain -vv
+```
 
 </details>
 

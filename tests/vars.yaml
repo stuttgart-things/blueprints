@@ -1,0 +1,4 @@
+---
+execute_baseos: false
+install_ansible: true
+install_binaries: false

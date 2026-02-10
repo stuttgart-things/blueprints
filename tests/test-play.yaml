@@ -1,0 +1,12 @@
+---
+- name: Base setup
+  ansible.builtin.import_playbook: sthings.baseos.setup
+  when: execute_baseos | default(true) | bool
+
+- name: Install binaries
+  ansible.builtin.import_playbook: sthings.baseos.binaries
+  when: install_binaries | default(true) | bool
+
+- name: Install ansible
+  ansible.builtin.import_playbook: sthings.baseos.ansible
+  when: install_ansible | default(true) | bool

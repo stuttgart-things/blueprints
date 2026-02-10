@@ -1,3 +1,15 @@
+# [1.56.0](https://github.com/stuttgart-things/blueprints/compare/v1.55.0...v1.56.0) (2026-02-10)
+
+
+### Bug Fixes
+
+* remove duplicate platform-engineering system declaration ([2f8f3d1](https://github.com/stuttgart-things/blueprints/commit/2f8f3d15ef8e02869c3b52353af473fb8de7a9b6))
+
+
+### Features
+
+* feat/add-ansible-yaml-params ([4f768d1](https://github.com/stuttgart-things/blueprints/commit/4f768d14e52a550396b26d4390c7966ccfac7443))
+
 # [1.55.0](https://github.com/stuttgart-things/blueprints/compare/v1.54.0...v1.55.0) (2026-02-09)
 
 

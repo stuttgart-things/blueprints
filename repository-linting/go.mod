@@ -3,7 +3,7 @@ module dagger/repository-linting
 go 1.25.2
 
 require (
-	dagger.io/dagger v0.19.3
+	dagger.io/dagger v0.19.11
 	github.com/99designs/gqlgen v0.17.81
 	github.com/Khan/genqlient v0.8.1
 	github.com/vektah/gqlparser/v2 v2.5.30

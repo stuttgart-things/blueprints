@@ -65,7 +65,6 @@ EOF
 dagger call -m vm execute-ansible \
 --src "." \
 --playbooks test-play.yaml \
---playbooks "sthings.baseos.setup,sthings.container.kind_xplane" \
 --hosts "10.31.103.27" \
 --ssh-user=env:SSH_USER \
 --ssh-password=env:SSH_PASSWORD \

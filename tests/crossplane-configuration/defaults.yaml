@@ -3,8 +3,6 @@ maintainer: patrick.hermann@sva.de
 source: https://github.com/stuttgart-things
 license: Apache-2.0
 crossplaneVersion: "2.13.0"
-claimNamespace: default
-claimName: demo
 xrdScope: Namespaced
 xrdDeletePolicy: Foreground
 dependencies:

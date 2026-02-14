@@ -19,8 +19,8 @@ type TemplateDestination struct {
 
 var PackageFiles = []TemplateDestination{
 	{
-		Template:    Claim,
-		Destination: "examples/claim.yaml",
+		Template:    Example,
+		Destination: "examples/{name}.yaml",
 	},
 	{
 		Template:    Functions,
@@ -28,7 +28,7 @@ var PackageFiles = []TemplateDestination{
 	},
 	{
 		Template:    Composition,
-		Destination: "apis/composition.yaml",
+		Destination: "compositions/{name}.yaml",
 	},
 	{
 		Template:    Readme,
@@ -42,16 +42,19 @@ var PackageFiles = []TemplateDestination{
 		Template:    Configuration,
 		Destination: "crossplane.yaml",
 	},
+	{
+		Template:    ProviderConfig,
+		Destination: "examples/provider-config.yaml",
+	},
 }
 
-var Claim = `---
-apiVersion: {{ .apiGroup }}/{{ .apiVersion }}
+var Example = `---
+apiVersion: {{ .apiGroup }}/v1alpha1
 kind: {{ .kind }}
 metadata:
-  name: {{ .claimName }}
-  namespace: {{ .claimNamespace }}
+  name: {{ .name }}
 spec:
-  # add spec fields here
+  targetCluster: cluster-name
 `
 
 var Functions = `---{{- range .functions }}
@@ -66,7 +69,7 @@ spec:
 `
 
 var Composition = `---
-apiVersion: {{ .compositionApiVersion }}
+apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
   labels:
@@ -74,38 +77,23 @@ metadata:
   name: {{ .name }}
 spec:
   compositeTypeRef:
-    apiVersion: {{ .apiGroup }}/{{ .claimApiVersion }}
+    apiVersion: {{ .apiGroup }}/v1alpha1
     kind: {{ .kind }}
-  #pipeline:
-  #  - step: <REPLACE_ME>
-  #    functionRef:
-  #      name: function-go-templating
-  #    input:
-  #      apiVersion: gotemplating.fn.crossplane.io/v1beta1
-  #      kind: GoTemplate
-  #      source: Inline
-  #      inline:
-  #        template: |
-  #          apiVersion: <REPLACE_ME>
-  #          kind: <REPLACE_ME>
-  #          metadata:
-  #            annotations:
-  #              gotemplating.fn.crossplane.io/composition-resource-name: $CLAIMNAME
-  #              gotemplating.fn.crossplane.io/ready: "True"
-  #  - step: <REPLACE_ME>
-  #    functionRef:
-  #      name: function-patch-and-transform
-  #    input:
-  #      apiVersion: pt.fn.crossplane.io/v1beta1
-  #      environment: null
-  #      kind: Resources
-  #      patchSets: []
-  #      resources:
-  #        - name: <REPLACE_ME>
-  #          base:
-  #            apiVersion: <REPLACE_ME>
-  #            kind: <REPLACE_ME>
-  #          patches: {}
+  mode: Pipeline
+  pipeline:
+    - step: render-templates
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            # Add your go-templating resources here
+    - step: automatically-detect-readiness
+      functionRef:
+        name: function-auto-ready
 `
 
 var Definition = `---
@@ -128,7 +116,36 @@ spec:
       schema:
         openAPIV3Schema:
           type: object
-      # add spec fields here
+          properties:
+            spec:
+              type: object
+              properties:
+                targetCluster:
+                  type: string
+              required:
+                - targetCluster
+            status:
+              type: object
+              properties:
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                    required:
+                      - type
+                      - status
 `
 
 var Configuration = `---
@@ -154,7 +171,17 @@ spec:
     {{- end }}
 `
 
-var Readme = "# {{ .claimKind }}\n\nThis Crossplane Configuration provisions a `{{ .kind }}` Composite Resource Definition (XRD) along with a Composition and an example Claim.\n\n## DEV\n\n```bash\ncrossplane render examples/claim.yaml \\\napis/composition.yaml \\\nexamples/functions.yaml \\\n--include-function-results\n```\n\n"
+var Readme = "# {{ .name }}\n\nThis Crossplane Configuration provisions a `{{ .kind }}` Composite Resource Definition (XRD) along with a Composition and an example.\n\n## DEV\n\n```bash\ncrossplane render examples/{{ .name }}.yaml \\\ncompositions/{{ .name }}.yaml \\\nexamples/functions.yaml \\\n--include-function-results\n```\n\n"
+
+var ProviderConfig = `---
+apiVersion: helm.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: provider-config-helm
+spec:
+  credentials:
+    source: InjectedIdentity
+`
 
 var KubeconfigSecret = `---
 apiVersion: v1

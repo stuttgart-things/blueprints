@@ -5,10 +5,10 @@ A Dagger module for generating Crossplane configurations with flexible variable 
 ## Overview
 
 This module creates complete Crossplane package configurations including:
-- **CompositeResourceDefinition (XRD)** - Defines the API for your custom claim
-- **Composition** - Orchestrates how claims are composed
+- **CompositeResourceDefinition (XRD)** - Defines the API for your custom resource
+- **Composition** - Orchestrates how resources are composed via pipeline
 - **Configuration** - Package metadata and dependencies
-- **Examples** - Sample claim and function definitions
+- **Examples** - Sample XR, function definitions, and provider config
 
 ## Features
 
@@ -208,7 +208,7 @@ dagger call -m crossplane-configuration create \
   --name openebs \
   --defaults-file ./defaults.yaml \
   --variables-file ./openebs-variables.yaml \
-  --variables='crossplaneVersion=4.13.0,functions=[{"Name":"function-patch-and-transform","ApiVersion":"pt.fn.crossplane.io/v1beta1","PackageURL":"xpkg.upbound.io/function-patch-and-transform","Version":"v0.1.0"}]' \
+  --variables='crossplaneVersion=4.13.0,functions=[{"Name":"crossplane-contrib-function-go-templating","ApiVersion":"pkg.crossplane.io/v1beta1","PackageURL":"xpkg.crossplane.io/crossplane-contrib/function-go-templating","Version":"v0.11.3"}]' \
   export --path=./output/openebs
 ```
 
@@ -235,8 +235,6 @@ maintainer: patrick.hermann@sva.de
 source: https://github.com/stuttgart-things
 license: Apache-2.0
 crossplaneVersion: "2.13.0"
-claimNamespace: default
-claimName: demo
 xrdScope: Namespaced
 xrdDeletePolicy: Foreground
 dependencies:
@@ -252,7 +250,6 @@ EOF
 - `source` - Git repository URL
 - `license` - License type (Apache-2.0, MIT, etc.)
 - `crossplaneVersion` - Minimum Crossplane version required
-- `claimNamespace` - Default namespace for claims
 - `xrdScope` - Either `Namespaced` or `Cluster`
 - `xrdDeletePolicy` - How to handle deletion (`Foreground` or `Background`)
 - `dependencies` - List of required Crossplane providers
@@ -271,34 +268,26 @@ cat > openebs-variables.yaml <<EOF
 ---
 kind: openebs
 apiGroup: resources.stuttgart-things.com
-apiVersion: v1
-claimKind: OpenEBS
-claimApiVersion: v1alpha1
 xrdPlural: openebses
 xrdSingular: openebs
-compositionApiVersion: v1beta1
 name: openebs
 functions:
-  - Name: function-patch-and-transform
-    ApiVersion: pt.fn.crossplane.io/v1beta1
-    PackageURL: xpkg.upbound.io/function-patch-and-transform
-    Version: v0.1.0
-  - Name: function-go-templating
-    ApiVersion: gotemplating.fn.crossplane.io/v1beta1
-    PackageURL: xpkg.upbound.io/function-go-templating
-    Version: v0.1.0
+  - Name: crossplane-contrib-function-go-templating
+    ApiVersion: pkg.crossplane.io/v1beta1
+    PackageURL: xpkg.crossplane.io/crossplane-contrib/function-go-templating
+    Version: v0.11.3
+  - Name: crossplane-contrib-function-auto-ready
+    ApiVersion: pkg.crossplane.io/v1beta1
+    PackageURL: xpkg.crossplane.io/crossplane-contrib/function-auto-ready
+    Version: v0.6.0
 EOF
 ```
 
 **Key fields:**
 - `kind` - The resource kind (e.g., `openebs`, `mysql`, `postgres`)
 - `apiGroup` - Unique API group for your custom resources
-- `apiVersion` - API version (typically `v1`)
-- `claimKind` - The claim kind users will create (e.g., `OpenEBS`)
-- `claimApiVersion` - Schema version for claims (typically `v1alpha1`)
 - `xrdPlural` - Plural form of the kind (e.g., `openebses`)
 - `xrdSingular` - Singular form (e.g., `openebs`)
-- `compositionApiVersion` - Composition API version (typically `v1beta1`)
 - `name` - Package name
 - `functions` - List of Crossplane function packages to include
 
@@ -310,23 +299,26 @@ EOF
 <summary><b>Output Structure</b></summary>
 
 ```
-openebs/
+<name>/
 ├── crossplane.yaml              # Package metadata & dependencies
 ├── apis/
-│   ├── definition.yaml         # CompositeResourceDefinition (XRD)
-│   └── composition.yaml        # Composition template
+│   └── definition.yaml          # CompositeResourceDefinition (XRD)
+├── compositions/
+│   └── <name>.yaml              # Composition with pipeline
 ├── examples/
-│   ├── claim.yaml             # Example claim resource
-│   └── functions.yaml         # Function definitions
-└── README.md                   # Documentation
+│   ├── <name>.yaml              # Example XR resource
+│   ├── functions.yaml           # Function definitions
+│   └── provider-config.yaml     # Helm ProviderConfig example
+└── README.md                    # Documentation
 ```
 
 **Files:**
 - `crossplane.yaml` - Package configuration with maintainer info and dependencies
 - `apis/definition.yaml` - Defines the custom resource API schema
-- `apis/composition.yaml` - Orchestrates resource composition
-- `examples/claim.yaml` - Template for creating resources
+- `compositions/<name>.yaml` - Composition with pipeline mode (go-templating + auto-ready)
+- `examples/<name>.yaml` - Example XR for rendering with `crossplane render`
 - `examples/functions.yaml` - Function package declarations
+- `examples/provider-config.yaml` - Helm ProviderConfig with InjectedIdentity
 - `README.md` - Auto-generated documentation
 
 </details>
@@ -343,18 +335,18 @@ Create `postgres-variables.yaml`:
 ---
 kind: postgres
 apiGroup: database.stuttgart-things.com
-apiVersion: v1
-claimKind: PostgreSQL
-claimApiVersion: v1alpha1
 xrdPlural: postgresqls
 xrdSingular: postgres
-compositionApiVersion: v1beta1
 name: postgres
 functions:
-  - Name: function-patch-and-transform
-    ApiVersion: pt.fn.crossplane.io/v1beta1
-    PackageURL: xpkg.upbound.io/function-patch-and-transform
-    Version: v0.1.0
+  - Name: crossplane-contrib-function-go-templating
+    ApiVersion: pkg.crossplane.io/v1beta1
+    PackageURL: xpkg.crossplane.io/crossplane-contrib/function-go-templating
+    Version: v0.11.3
+  - Name: crossplane-contrib-function-auto-ready
+    ApiVersion: pkg.crossplane.io/v1beta1
+    PackageURL: xpkg.crossplane.io/crossplane-contrib/function-auto-ready
+    Version: v0.6.0
 ```
 
 Then generate:
@@ -406,7 +398,8 @@ dagger call -m crossplane-configuration create \
 Check the generated files:
 ```bash
 cat test-output/crossplane.yaml
-cat test-output/apis/composition.yaml
+cat test-output/compositions/test.yaml
+cat test-output/examples/test.yaml
 ```
 
 </details>

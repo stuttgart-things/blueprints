@@ -27,20 +27,33 @@ func (m *CrossplaneConfiguration) Create(
 
 	// Data to be used with the template
 	data := map[string]interface{}{
+		"name":              name,
 		"kind":              "default-kind",
+		"apiGroup":          "resources.stuttgart-things.com",
 		"maintainer":        "me@example.com",
 		"source":            "https://github.com/stuttgart-things",
 		"license":           "Apache-2.0",
-		"claimKind":         "MyClaim",
 		"crossplaneVersion": "2.13.0",
-		"claimNamespace":    "default",
-		"claimName":         "demo",
 		"xrdScope":          "Namespaced",
 		"xrdDeletePolicy":   "Foreground",
 		"dependencies": []map[string]string{
 			{
 				"provider": "xpkg.upbound.io/crossplane-contrib/provider-helm",
 				"version":  ">=v0.19.0",
+			},
+		},
+		"functions": []map[string]string{
+			{
+				"Name":       "crossplane-contrib-function-go-templating",
+				"ApiVersion": "pkg.crossplane.io/v1beta1",
+				"PackageURL": "xpkg.crossplane.io/crossplane-contrib/function-go-templating",
+				"Version":    "v0.11.3",
+			},
+			{
+				"Name":       "crossplane-contrib-function-auto-ready",
+				"ApiVersion": "pkg.crossplane.io/v1beta1",
+				"PackageURL": "xpkg.crossplane.io/crossplane-contrib/function-auto-ready",
+				"Version":    "v0.6.0",
 			},
 		},
 	}
@@ -111,9 +124,12 @@ func (m *CrossplaneConfiguration) Create(
 			return nil, fmt.Errorf("render template %s: %w", tmpl.Destination, err)
 		}
 
+		// Replace {name} placeholder in destination path with actual name
+		destination := strings.ReplaceAll(tmpl.Destination, "{name}", name)
+
 		// Use the full destination path to preserve folder structure
 		// WithNewFile automatically creates parent directories
-		xplane = xplane.WithNewFile(tmpl.Destination, rendered)
+		xplane = xplane.WithNewFile(destination, rendered)
 	}
 
 	return xplane.Directory(workingDir), nil

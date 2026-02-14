@@ -1,20 +1,16 @@
 ---
 kind: openebs
 apiGroup: resources.stuttgart-things.com
-apiVersion: v1
-claimKind: OpenEBS
 crossplaneVersion: "2.13.0"
 functions:
-  - Name: function-patch-and-transform
-    ApiVersion: pt.fn.crossplane.io/v1beta1
-    PackageURL: xpkg.upbound.io/function-patch-and-transform
-    Version: v0.1.0
-  - Name: function-go-templating
-    ApiVersion: gotemplating.fn.crossplane.io/v1beta1
-    PackageURL: xpkg.upbound.io/function-go-templating
-    Version: v0.1.0
-claimApiVersion: v1alpha1
+  - Name: crossplane-contrib-function-go-templating
+    ApiVersion: pkg.crossplane.io/v1beta1
+    PackageURL: xpkg.crossplane.io/crossplane-contrib/function-go-templating
+    Version: v0.11.3
+  - Name: crossplane-contrib-function-auto-ready
+    ApiVersion: pkg.crossplane.io/v1beta1
+    PackageURL: xpkg.crossplane.io/crossplane-contrib/function-auto-ready
+    Version: v0.6.0
 xrdPlural: openebses
 xrdSingular: openebs
-compositionApiVersion: v1beta1
 name: openebs

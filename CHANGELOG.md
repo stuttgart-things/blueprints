@@ -1,3 +1,10 @@
+# [1.57.0](https://github.com/stuttgart-things/blueprints/compare/v1.56.0...v1.57.0) (2026-02-14)
+
+
+### Features
+
+* feat/update-crossplane-init ([35a9429](https://github.com/stuttgart-things/blueprints/commit/35a94292a0fae0e0f4cf350c1fc2d7de22a93247))
+
 # [1.56.0](https://github.com/stuttgart-things/blueprints/compare/v1.55.0...v1.56.0) (2026-02-10)
 
 

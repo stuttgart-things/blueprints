@@ -24,3 +24,47 @@ dagger call -m kubernetes-deployment install-custom-resource-definitions \
 --kube-config file:///home/sthings/.kube/xplane \
 --progress plain
 ```
+
+```bash
+# FLUX BOOTSTRAP - FULL LIFECYCLE (render, apply secrets, deploy operator, wait)
+dagger call -m kubernetes-deployment flux-bootstrap \
+  --config-parameters "name=flux-system,namespace=flux-system,version=2.4.0,gitUrl=https://github.com/my-org/fleet,gitRef=main,gitPath=clusters/prod" \
+  --kube-config file:///home/sthings/.kube/cluster \
+  --src ./helmfile \
+  --render-secrets \
+  --git-username env:GIT_USERNAME \
+  --git-password env:GIT_PASSWORD \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --progress plain
+```
+
+```bash
+# FLUX BOOTSTRAP - RENDER + ENCRYPT + COMMIT TO GIT (no cluster deploy)
+dagger call -m kubernetes-deployment flux-bootstrap \
+  --config-parameters "name=flux-system,namespace=flux-system,version=2.4.0,gitUrl=https://github.com/my-org/fleet,gitRef=main,gitPath=clusters/staging" \
+  --kube-config file:///home/sthings/.kube/cluster \
+  --render-secrets \
+  --git-username env:GIT_USERNAME \
+  --git-password env:GIT_PASSWORD \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypt-secrets \
+  --age-public-key env:AGE_PUBLIC_KEY \
+  --commit-to-git \
+  --repository "my-org/fleet" \
+  --git-token env:GITHUB_TOKEN \
+  --destination-path "clusters/staging/" \
+  --deploy-operator=false \
+  --wait-for-reconciliation=false \
+  --progress plain
+```
+
+```bash
+# FLUX BOOTSTRAP - DEPLOY OPERATOR ONLY (skip rendering and git)
+dagger call -m kubernetes-deployment flux-bootstrap \
+  --config-parameters "name=flux-system,namespace=flux-system" \
+  --kube-config file:///home/sthings/.kube/cluster \
+  --src ./helmfile \
+  --apply-secrets=false \
+  --commit-to-git=false \
+  --progress plain
+```

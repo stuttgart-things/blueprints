@@ -1,3 +1,11 @@
+# [1.58.0](https://github.com/stuttgart-things/blueprints/compare/v1.57.0...v1.58.0) (2026-02-16)
+
+
+### Features
+
+* add FluxBootstrap function to kubernetes-deployment module ([79ece42](https://github.com/stuttgart-things/blueprints/commit/79ece421bb6470463572c8a4ce5b7f1c3d1a5b9b))
+* feat/add-flux-boostrap ([2438c79](https://github.com/stuttgart-things/blueprints/commit/2438c79be42796c807518da56e4982c308dec048))
+
 # [1.57.0](https://github.com/stuttgart-things/blueprints/compare/v1.56.0...v1.57.0) (2026-02-14)
 
 

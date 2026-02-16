@@ -26,7 +26,15 @@ dagger call -m kubernetes-deployment install-custom-resource-definitions \
 ```
 
 ```bash
-# FLUX BOOTSTRAP - FULL LIFECYCLE (render, apply secrets, deploy operator, wait)
+# VALIDATE AGE KEY PAIR (standalone — fails fast on mismatch)
+dagger call -m kubernetes-deployment validate-age-key-pair \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --age-public-key env:AGE_PUB \
+  --progress plain
+```
+
+```bash
+# FLUX BOOTSTRAP - FULL LIFECYCLE (validate keys, render, deploy operator, apply config, apply secrets, verify, wait)
 dagger call -m kubernetes-deployment flux-bootstrap \
   --config-parameters "name=flux-system,namespace=flux-system,version=2.4.0,gitUrl=https://github.com/my-org/fleet,gitRef=main,gitPath=clusters/prod" \
   --kube-config file:///home/sthings/.kube/cluster \
@@ -35,6 +43,7 @@ dagger call -m kubernetes-deployment flux-bootstrap \
   --git-username env:GIT_USERNAME \
   --git-password env:GIT_PASSWORD \
   --sops-age-key env:SOPS_AGE_KEY \
+  --age-public-key env:AGE_PUB \
   --progress plain
 ```
 
@@ -63,8 +72,73 @@ dagger call -m kubernetes-deployment flux-bootstrap \
 dagger call -m kubernetes-deployment flux-bootstrap \
   --config-parameters "name=flux-system,namespace=flux-system" \
   --kube-config file:///home/sthings/.kube/cluster \
-  --src ./helmfile \
+  --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
   --apply-secrets=false \
   --commit-to-git=false \
+  --wait-for-reconciliation=false \
+  --progress plain
+```
+
+```bash
+# ONLY CREATE SECRETS ON CLUSTER
+dagger call -m kubernetes-deployment flux-bootstrap \
+  --kube-config file:///home/sthings/.kube/vre2.yaml \
+  --deploy-operator=false \
+  --commit-to-git=false \
+  --config-parameters "name=flux,namespace=flux-system,version=2.4.0,gitUrl=https://github.com/stuttgart-things/stuttgart-things,gitRef=refs/heads/main,gitPath=clusters/labul/vsphere/vre2" \
+  --git-username env:GITHUB_USER \
+  --git-password env:GITHUB_TOKEN \
+  --git-token env:GITHUB_TOKEN \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --age-public-key env:AGE_PUB \
+  --render-secrets=true \
+  --apply-secrets=true \
+  --apply-config=false \
+  --encrypt-secrets=false \
+  --wait-for-reconciliation=false \
+  --progress plain
+```
+
+```bash
+# INDIVIDUAL PHASE FUNCTIONS (each callable standalone via dagger call)
+
+# Render config only
+dagger call -m kubernetes-deployment flux-render-config \
+  --config-parameters "name=flux-system,namespace=flux-system,version=2.4.0" \
+  --progress plain
+
+# Encrypt secrets
+dagger call -m kubernetes-deployment flux-encrypt-secrets \
+  --secret-content "$(cat secrets.yaml)" \
+  --age-public-key env:AGE_PUB \
+  --progress plain
+
+# Apply config to cluster
+dagger call -m kubernetes-deployment flux-apply-config \
+  --config-content "$(cat config.yaml)" \
+  --kube-config file:///home/sthings/.kube/cluster \
+  --progress plain
+
+# Apply secrets to cluster
+dagger call -m kubernetes-deployment flux-apply-secrets \
+  --secret-content "$(cat secrets.yaml)" \
+  --kube-config file:///home/sthings/.kube/cluster \
+  --progress plain
+
+# Verify secrets exist in cluster
+dagger call -m kubernetes-deployment flux-verify-secrets \
+  --secret-content "$(cat secrets.yaml)" \
+  --kube-config file:///home/sthings/.kube/cluster \
+  --progress plain
+
+# Deploy operator only
+dagger call -m kubernetes-deployment flux-deploy-operator \
+  --kube-config file:///home/sthings/.kube/cluster \
+  --src ./helmfile \
+  --progress plain
+
+# Wait for reconciliation
+dagger call -m kubernetes-deployment flux-wait-for-reconciliation \
+  --kube-config file:///home/sthings/.kube/cluster \
   --progress plain
 ```

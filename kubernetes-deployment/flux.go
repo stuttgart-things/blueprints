@@ -49,7 +49,8 @@ func (m *KubernetesDeployment) ValidateAgeKeyPair(
 	pubKeyPlain = strings.TrimSpace(pubKeyPlain)
 
 	derived, err := dag.Container().
-		From("ghcr.io/getsops/sops:v3.9.4-alpine").
+		From("alpine:3.21").
+		WithExec([]string{"apk", "add", "--no-cache", "age"}).
 		WithMountedSecret("/tmp/age-key", sopsAgeKey, dagger.ContainerWithMountedSecretOpts{
 			Mode: 0444,
 		}).

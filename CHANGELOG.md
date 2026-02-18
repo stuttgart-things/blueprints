@@ -1,3 +1,10 @@
+# [1.62.0](https://github.com/stuttgart-things/blueprints/compare/v1.61.0...v1.62.0) (2026-02-18)
+
+
+### Features
+
+* fix/fix-lint-fail-output ([1d17ebc](https://github.com/stuttgart-things/blueprints/commit/1d17ebc85ee666155d4a52ba414f9e0c4d84dfb8))
+
 # [1.61.0](https://github.com/stuttgart-things/blueprints/compare/v1.60.0...v1.61.0) (2026-02-18)
 
 

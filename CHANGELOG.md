@@ -1,3 +1,11 @@
+# [1.60.0](https://github.com/stuttgart-things/blueprints/compare/v1.59.0...v1.60.0) (2026-02-18)
+
+
+### Features
+
+* extract KCL params into dedicated FluxBootstrap flags ([fe807b2](https://github.com/stuttgart-things/blueprints/commit/fe807b28ce0e5ac8e1623b1df3403fa5f3b208bc))
+* feat/update-repo-linting ([f70e3b5](https://github.com/stuttgart-things/blueprints/commit/f70e3b582ce95b838ea4abd94d96e1c9a1aa9cd0))
+
 # [1.59.0](https://github.com/stuttgart-things/blueprints/compare/v1.58.0...v1.59.0) (2026-02-17)
 
 

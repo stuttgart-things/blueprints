@@ -202,15 +202,92 @@ rules:
 		File(mergedOutputFile)
 
 	// Evaluate fail condition
-	if failOn == "any" {
-		for _, key := range order {
-			if r, ok := results[key]; ok {
-				if strings.TrimSpace(r.content) != "" {
-					return reportFile, fmt.Errorf("linter %q produced findings (failOn=any)", r.name)
-				}
-			}
-		}
+	if err := evaluateFailCondition(failOn, results, order); err != nil {
+		return reportFile, err
 	}
 
 	return reportFile, nil
+}
+
+// evaluateFailCondition checks linter results against the failOn policy.
+// Supported values: none, any, yaml, markdown, secrets, precommit, error, warning.
+func evaluateFailCondition(failOn string, results map[string]linterResult, order []string) error {
+	switch failOn {
+	case "none", "":
+		return nil
+
+	case "any":
+		for _, key := range order {
+			if r, ok := results[key]; ok {
+				if hasFindings(r.content) {
+					return fmt.Errorf("linter %q produced findings (failOn=any)", r.name)
+				}
+			}
+		}
+
+	case "yaml", "markdown", "precommit", "secrets":
+		if r, ok := results[failOn]; ok {
+			if hasFindings(r.content) {
+				return fmt.Errorf("linter %q produced findings (failOn=%s)", r.name, failOn)
+			}
+		}
+
+	case "error":
+		for _, key := range order {
+			if r, ok := results[key]; ok {
+				if hasSeverityFindings(key, r.content, "error") {
+					return fmt.Errorf("linter %q produced error-level findings (failOn=error)", r.name)
+				}
+			}
+		}
+
+	case "warning":
+		for _, key := range order {
+			if r, ok := results[key]; ok {
+				if hasSeverityFindings(key, r.content, "warning") {
+					return fmt.Errorf("linter %q produced warning-level or higher findings (failOn=warning)", r.name)
+				}
+			}
+		}
+
+	default:
+		return fmt.Errorf("unsupported failOn value: %q (supported: none, any, yaml, markdown, secrets, precommit, error, warning)", failOn)
+	}
+
+	return nil
+}
+
+func hasFindings(content string) bool {
+	return strings.TrimSpace(content) != ""
+}
+
+// hasSeverityFindings checks if linter output contains findings at the given severity level.
+// For yamllint, it parses severity markers from the output (e.g. [error], [warning]).
+// For all other linters, any non-empty finding is treated as error-level.
+func hasSeverityFindings(linterKey string, content string, level string) bool {
+	if !hasFindings(content) {
+		return false
+	}
+
+	// yamllint has explicit severity levels in its output
+	if linterKey == "yaml" {
+		for _, line := range strings.Split(content, "\n") {
+			lower := strings.ToLower(line)
+			switch level {
+			case "error":
+				if strings.Contains(lower, "[error]") || strings.Contains(lower, "  error  ") {
+					return true
+				}
+			case "warning":
+				if strings.Contains(lower, "[warning]") || strings.Contains(lower, "  warning  ") ||
+					strings.Contains(lower, "[error]") || strings.Contains(lower, "  error  ") {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	// For all other linters, any finding is treated as error-level
+	return true
 }

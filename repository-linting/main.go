@@ -211,43 +211,57 @@ rules:
 
 // evaluateFailCondition checks linter results against the failOn policy.
 // Supported values: none, any, yaml, markdown, secrets, precommit, error, warning.
+// When failing, the error message includes the actual findings so users can see
+// what needs to be fixed (since the exported file is not available on failure).
 func evaluateFailCondition(failOn string, results map[string]linterResult, order []string) error {
 	switch failOn {
 	case "none", "":
 		return nil
 
 	case "any":
+		var failedLinters []string
 		for _, key := range order {
 			if r, ok := results[key]; ok {
 				if hasFindings(r.content) {
-					return fmt.Errorf("linter %q produced findings (failOn=any)", r.name)
+					failedLinters = append(failedLinters, key)
 				}
 			}
+		}
+		if len(failedLinters) > 0 {
+			return fmt.Errorf("linters produced findings (failOn=any)\n\n%s", formatFindings(results, failedLinters))
 		}
 
 	case "yaml", "markdown", "precommit", "secrets":
 		if r, ok := results[failOn]; ok {
 			if hasFindings(r.content) {
-				return fmt.Errorf("linter %q produced findings (failOn=%s)", r.name, failOn)
+				return fmt.Errorf("linter %q produced findings (failOn=%s)\n\n%s", r.name, failOn, formatFindings(results, []string{failOn}))
 			}
 		}
 
 	case "error":
+		var failedLinters []string
 		for _, key := range order {
 			if r, ok := results[key]; ok {
 				if hasSeverityFindings(key, r.content, "error") {
-					return fmt.Errorf("linter %q produced error-level findings (failOn=error)", r.name)
+					failedLinters = append(failedLinters, key)
 				}
 			}
 		}
+		if len(failedLinters) > 0 {
+			return fmt.Errorf("linters produced error-level findings (failOn=error)\n\n%s", formatFindings(results, failedLinters))
+		}
 
 	case "warning":
+		var failedLinters []string
 		for _, key := range order {
 			if r, ok := results[key]; ok {
 				if hasSeverityFindings(key, r.content, "warning") {
-					return fmt.Errorf("linter %q produced warning-level or higher findings (failOn=warning)", r.name)
+					failedLinters = append(failedLinters, key)
 				}
 			}
+		}
+		if len(failedLinters) > 0 {
+			return fmt.Errorf("linters produced warning-level or higher findings (failOn=warning)\n\n%s", formatFindings(results, failedLinters))
 		}
 
 	default:
@@ -255,6 +269,17 @@ func evaluateFailCondition(failOn string, results map[string]linterResult, order
 	}
 
 	return nil
+}
+
+// formatFindings builds a human-readable summary of findings from the specified linters.
+func formatFindings(results map[string]linterResult, keys []string) string {
+	var sections []string
+	for _, key := range keys {
+		if r, ok := results[key]; ok {
+			sections = append(sections, fmt.Sprintf("=== %s Findings ===\n%s", r.name, r.content))
+		}
+	}
+	return strings.Join(sections, "\n\n")
 }
 
 func hasFindings(content string) bool {

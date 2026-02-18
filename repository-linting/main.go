@@ -16,10 +16,21 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"sync"
+
 	"dagger/repository-linting/internal/dagger"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type RepositoryLinting struct{}
+
+type linterResult struct {
+	name    string
+	content string
+}
 
 func (m *RepositoryLinting) ValidateMultipleTechnologies(
 	ctx context.Context,
@@ -44,9 +55,32 @@ func (m *RepositoryLinting) ValidateMultipleTechnologies(
 	// +optional
 	// +default="all-findings.txt"
 	mergedOutputFile string,
-	src *dagger.Directory) *dagger.File {
+	src *dagger.Directory,
+	// +optional
+	// +default=false
+	enablePreCommit bool,
+	// +optional
+	// +default=".pre-commit-config.yaml"
+	preCommitConfigPath string,
+	// +optional
+	// +default="pre-commit-findings.txt"
+	preCommitOutputFile string,
+	// +optional
+	skipHooks []string,
+	// +optional
+	// +default=false
+	enableSecrets bool,
+	// +optional
+	// +default="secret-findings.json"
+	secretsOutputFile string,
+	// +optional
+	secretsExcludeFiles string,
+	// +optional
+	// +default="none"
+	failOn string,
+) (*dagger.File, error) {
 
-	// Create default YAML linting config if not present
+	// Default configs
 	yamlConfig := `---
 extends: default
 
@@ -64,7 +98,6 @@ rules:
     indent-sequences: true
 `
 
-	// Create default Markdown linting config if not present
 	markdownConfig := `{
   "default": true,
   "MD013": false,
@@ -76,62 +109,108 @@ rules:
 }
 `
 
-	// Check if config files exist, if not create them with defaults
+	// Ensure config files exist
 	srcWithConfigs := src
 
-	// Check and add YAML config if missing and YAML linting is enabled
 	if enableYaml {
 		yamlConfigFile := src.File(yamlConfigPath)
 		if _, err := yamlConfigFile.Contents(ctx); err != nil {
-			// Config doesn't exist, create it
 			srcWithConfigs = srcWithConfigs.WithNewFile(yamlConfigPath, yamlConfig)
 		}
 	}
 
-	// Check and add Markdown config if missing and Markdown linting is enabled
 	if enableMarkdown {
 		markdownConfigFile := src.File(markdownConfigPath)
 		if _, err := markdownConfigFile.Contents(ctx); err != nil {
-			// Config doesn't exist, create it
 			srcWithConfigs = srcWithConfigs.WithNewFile(markdownConfigPath, markdownConfig)
 		}
 	}
 
-	var yamlContent, markdownContent string
+	// Run linters in parallel using errgroup
+	var mu sync.Mutex
+	results := make(map[string]linterResult)
 
-	// Run YAML linting if enabled
-	if enableYaml {
-		yamlReport := m.LintYAML(ctx, yamlConfigPath, yamlOutputFile, srcWithConfigs)
-		yamlContent, _ = yamlReport.Contents(ctx)
-	}
-
-	// Run Markdown linting if enabled
-	if enableMarkdown {
-		markdownReport := m.LintMarkdown(ctx, markdownConfigPath, markdownOutputFile, srcWithConfigs)
-		markdownContent, _ = markdownReport.Contents(ctx)
-	}
-
-	// Build merged content based on which linters are enabled
-	mergedContent := ""
+	g, ctx := errgroup.WithContext(ctx)
 
 	if enableYaml {
-		mergedContent += "=== YAML Linting Results ===\n" + yamlContent
+		g.Go(func() error {
+			report := m.LintYAML(ctx, yamlConfigPath, yamlOutputFile, srcWithConfigs)
+			content, _ := report.Contents(ctx)
+			mu.Lock()
+			results["yaml"] = linterResult{name: "YAML Linting", content: content}
+			mu.Unlock()
+			return nil
+		})
 	}
 
 	if enableMarkdown {
-		if enableYaml {
-			mergedContent += "\n\n"
+		g.Go(func() error {
+			report := m.LintMarkdown(ctx, markdownConfigPath, markdownOutputFile, srcWithConfigs)
+			content, _ := report.Contents(ctx)
+			mu.Lock()
+			results["markdown"] = linterResult{name: "Markdown Linting", content: content}
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	if enablePreCommit {
+		g.Go(func() error {
+			report := m.RunPreCommit(ctx, preCommitConfigPath, preCommitOutputFile, skipHooks, srcWithConfigs)
+			content, _ := report.Contents(ctx)
+			mu.Lock()
+			results["precommit"] = linterResult{name: "Pre-Commit", content: content}
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	if enableSecrets {
+		g.Go(func() error {
+			report := m.ScanSecrets(ctx, secretsOutputFile, secretsExcludeFiles, srcWithConfigs)
+			content, _ := report.Contents(ctx)
+			mu.Lock()
+			results["secrets"] = linterResult{name: "Secrets Scan", content: content} // pragma: allowlist secret
+			mu.Unlock()
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	// Build merged output in fixed order
+	order := []string{"yaml", "markdown", "precommit", "secrets"}
+	var sections []string
+
+	for _, key := range order {
+		if r, ok := results[key]; ok {
+			sections = append(sections, fmt.Sprintf("=== %s Results ===\n%s", r.name, r.content))
 		}
-		mergedContent += "=== Markdown Linting Results ===\n" + markdownContent
 	}
 
-	// If both are disabled, provide a message
-	if !enableYaml && !enableMarkdown {
+	mergedContent := ""
+	if len(sections) > 0 {
+		mergedContent = strings.Join(sections, "\n\n")
+	} else {
 		mergedContent = "No linting technologies enabled. Set enableYaml and/or enableMarkdown to true."
 	}
 
-	// Return as a new file
-	return dag.Directory().
+	reportFile := dag.Directory().
 		WithNewFile(mergedOutputFile, mergedContent).
 		File(mergedOutputFile)
+
+	// Evaluate fail condition
+	if failOn == "any" {
+		for _, key := range order {
+			if r, ok := results[key]; ok {
+				if strings.TrimSpace(r.content) != "" {
+					return reportFile, fmt.Errorf("linter %q produced findings (failOn=any)", r.name)
+				}
+			}
+		}
+	}
+
+	return reportFile, nil
 }

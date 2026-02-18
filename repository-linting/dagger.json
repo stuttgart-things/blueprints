@@ -1,6 +1,6 @@
 {
   "name": "repository-linting",
-  "engineVersion": "v0.19.3",
+  "engineVersion": "v0.19.11",
   "sdk": {
     "source": "go"
   },
@@ -12,8 +12,9 @@
     },
     {
       "name": "linting",
-      "source": "github.com/stuttgart-things/dagger/linting@v0.36.0",
-      "pin": "065862a0d97418baed85591edcb679e50be23e57"
+      "source": "github.com/stuttgart-things/dagger/linting@v0.80.0",
+      "pin": "a2d7c6957b80ad9091157c134df2ee3943c2d76a"
     }
-  ]
+  ],
+  "disableDefaultFunctionCaching": true
 }

@@ -1,3 +1,10 @@
+# [1.61.0](https://github.com/stuttgart-things/blueprints/compare/v1.60.0...v1.61.0) (2026-02-18)
+
+
+### Features
+
+* feat/add-validate-lint-values ([6a3052e](https://github.com/stuttgart-things/blueprints/commit/6a3052e36c073177eadbcab52d41dac89d7ce2cd))
+
 # [1.60.0](https://github.com/stuttgart-things/blueprints/compare/v1.59.0...v1.60.0) (2026-02-18)
 
 

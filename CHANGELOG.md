@@ -1,3 +1,16 @@
+# [1.63.0](https://github.com/stuttgart-things/blueprints/compare/v1.62.0...v1.63.0) (2026-02-18)
+
+
+### Bug Fixes
+
+* fix/secrets-empty ([4b549ad](https://github.com/stuttgart-things/blueprints/commit/4b549adb5bf668933789947187b5c9668b1be7d5))
+* handle empty secrets results in failOn check ([#110](https://github.com/stuttgart-things/blueprints/issues/110)) ([f2135a5](https://github.com/stuttgart-things/blueprints/commit/f2135a5a95725d9cf9e6c29becbcdb294aa235d4))
+
+
+### Features
+
+* fix/fix-detect-secrets ([b482161](https://github.com/stuttgart-things/blueprints/commit/b4821619b7663fd830a0a117a19cf932199222d5))
+
 # [1.62.0](https://github.com/stuttgart-things/blueprints/compare/v1.61.0...v1.62.0) (2026-02-18)
 
 

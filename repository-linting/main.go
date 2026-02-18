@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -283,7 +284,22 @@ func formatFindings(results map[string]linterResult, keys []string) string {
 }
 
 func hasFindings(content string) bool {
-	return strings.TrimSpace(content) != ""
+	trimmed := strings.TrimSpace(content)
+	if trimmed == "" {
+		return false
+	}
+
+	// detect-secrets outputs JSON with a "results" key.
+	// When no secrets are found, results is an empty object: {"results": {}}.
+	// We must not treat this as findings.
+	var secretsOutput struct {
+		Results map[string]json.RawMessage `json:"results"`
+	}
+	if json.Unmarshal([]byte(trimmed), &secretsOutput) == nil && secretsOutput.Results != nil {
+		return len(secretsOutput.Results) > 0
+	}
+
+	return true
 }
 
 // hasSeverityFindings checks if linter output contains findings at the given severity level.

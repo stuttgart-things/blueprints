@@ -87,6 +87,7 @@ dagger call -m repository-linting create-issue \
 | Parameter | Description |
 |-----------|-------------|
 | `--src` | Repository path to validate |
+| `--fail-on` | Fail condition: `none` (default), `any`, `yaml`, `markdown`, `secrets`, `precommit`, `error`, `warning` |
 
 ### create-github-issue
 

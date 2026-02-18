@@ -26,7 +26,15 @@ dagger call -m repository-linting validate-multiple-technologies \
 - `--src tests/repository-linting/test-repo` selects the repository to validate
 - `--enable-pre-commit` enables pre-commit hook linting (default: false)
 - `--enable-secrets` enables detect-secrets scanning (default: false)
-- `--fail-on any` fails the pipeline if any linter produces findings (default: `none`)
+- `--fail-on` controls when the pipeline fails (default: `none`). Supported values:
+  - `none` — never fail
+  - `any` — fail if any linter produces findings
+  - `yaml` — fail only on YAML lint findings
+  - `markdown` — fail only on Markdown lint findings
+  - `secrets` — fail only on secret scan findings
+  - `precommit` — fail only on pre-commit findings
+  - `error` — fail on error-level findings (yamllint errors; any finding from other linters)
+  - `warning` — fail on warning-level or higher findings (yamllint warnings/errors; any finding from other linters)
 - `export --path /tmp/all-findings.txt` saves the merged findings to a text file
 
 All linters run in parallel. Results are merged in fixed order: YAML, Markdown, Pre-Commit, Secrets.

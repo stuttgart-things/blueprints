@@ -12,8 +12,64 @@ dagger call -m repository-linting validate-multiple-technologies \
   export --path /tmp/all-findings.txt
 ```
 
+With pre-commit hooks, secrets scanning, and fail control:
+
+```bash
+dagger call -m repository-linting validate-multiple-technologies \
+  --src tests/repository-linting/test-repo \
+  --enable-pre-commit=true \
+  --enable-secrets=true \
+  --fail-on any \
+  export --path /tmp/all-findings.txt
+```
+
 - `--src tests/repository-linting/test-repo` selects the repository to validate
-- `export --path /tmp/all-findings.txt` saves the findings to a text file
+- `--enable-pre-commit` enables pre-commit hook linting (default: false)
+- `--enable-secrets` enables detect-secrets scanning (default: false)
+- `--fail-on any` fails the pipeline if any linter produces findings (default: `none`)
+- `export --path /tmp/all-findings.txt` saves the merged findings to a text file
+
+All linters run in parallel. Results are merged in fixed order: YAML, Markdown, Pre-Commit, Secrets.
+
+### Run Pre-Commit Hooks
+
+Run pre-commit hooks standalone on a repository:
+
+```bash
+dagger call -m repository-linting run-pre-commit \
+  --src tests/repository-linting/test-repo \
+  export --path /tmp/precommit.txt
+```
+
+Skip specific hooks:
+
+```bash
+dagger call -m repository-linting run-pre-commit \
+  --src tests/repository-linting/test-repo \
+  --skip-hooks trailing-whitespace \
+  --skip-hooks end-of-file-fixer \
+  export --path /tmp/precommit.txt
+```
+
+### Scan Secrets
+
+Scan a repository for secrets using detect-secrets:
+
+```bash
+dagger call -m repository-linting scan-secrets \
+  --src tests/repository-linting/test-repo \
+  export --path /tmp/secrets.json
+```
+
+### Auto-Fix Secrets
+
+Use AI to add `pragma: allowlist secret` comments to flagged lines:
+
+```bash
+dagger call -m repository-linting auto-fix-secrets \
+  --src tests/repository-linting/test-repo \
+  export --path /tmp/fixed-repo
+```
 
 #### 📂 Test Data
 

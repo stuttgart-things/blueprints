@@ -39,7 +39,8 @@ dagger call -m kubernetes-deployment flux-bootstrap \
   --kube-config file:///home/sthings/.kube/vre2.yaml \
   --deploy-operator=true \
   --commit-to-git=true \
-  --config-parameters "name=flux,namespace=flux-system,version=2.4.0,gitUrl=https://github.com/stuttgart-things/stuttgart-things,gitRef=refs/heads/main,gitPath=clusters/labul/vsphere/vre2" \
+  --repository stuttgart-things/stuttgart-things \
+  --destination-path "clusters/labul/vsphere/vre2" \
   --git-username env:GITHUB_USER \
   --git-password env:GITHUB_TOKEN \
   --git-token env:GITHUB_TOKEN \
@@ -51,16 +52,15 @@ dagger call -m kubernetes-deployment flux-bootstrap \
   --encrypt-secrets=true \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
   --wait-for-reconciliation=true \
-  --repository stuttgart-things/stuttgart-things \
-  --destination-path "clusters/labul/vsphere/vre2" \
   --progress plain
 ```
 
 ```bash
 # FLUX BOOTSTRAP - RENDER + ENCRYPT + COMMIT TO GIT (no cluster deploy)
 dagger call -m kubernetes-deployment flux-bootstrap \
-  --config-parameters "name=flux-system,namespace=flux-system,version=2.4.0,gitUrl=https://github.com/my-org/fleet,gitRef=main,gitPath=clusters/staging" \
   --kube-config file:///home/sthings/.kube/cluster \
+  --repository "my-org/fleet" \
+  --destination-path "clusters/staging/" \
   --render-secrets \
   --git-username env:GIT_USERNAME \
   --git-password env:GIT_PASSWORD \
@@ -68,9 +68,7 @@ dagger call -m kubernetes-deployment flux-bootstrap \
   --encrypt-secrets \
   --age-public-key env:AGE_PUBLIC_KEY \
   --commit-to-git \
-  --repository "my-org/fleet" \
   --git-token env:GITHUB_TOKEN \
-  --destination-path "clusters/staging/" \
   --deploy-operator=false \
   --wait-for-reconciliation=false \
   --progress plain
@@ -79,7 +77,6 @@ dagger call -m kubernetes-deployment flux-bootstrap \
 ```bash
 # FLUX BOOTSTRAP - DEPLOY OPERATOR ONLY (skip rendering and git)
 dagger call -m kubernetes-deployment flux-bootstrap \
-  --config-parameters "name=flux-system,namespace=flux-system" \
   --kube-config file:///home/sthings/.kube/cluster \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
   --apply-secrets=false \
@@ -94,7 +91,8 @@ dagger call -m kubernetes-deployment flux-bootstrap \
   --kube-config file:///home/sthings/.kube/vre2.yaml \
   --deploy-operator=false \
   --commit-to-git=false \
-  --config-parameters "name=flux,namespace=flux-system,version=2.4.0,gitUrl=https://github.com/stuttgart-things/stuttgart-things,gitRef=refs/heads/main,gitPath=clusters/labul/vsphere/vre2" \
+  --repository stuttgart-things/stuttgart-things \
+  --destination-path "clusters/labul/vsphere/vre2" \
   --git-username env:GITHUB_USER \
   --git-password env:GITHUB_TOKEN \
   --git-token env:GITHUB_TOKEN \

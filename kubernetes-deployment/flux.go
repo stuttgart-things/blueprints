@@ -476,8 +476,13 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	// +optional
 	// +default="ghcr.io/stuttgart-things/kcl-flux-instance:0.3.3"
 	ociSource string,
-	// Comma-separated key=value pairs for KCL parameters (e.g., "name=flux,namespace=flux-system,version=2.4.0")
+	// Additional comma-separated key=value pairs for KCL parameters
+	// +optional
 	configParameters string,
+	// Flux instance version
+	// +optional
+	// +default="2.4.0"
+	fluxVersion string,
 	// KCL entrypoint file name
 	// +optional
 	// +default="main.k"
@@ -518,6 +523,10 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	// +optional
 	// +default="clusters/"
 	destinationPath string,
+	// Git reference for Flux source (e.g., refs/heads/main)
+	// +optional
+	// +default="refs/heads/main"
+	gitRef string,
 	// GitHub token for git operations
 	// +optional
 	gitToken *dagger.Secret,
@@ -582,8 +591,23 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	// Phase 1: Render Flux Instance Config (KCL)
 	// =========================================================================
 
+	// Build KCL parameters from dedicated flags
+	kclParams := "name=flux,namespace=" + namespace + ",version=" + fluxVersion
+	if repository != "" {
+		kclParams += ",gitUrl=https://github.com/" + repository
+	}
+	if destinationPath != "" {
+		kclParams += ",gitPath=" + destinationPath
+	}
+	if gitRef != "" {
+		kclParams += ",gitRef=" + gitRef
+	}
+	if configParameters != "" {
+		kclParams += "," + configParameters
+	}
+
 	renderedContent, err := m.FluxRenderConfig(
-		ctx, ociSource, configParameters, entrypoint, renderSecrets,
+		ctx, ociSource, kclParams, entrypoint, renderSecrets,
 		gitUsername, gitPassword, sopsAgeKey,
 	)
 	if err != nil {
@@ -609,7 +633,7 @@ func (m *KubernetesDeployment) FluxBootstrap(
 
 	// Log parameter keys for debugging
 	var paramKeys []string
-	for _, p := range strings.Split(configParameters, ",") {
+	for _, p := range strings.Split(kclParams, ",") {
 		if parts := strings.SplitN(p, "=", 2); len(parts) == 2 {
 			paramKeys = append(paramKeys, parts[0])
 		}

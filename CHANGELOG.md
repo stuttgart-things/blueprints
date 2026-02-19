@@ -1,3 +1,10 @@
+## [1.63.1](https://github.com/stuttgart-things/blueprints/compare/v1.63.0...v1.63.1) (2026-02-19)
+
+
+### Bug Fixes
+
+* fix/update-hugo-156 ([fa637ad](https://github.com/stuttgart-things/blueprints/commit/fa637ad1762806de5631a695131b6c047cf6b9b8))
+
 # [1.63.0](https://github.com/stuttgart-things/blueprints/compare/v1.62.0...v1.63.0) (2026-02-18)
 
 

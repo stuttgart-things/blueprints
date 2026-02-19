@@ -34,6 +34,10 @@ func (m *Presentations) Init(
 		"BaseURL":      "/",
 		"LanguageCode": "en-us",
 		"Title":        packageName,
+		"Author": map[string]interface{}{
+			"name":  "guest",
+			"email": "guest@example.com",
+		},
 		"Themes": []string{
 			"github.com/joshed-io/reveal-hugo",
 		},
@@ -118,6 +122,8 @@ func (m *Presentations) Init(
 				data[key] = value
 			}
 		}
+
+		normalizeAuthor(data)
 	}
 
 	// Parse variables from YAML file (middle priority)
@@ -138,6 +144,8 @@ func (m *Presentations) Init(
 				data[key] = value
 			}
 		}
+
+		normalizeAuthor(data)
 	}
 
 	// Parse and merge additional variables from comma-separated string (highest priority)
@@ -145,7 +153,10 @@ func (m *Presentations) Init(
 		// Parse variables with support for JSON values
 		// Strategy: find key= patterns and extract value until next key= or end
 		parseVariables(variables, data)
+		normalizeAuthor(data)
 	}
+
+	normalizeAuthor(data)
 
 	xplane := dag.Container().
 		From("alpine:latest").
@@ -172,6 +183,54 @@ func (m *Presentations) Init(
 	}
 
 	return xplane.Directory(workingDir), nil
+}
+
+func normalizeAuthor(data map[string]interface{}) {
+	author := map[string]interface{}{
+		"name":  "guest",
+		"email": "guest@example.com",
+	}
+
+	if value, ok := data["Author"]; ok {
+		for key, mapped := range toStringMap(value) {
+			switch strings.ToLower(key) {
+			case "name":
+				author["name"] = mapped
+			case "email":
+				author["email"] = mapped
+			}
+		}
+	}
+
+	if value, ok := data["author"]; ok {
+		for key, mapped := range toStringMap(value) {
+			switch strings.ToLower(key) {
+			case "name":
+				author["name"] = mapped
+			case "email":
+				author["email"] = mapped
+			}
+		}
+	}
+
+	data["Author"] = author
+}
+
+func toStringMap(value interface{}) map[string]interface{} {
+	result := map[string]interface{}{}
+
+	switch typed := value.(type) {
+	case map[string]interface{}:
+		for key, item := range typed {
+			result[key] = item
+		}
+	case map[interface{}]interface{}:
+		for key, item := range typed {
+			result[fmt.Sprint(key)] = item
+		}
+	}
+
+	return result
 }
 
 // parseVariables parses key=value pairs with support for JSON values

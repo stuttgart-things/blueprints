@@ -17,6 +17,14 @@ languageCode = "{{ .LanguageCode }}"
 title = "{{ .Title }}"
 theme = [{{ range $i, $t := .Themes }}{{ if $i }}, {{ end }}"{{ $t }}"{{ end }}]
 
+[author]
+name = "{{ .Author.name }}"
+email = "{{ .Author.email }}"
+
+[params.author]
+name = "{{ .Author.name }}"
+email = "{{ .Author.email }}"
+
 [module]
   proxy = "{{ .Module.Proxy }}"
   vendored = {{ .Module.Vendored }}

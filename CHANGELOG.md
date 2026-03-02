@@ -1,3 +1,10 @@
+# [1.65.0](https://github.com/stuttgart-things/blueprints/compare/v1.64.0...v1.65.0) (2026-03-02)
+
+
+### Features
+
+* feat/update-vm-ansible ([03258e6](https://github.com/stuttgart-things/blueprints/commit/03258e67a60c39fd0548893cdc894ff56dbac818))
+
 # [1.64.0](https://github.com/stuttgart-things/blueprints/compare/v1.63.1...v1.64.0) (2026-03-02)
 
 

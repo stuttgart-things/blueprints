@@ -98,6 +98,24 @@ export --path=~/projects/terraform/vms/sthings-runner/
 ```
 
 ```bash
+# SOPS ENCRYPTED w/ AUTO SSH CREDS
+# When the SOPS-encrypted tfvars file contains "vm_ssh_user" and
+# "vm_ssh_password", Ansible SSH credentials are extracted automatically.
+# No --ansible-user / --ansible-password flags needed.
+
+dagger call -m vm bake-local \
+--terraform-dir ~/projects/terraform/vms/sthings-runner/ \
+--encrypted-file /home/sthings/projects/stuttgart-things/terraform/secrets/labda-terraform.tfvars.enc.json \
+--operation apply \
+--sops-key=env:SOPS_AGE_KEY \
+--ansible-requirements-file tests/vm/requirements.yaml \
+--ansible-parameters "send_to_homerun=false" \
+--ansible-playbooks "sthings.baseos.setup" \
+-vv --progress plain \
+export --path=~/projects/terraform/vms/sthings-runner/
+```
+
+```bash
 # TERRAFORM SECRETS FROM VAULT
 export SSH_USER=sthings
 export SSH_PASSWORD=<REPLACEME>
@@ -166,6 +184,35 @@ dagger call -m vm bake-local-by-profile \
 export --path ./
 ```
 
+```bash
+# SOPS ENCRYPTED w/ AUTO SSH CREDS
+# If the profile references a SOPS-encrypted tfvars file that contains
+# "vm_ssh_user" and "vm_ssh_password", --ansible-user / --ansible-password
+# can be omitted — credentials are extracted from the decrypted content.
+
+cat <<EOF >> vm-sops.yaml
+---
+operation: apply
+ansiblePlaybooks:
+  - "sthings.baseos.setup"
+ansibleParameters: []
+ansibleInventoryType: default
+ansibleWaitTimeout: 30
+ansibleRequirementsFile: ./requirements.yaml
+encryptedFile: ./terraform.tfvars.enc.json
+EOF
+```
+
+```bash
+dagger call -m vm bake-local-by-profile \
+--src ./ \
+--profile vm-sops.yaml \
+--sops-key env:SOPS_AGE_KEY \
+--awsAccessKeyID env:AWS_ACCESS_KEY_ID \
+--awsSecretAccessKey env:AWS_SECRET_ACCESS_KEY \
+--progress plain -vv \
+export --path ./
+```
 
 </details>
 

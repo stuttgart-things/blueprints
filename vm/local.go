@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dagger/vm/internal/dagger"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -101,6 +102,23 @@ func (v *Vm) BakeLocal(
 			WithNewFile(
 				fmt.Sprintf("%s/terraform.tfvars.json", workDir),
 				decryptedContent)
+
+		// Extract Ansible SSH creds from SOPS-decrypted content (CLI flags take precedence)
+		if ansibleUser == nil || ansiblePassword == nil { // pragma: allowlist secret
+			var tfvars map[string]interface{}
+			if err := json.Unmarshal([]byte(decryptedContent), &tfvars); err == nil {
+				if ansibleUser == nil {
+					if u, ok := tfvars["vm_ssh_user"].(string); ok && u != "" {
+						ansibleUser = dag.SetSecret("ansible-user", u)
+					}
+				}
+				if ansiblePassword == nil { // pragma: allowlist secret
+					if p, ok := tfvars["vm_ssh_password"].(string); ok && p != "" {
+						ansiblePassword = dag.SetSecret("ansible-password", p)
+					}
+				}
+			}
+		}
 	}
 
 	// RUN TERRAFORM WITH RETRY LOGIC

@@ -1,14 +1,14 @@
 {
   "name": "vm",
-  "engineVersion": "v0.19.11",
+  "engineVersion": "v0.20.0",
   "sdk": {
     "source": "go"
   },
   "dependencies": [
     {
       "name": "ansible",
-      "source": "github.com/stuttgart-things/dagger/ansible@v0.34.0",
-      "pin": "49f18046e2b261b963d4aab2c90c26df8761e68c"
+      "source": "github.com/stuttgart-things/dagger/ansible@v0.83.0",
+      "pin": "ed3be744649d4841900648b8987e8c13c18434fa"
     },
     {
       "name": "configuration",
@@ -16,8 +16,8 @@
     },
     {
       "name": "git",
-      "source": "github.com/stuttgart-things/dagger/git@v0.15.3",
-      "pin": "7982ab59d9575d636cb31d410d5cee4f39de194b"
+      "source": "github.com/stuttgart-things/dagger/git@v0.70.0",
+      "pin": "65455222342fd3546dbe4971859a967d48bed70d"
     },
     {
       "name": "go",
@@ -26,8 +26,8 @@
     },
     {
       "name": "sops",
-      "source": "github.com/stuttgart-things/dagger/sops@v0.13.0",
-      "pin": "db530d4a1cbc0373f29fa75d6cf4e860cc3a07c0"
+      "source": "github.com/stuttgart-things/dagger/sops@v0.75.0",
+      "pin": "1d5b83e0a4ddb02acff6698a2a54204faf818a9f"
     },
     {
       "name": "terraform",

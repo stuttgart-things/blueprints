@@ -74,6 +74,76 @@ dagger call -m vm execute-ansible \
 
 </details>
 
+<details><summary>RUN ANSIBLE + EXPORT FILES</summary>
+
+```bash
+# Execute Ansible playbook and export files from the container
+dagger call -m vm execute-ansible-with-export \
+--playbooks "sthings.rke.k3s" \
+--hosts 10.31.103.22 \
+--ssh-user=env:SSH_USER \
+--ssh-password=env:SSH_PASSWORD \
+--requirements ./requirements.yaml \
+--parameters "k3s_k8s_version=1.35.1 k3s_release_kind=k3s1 cluster_setup=singlenode fetched_kubeconfig_path=/tmp/k3s.yaml" \
+--inventory-type cluster \
+--export-paths "/tmp/k3s.yaml" \
+--progress plain -vv \
+export --path=/tmp/exported/
+```
+
+</details>
+
+<details><summary>ENCRYPT FILE w/ SOPS</summary>
+
+```bash
+# Encrypt a plaintext file with SOPS using an AGE public key
+dagger call -m vm encrypt-file \
+--age-public-key=env:AGE_PUBLIC_KEY \
+--plaintext-file /tmp/k3s.yaml \
+--file-extension yaml
+```
+
+</details>
+
+<details><summary>COMMIT TO GIT</summary>
+
+```bash
+# Commit a directory of files to a GitHub repository branch
+dagger call -m vm commit-to-git \
+--source-dir /tmp/encrypted/ \
+--repository "stuttgart-things/k8s-configs" \
+--branch-name main \
+--commit-message "Add encrypted kubeconfig" \
+--destination-path "clusters/k3s/" \
+--git-token=env:GITHUB_TOKEN
+```
+
+</details>
+
+<details><summary>RUN ANSIBLE + ENCRYPT + COMMIT</summary>
+
+```bash
+# Full pipeline: execute Ansible, encrypt exported files, commit to Git
+dagger call -m vm execute-ansible-encrypt-and-commit \
+--playbooks "sthings.rke.k3s" \
+--hosts 10.31.103.22 \
+--ssh-user=env:SSH_USER \
+--ssh-password=env:SSH_PASSWORD \
+--requirements ./requirements.yaml \
+--parameters "k3s_k8s_version=1.35.1 k3s_release_kind=k3s1 cluster_setup=singlenode fetched_kubeconfig_path=/tmp/k3s.yaml prepare_rancher_ha_nodes=true" \
+--inventory-type cluster \
+--export-paths "/tmp/k3s.yaml" \
+--age-public-key=env:AGE_PUBLIC_KEY \
+--git-repository "stuttgart-things/k8s-configs" \
+--git-branch main \
+--git-commit-message "Add encrypted kubeconfig for k3s cluster" \
+--git-destination-path "clusters/k3s/" \
+--git-token=env:GITHUB_TOKEN \
+--progress plain -vv
+```
+
+</details>
+
 ## WORKFLOWS
 
 <details><summary>BAKE LOCAL</summary>

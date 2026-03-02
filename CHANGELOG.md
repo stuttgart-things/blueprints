@@ -1,3 +1,10 @@
+# [1.64.0](https://github.com/stuttgart-things/blueprints/compare/v1.63.1...v1.64.0) (2026-03-02)
+
+
+### Features
+
+* feat/update-bake-sops ([30f5259](https://github.com/stuttgart-things/blueprints/commit/30f525987d763ec3e7e932e77245c031df345ed2))
+
 ## [1.63.1](https://github.com/stuttgart-things/blueprints/compare/v1.63.0...v1.63.1) (2026-02-19)
 
 

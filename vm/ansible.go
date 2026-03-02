@@ -51,53 +51,9 @@ func (m *Vm) ExecuteAnsible(
 	inventoryType string,
 ) (bool, error) {
 
-	if src == nil {
-		src = dag.Directory()
-	}
-
-	// IF NO INVENTORY FILE PROVIDED BUT HOSTS ARE GIVEN, CREATE INVENTORY
-	if inventory == nil && hosts != "" {
-		var inventoryContent string
-		var err error
-
-		if inventoryType == "cluster" {
-			// Create cluster inventory with master/worker groups
-			inventoryContent, err = CreateClusterAnsibleInventoryFromHosts(hosts)
-			if err != nil {
-				return false, err
-			}
-		} else {
-			// Create simple inventory with [all] group
-			inventoryContent = "[all]\n"
-			for _, host := range splitHosts(hosts) {
-				inventoryContent += host + "\n"
-			}
-		}
-
-		// Create inventory file from content
-		inventory = dag.Directory().
-			WithNewFile("inventory.ini", inventoryContent).
-			File("inventory.ini")
-	}
-
-	// IF NO REQUIREMENTS FILE PROVIDED, GENERATE IT USING CONFIGURATION MODULE
-	if requirements == nil {
-		generatedRequirements := dag.Configuration().CreateAnsibleRequirementFiles(
-			dagger.ConfigurationCreateAnsibleRequirementFilesOpts{
-				Src:           src,
-				TemplatePaths: requirementsTemplate,
-				DataFile:      requirementsData,
-				StrictMode:    false,
-			},
-		)
-		// Extract requirements.yaml from generated directory
-		requirements = generatedRequirements.File("requirements.yaml")
-	}
-
-	// MERGE PARAMETERS FROM FILE AND STRING (STRING HAS HIGHER PRIORITY)
-	finalParameters, err := m.mergeAnsibleParameters(ctx, parametersFile, parameters)
+	prep, err := m.prepareAnsibleExecution(ctx, src, requirements, inventory, hosts, parameters, parametersFile, requirementsTemplate, requirementsData, inventoryType)
 	if err != nil {
-		return false, fmt.Errorf("failed to merge parameters: %w", err)
+		return false, err
 	}
 
 	// EXECUTE ANSIBLE USING DAGGER'S ANSIBLE MODULE
@@ -105,13 +61,13 @@ func (m *Vm) ExecuteAnsible(
 		ctx,
 		playbooks,
 		dagger.AnsibleExecuteOpts{
-			Src:            src,
-			Inventory:      inventory,
-			Parameters:     finalParameters,
+			Src:            prep.src,
+			Inventory:      prep.inventory,
+			Parameters:     prep.parameters,
 			VaultAppRoleID: vaultAppRoleID,
 			VaultSecretID:  vaultSecretID,
 			VaultURL:       vaultURL,
-			Requirements:   requirements,
+			Requirements:   prep.requirements,
 			SSHUser:        sshUser,
 			SSHPassword:    sshPassword,
 		})
@@ -271,4 +227,252 @@ func splitHosts(hosts string) []string {
 		}
 	}
 	return result
+}
+
+// ansiblePrepResult holds the prepared inputs for Ansible execution.
+type ansiblePrepResult struct {
+	src          *dagger.Directory
+	inventory    *dagger.File
+	requirements *dagger.File
+	parameters   string
+}
+
+// prepareAnsibleExecution handles inventory generation, requirements generation,
+// and parameter merging — shared logic between ExecuteAnsible and ExecuteAnsibleWithExport.
+func (m *Vm) prepareAnsibleExecution(
+	ctx context.Context,
+	src *dagger.Directory,
+	requirements *dagger.File,
+	inventory *dagger.File,
+	hosts string,
+	parameters string,
+	parametersFile *dagger.File,
+	requirementsTemplate string,
+	requirementsData string,
+	inventoryType string,
+) (*ansiblePrepResult, error) {
+
+	if src == nil {
+		src = dag.Directory()
+	}
+
+	// IF NO INVENTORY FILE PROVIDED BUT HOSTS ARE GIVEN, CREATE INVENTORY
+	if inventory == nil && hosts != "" {
+		var inventoryContent string
+		var err error
+
+		if inventoryType == "cluster" {
+			inventoryContent, err = CreateClusterAnsibleInventoryFromHosts(hosts)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			inventoryContent = "[all]\n"
+			for _, host := range splitHosts(hosts) {
+				inventoryContent += host + "\n"
+			}
+		}
+
+		inventory = dag.Directory().
+			WithNewFile("inventory.ini", inventoryContent).
+			File("inventory.ini")
+	}
+
+	// IF NO REQUIREMENTS FILE PROVIDED, GENERATE IT USING CONFIGURATION MODULE
+	if requirements == nil {
+		generatedRequirements := dag.Configuration().CreateAnsibleRequirementFiles(
+			dagger.ConfigurationCreateAnsibleRequirementFilesOpts{
+				Src:           src,
+				TemplatePaths: requirementsTemplate,
+				DataFile:      requirementsData,
+				StrictMode:    false,
+			},
+		)
+		requirements = generatedRequirements.File("requirements.yaml")
+	}
+
+	// MERGE PARAMETERS FROM FILE AND STRING (STRING HAS HIGHER PRIORITY)
+	finalParameters, err := m.mergeAnsibleParameters(ctx, parametersFile, parameters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to merge parameters: %w", err)
+	}
+
+	return &ansiblePrepResult{
+		src:          src,
+		inventory:    inventory,
+		requirements: requirements,
+		parameters:   finalParameters,
+	}, nil
+}
+
+// ExecuteAnsibleWithExport runs Ansible playbooks and exports specified files from the container.
+// Same parameters as ExecuteAnsible plus exportPaths (comma-separated file paths to extract).
+func (m *Vm) ExecuteAnsibleWithExport(
+	ctx context.Context,
+	// +optional
+	src *dagger.Directory,
+	playbooks string,
+	// Comma-separated list of file paths to export from the Ansible container
+	exportPaths string,
+	// +optional
+	requirements *dagger.File,
+	// +optional
+	inventory *dagger.File,
+	// Comma-separated list of hosts (e.g., "192.168.1.10,192.168.1.11")
+	// Used to generate inventory if inventory file is not provided
+	// +optional
+	hosts string,
+	// +optional
+	parameters string,
+	// Path to a YAML file containing parameters (lower priority)
+	// +optional
+	parametersFile *dagger.File,
+	// +optional
+	vaultAppRoleID *dagger.Secret,
+	// +optional
+	vaultSecretID *dagger.Secret,
+	// +optional
+	vaultURL *dagger.Secret,
+	// +optional
+	sshUser *dagger.Secret,
+	// +optional
+	sshPassword *dagger.Secret,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
+	requirementsTemplate string,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
+	requirementsData string,
+	// Inventory type: "simple" (default [all] group) or "cluster" (master/worker groups)
+	// +optional
+	// +default="simple"
+	inventoryType string,
+) (*dagger.Directory, error) {
+
+	prep, err := m.prepareAnsibleExecution(ctx, src, requirements, inventory, hosts, parameters, parametersFile, requirementsTemplate, requirementsData, inventoryType)
+	if err != nil {
+		return nil, err
+	}
+
+	// EXECUTE ANSIBLE AND EXPORT FILES
+	exportDir := dag.Ansible().ExecuteAndExport(
+		playbooks,
+		exportPaths,
+		dagger.AnsibleExecuteAndExportOpts{
+			Src:            prep.src,
+			Inventory:      prep.inventory,
+			Parameters:     prep.parameters,
+			VaultAppRoleID: vaultAppRoleID,
+			VaultSecretID:  vaultSecretID,
+			VaultURL:       vaultURL,
+			Requirements:   prep.requirements,
+			SSHUser:        sshUser,
+			SSHPassword:    sshPassword,
+		})
+
+	return exportDir, nil
+}
+
+// ExecuteAnsibleEncryptAndCommit runs Ansible playbooks, extracts files from the container,
+// encrypts them with SOPS, and commits the encrypted files to a Git repository.
+func (m *Vm) ExecuteAnsibleEncryptAndCommit(
+	ctx context.Context,
+	// +optional
+	src *dagger.Directory,
+	playbooks string,
+	// Comma-separated list of file paths to export from the Ansible container
+	exportPaths string,
+	// +optional
+	requirements *dagger.File,
+	// +optional
+	inventory *dagger.File,
+	// Comma-separated list of hosts (e.g., "192.168.1.10,192.168.1.11")
+	// +optional
+	hosts string,
+	// +optional
+	parameters string,
+	// +optional
+	parametersFile *dagger.File,
+	// +optional
+	vaultAppRoleID *dagger.Secret,
+	// +optional
+	vaultSecretID *dagger.Secret,
+	// +optional
+	vaultURL *dagger.Secret,
+	// +optional
+	sshUser *dagger.Secret,
+	// +optional
+	sshPassword *dagger.Secret,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
+	requirementsTemplate string,
+	// +optional
+	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
+	requirementsData string,
+	// Inventory type: "simple" (default [all] group) or "cluster" (master/worker groups)
+	// +optional
+	// +default="simple"
+	inventoryType string,
+	// AGE public key for SOPS encryption
+	agePublicKey *dagger.Secret,
+	// File extension for SOPS encryption (e.g., "yaml", "json")
+	// +optional
+	// +default="yaml"
+	sopsFileExtension string,
+	// SOPS config file (.sops.yaml)
+	// +optional
+	sopsConfig *dagger.File,
+	// Git repository in "owner/repo" format
+	gitRepository string,
+	// Git branch name
+	// +optional
+	// +default="main"
+	gitBranch string,
+	// Git commit message
+	// +optional
+	// +default="Add encrypted files from Ansible execution"
+	gitCommitMessage string,
+	// Destination path within the git repository
+	// +optional
+	// +default="/"
+	gitDestinationPath string,
+	// GitHub token for authentication
+	gitToken *dagger.Secret,
+) (string, error) {
+
+	// PHASE 1: Execute Ansible and export files
+	exportDir, err := m.ExecuteAnsibleWithExport(
+		ctx, src, playbooks, exportPaths, requirements, inventory, hosts, parameters, parametersFile,
+		vaultAppRoleID, vaultSecretID, vaultURL, sshUser, sshPassword,
+		requirementsTemplate, requirementsData, inventoryType,
+	)
+	if err != nil {
+		return "", fmt.Errorf("ansible execution failed: %w", err)
+	}
+
+	// PHASE 2: Encrypt each exported file with SOPS
+	entries, err := exportDir.Entries(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to list exported files: %w", err)
+	}
+
+	encryptedDir := dag.Directory()
+	for _, entry := range entries {
+		plaintextFile := exportDir.File(entry)
+
+		encryptedContent, err := m.EncryptFile(ctx, agePublicKey, plaintextFile, sopsFileExtension, sopsConfig)
+		if err != nil {
+			return "", fmt.Errorf("failed to encrypt file %s: %w", entry, err)
+		}
+
+		encryptedDir = encryptedDir.WithNewFile(entry, encryptedContent)
+	}
+
+	// PHASE 3: Commit encrypted files to Git
+	result, err := m.CommitToGit(ctx, encryptedDir, gitRepository, gitBranch, gitCommitMessage, gitDestinationPath, gitToken)
+	if err != nil {
+		return "", fmt.Errorf("git commit failed: %w", err)
+	}
+
+	return result, nil
 }

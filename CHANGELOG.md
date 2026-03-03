@@ -1,3 +1,10 @@
+# [1.66.0](https://github.com/stuttgart-things/blueprints/compare/v1.65.0...v1.66.0) (2026-03-03)
+
+
+### Features
+
+* feat/update-flux-boostrap ([d05bfa5](https://github.com/stuttgart-things/blueprints/commit/d05bfa50b3a8010742902672d342aa4f9cfdf249))
+
 # [1.65.0](https://github.com/stuttgart-things/blueprints/compare/v1.64.0...v1.65.0) (2026-03-02)
 
 

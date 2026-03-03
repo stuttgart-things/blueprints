@@ -44,6 +44,7 @@ func (v *Vm) BakeFromGit(
 }
 
 // CommitToGit commits a directory of files to a GitHub repository branch.
+// Optionally creates a new branch and opens a pull request.
 func (m *Vm) CommitToGit(
 	ctx context.Context,
 	// Directory containing files to commit
@@ -64,12 +65,36 @@ func (m *Vm) CommitToGit(
 	destinationPath string,
 	// GitHub token for authentication
 	gitToken *dagger.Secret,
+	// If non-empty, create this branch (from branchName as base) and commit there instead
+	// +optional
+	createBranch string,
+	// If true (and createBranch set), open a PR from the new branch back to branchName
+	// +optional
+	createPr bool,
+	// PR title (defaults to commitMessage if empty)
+	// +optional
+	prTitle string,
 ) (string, error) {
 
+	// Determine the target branch for the commit
+	targetBranch := branchName
+
+	// Create a new branch if requested
+	if createBranch != "" {
+		_, err := dag.Git().CreateGithubBranch(ctx, repository, createBranch, gitToken, dagger.GitCreateGithubBranchOpts{
+			BaseBranch: branchName,
+		})
+		if err != nil {
+			return "", fmt.Errorf("create-branch: %w", err)
+		}
+		targetBranch = createBranch
+	}
+
+	// Commit files to the target branch
 	_, err := dag.Git().AddFolderToGithubBranch(
 		ctx,
 		repository,
-		branchName,
+		targetBranch,
 		commitMessage,
 		gitToken,
 		sourceDir,
@@ -82,5 +107,21 @@ func (m *Vm) CommitToGit(
 		return "", fmt.Errorf("commit-to-git: %w", err)
 	}
 
-	return fmt.Sprintf("Committed to %s branch %s at %s", repository, branchName, destinationPath), nil
+	// Create a pull request if requested
+	if createPr && createBranch != "" {
+		title := prTitle
+		if title == "" {
+			title = commitMessage
+		}
+
+		prURL, err := dag.Git().CreateGithubPullRequest(ctx, repository, createBranch, title, commitMessage, gitToken, dagger.GitCreateGithubPullRequestOpts{
+			BaseBranch: branchName,
+		})
+		if err != nil {
+			return "", fmt.Errorf("create-pr: %w", err)
+		}
+		return fmt.Sprintf("Committed to %s branch %s at %s — PR: %s", repository, createBranch, destinationPath, prURL), nil
+	}
+
+	return fmt.Sprintf("Committed to %s branch %s at %s", repository, targetBranch, destinationPath), nil
 }

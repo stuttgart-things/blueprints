@@ -222,6 +222,10 @@ func (m *KubernetesDeployment) FluxDeployOperator(
 	// Directory containing the helmfile
 	// +optional
 	src *dagger.Directory,
+	// Comma-separated key=value pairs for --state-values-set
+	// (e.g., "version=0.42.1")
+	// +optional
+	stateValues string,
 ) error {
 	return m.DeployHelmfile(
 		ctx,
@@ -235,7 +239,7 @@ func (m *KubernetesDeployment) FluxDeployOperator(
 		nil,
 		"",
 		"approle",
-		"",
+		stateValues,
 	)
 }
 
@@ -481,7 +485,7 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	configParameters string,
 	// Flux instance version
 	// +optional
-	// +default="2.4.0"
+	// +default="2.8"
 	fluxVersion string,
 	// KCL entrypoint file name
 	// +optional
@@ -569,6 +573,10 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	// +optional
 	// +default="ghcr.io/fluxcd/flux-cli:v2.7.5"
 	fluxCliImage string,
+	// Flux operator version for Helmfile state values
+	// +optional
+	// +default="0.42.1"
+	operatorVersion string,
 ) (string, error) {
 
 	var results []string
@@ -692,7 +700,7 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	// =========================================================================
 
 	if deployOperator {
-		err := m.FluxDeployOperator(ctx, kubeConfig, helmfileRef, src)
+		err := m.FluxDeployOperator(ctx, kubeConfig, helmfileRef, src, "version="+operatorVersion)
 		if err != nil {
 			return "", fmt.Errorf("phase 4: deploy flux operator: %w", err)
 		}

@@ -438,6 +438,15 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 	gitDestinationPath string,
 	// GitHub token for authentication
 	gitToken *dagger.Secret,
+	// If non-empty, create this branch (from gitBranch as base) and commit there instead
+	// +optional
+	gitCreateBranch string,
+	// If true (and gitCreateBranch set), open a PR from the new branch back to gitBranch
+	// +optional
+	gitCreatePr bool,
+	// PR title (defaults to gitCommitMessage if empty)
+	// +optional
+	gitPrTitle string,
 ) (string, error) {
 
 	// PHASE 1: Execute Ansible and export files
@@ -469,7 +478,7 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 	}
 
 	// PHASE 3: Commit encrypted files to Git
-	result, err := m.CommitToGit(ctx, encryptedDir, gitRepository, gitBranch, gitCommitMessage, gitDestinationPath, gitToken)
+	result, err := m.CommitToGit(ctx, encryptedDir, gitRepository, gitBranch, gitCommitMessage, gitDestinationPath, gitToken, gitCreateBranch, gitCreatePr, gitPrTitle)
 	if err != nil {
 		return "", fmt.Errorf("git commit failed: %w", err)
 	}

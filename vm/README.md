@@ -118,6 +118,20 @@ dagger call -m vm commit-to-git \
 --git-token=env:GITHUB_TOKEN
 ```
 
+```bash
+# Commit to a new branch and open a PR
+dagger call -m vm commit-to-git \
+--source-dir /tmp/encrypted/ \
+--repository "stuttgart-things/k8s-configs" \
+--branch-name main \
+--create-branch "feat/add-kubeconfig" \
+--create-pr \
+--pr-title "Add encrypted kubeconfig" \
+--commit-message "Add encrypted kubeconfig" \
+--destination-path "clusters/k3s/" \
+--git-token=env:GITHUB_TOKEN
+```
+
 </details>
 
 <details><summary>RUN ANSIBLE + ENCRYPT + COMMIT</summary>
@@ -136,6 +150,29 @@ dagger call -m vm execute-ansible-encrypt-and-commit \
 --age-public-key=env:AGE_PUBLIC_KEY \
 --git-repository "stuttgart-things/k8s-configs" \
 --git-branch main \
+--git-commit-message "Add encrypted kubeconfig for k3s cluster" \
+--git-destination-path "clusters/k3s/" \
+--git-token=env:GITHUB_TOKEN \
+--progress plain -vv
+```
+
+```bash
+# Full pipeline with branch creation + PR
+dagger call -m vm execute-ansible-encrypt-and-commit \
+--playbooks "sthings.rke.k3s" \
+--hosts 10.31.103.22 \
+--ssh-user=env:SSH_USER \
+--ssh-password=env:SSH_PASSWORD \
+--requirements ./requirements.yaml \
+--parameters "k3s_k8s_version=1.35.1 k3s_release_kind=k3s1 cluster_setup=singlenode fetched_kubeconfig_path=/tmp/k3s.yaml prepare_rancher_ha_nodes=true" \
+--inventory-type cluster \
+--export-paths "/tmp/k3s.yaml" \
+--age-public-key=env:AGE_PUBLIC_KEY \
+--git-repository "stuttgart-things/k8s-configs" \
+--git-branch main \
+--git-create-branch "feat/add-k3s-kubeconfig" \
+--git-create-pr \
+--git-pr-title "Add encrypted kubeconfig for k3s cluster" \
 --git-commit-message "Add encrypted kubeconfig for k3s cluster" \
 --git-destination-path "clusters/k3s/" \
 --git-token=env:GITHUB_TOKEN \

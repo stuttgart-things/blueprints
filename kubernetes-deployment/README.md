@@ -51,6 +51,7 @@ dagger call -m kubernetes-deployment flux-bootstrap \
   --apply-config=true \
   --encrypt-secrets=true \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
+  --operator-version "0.42.1" \
   --wait-for-reconciliation=true \
   --progress plain
 ```
@@ -79,6 +80,7 @@ dagger call -m kubernetes-deployment flux-bootstrap \
 dagger call -m kubernetes-deployment flux-bootstrap \
   --kube-config file:///home/sthings/.kube/cluster \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
+  --operator-version "0.42.1" \
   --apply-secrets=false \
   --commit-to-git=false \
   --wait-for-reconciliation=false \
@@ -111,7 +113,7 @@ dagger call -m kubernetes-deployment flux-bootstrap \
 
 # Render config only
 dagger call -m kubernetes-deployment flux-render-config \
-  --config-parameters "name=flux-system,namespace=flux-system,version=2.4.0" \
+  --config-parameters "name=flux-system,namespace=flux-system,version=2.8" \
   --progress plain
 
 # Encrypt secrets
@@ -141,7 +143,8 @@ dagger call -m kubernetes-deployment flux-verify-secrets \
 # Deploy operator only
 dagger call -m kubernetes-deployment flux-deploy-operator \
   --kube-config file:///home/sthings/.kube/cluster \
-  --src ./helmfile \
+  --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
+  --state-values "version=0.42.1" \
   --progress plain
 
 # Wait for reconciliation

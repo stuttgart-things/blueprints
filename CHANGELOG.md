@@ -1,3 +1,10 @@
+# [1.67.0](https://github.com/stuttgart-things/blueprints/compare/v1.66.0...v1.67.0) (2026-03-04)
+
+
+### Features
+
+* feat/udpate-ansible ([2ced31f](https://github.com/stuttgart-things/blueprints/commit/2ced31f94d06750f53fb2c3fdd34001be9b848ce))
+
 # [1.66.0](https://github.com/stuttgart-things/blueprints/compare/v1.65.0...v1.66.0) (2026-03-03)
 
 

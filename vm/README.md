@@ -427,6 +427,20 @@ dagger call -m github.com/stuttgart-things/blueprints/vm@v1.34.0 execute-ansible
 --progress plain -vv
 ```
 
+```bash
+# EXAMPLE 3 - PDNS w/ VAULT
+
+dagger call -m vm \
+execute-ansible \
+--playbooks sthings.baseos.pdns \
+--requirements requirements.yaml \
+--parameters "ip_address=10.31.102.8 hostname=dev-infra-pre pdns_url=https://pdns-vsphere.labul.sva.de:8443 entry_zone=sthings-vsphere.labul.sva.de." \
+--vault-secret-id env:VAULT_SECRET_ID \
+--vault-role-id env:VAULT_ROLE_ID \
+--vault-url env:VAULT_ADDR \
+--progress plain -vv
+```
+
 </details>
 
 <details><summary>GET TSHIRT SIZE</summary>

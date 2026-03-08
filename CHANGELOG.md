@@ -1,3 +1,10 @@
+# [1.69.0](https://github.com/stuttgart-things/blueprints/compare/v1.68.0...v1.69.0) (2026-03-08)
+
+
+### Features
+
+* feat/add-mulitple-ansible-commits-change-filenames ([4c8f03a](https://github.com/stuttgart-things/blueprints/commit/4c8f03a5b399a56e4f02fc327913e46eca06a9f2))
+
 # [1.68.0](https://github.com/stuttgart-things/blueprints/compare/v1.67.0...v1.68.0) (2026-03-08)
 
 

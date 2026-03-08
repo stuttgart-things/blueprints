@@ -5,6 +5,7 @@ import (
 	"dagger/vm/internal/dagger"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -447,6 +448,10 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 	// PR title (defaults to gitCommitMessage if empty)
 	// +optional
 	gitPrTitle string,
+	// Comma-separated list of target filenames for exported files (maps 1:1 to exportPaths)
+	// If not set, original filenames are used
+	// +optional
+	exportTargetNames string,
 ) (string, error) {
 
 	// PHASE 1: Execute Ansible and export files
@@ -465,6 +470,20 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 		return "", fmt.Errorf("failed to list exported files: %w", err)
 	}
 
+	// Build rename map from exportTargetNames if provided
+	renameMap := make(map[string]string)
+	if exportTargetNames != "" {
+		targetNames := strings.Split(exportTargetNames, ",")
+		exportPathsList := strings.Split(exportPaths, ",")
+		if len(targetNames) != len(exportPathsList) {
+			return "", fmt.Errorf("exportTargetNames count (%d) must match exportPaths count (%d)", len(targetNames), len(exportPathsList))
+		}
+		for i, ep := range exportPathsList {
+			baseName := filepath.Base(strings.TrimSpace(ep))
+			renameMap[baseName] = strings.TrimSpace(targetNames[i])
+		}
+	}
+
 	encryptedDir := dag.Directory()
 	for _, entry := range entries {
 		plaintextFile := exportDir.File(entry)
@@ -474,7 +493,12 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 			return "", fmt.Errorf("failed to encrypt file %s: %w", entry, err)
 		}
 
-		encryptedDir = encryptedDir.WithNewFile(entry, encryptedContent)
+		targetName := entry
+		if mapped, ok := renameMap[entry]; ok {
+			targetName = mapped
+		}
+
+		encryptedDir = encryptedDir.WithNewFile(targetName, encryptedContent)
 	}
 
 	// PHASE 3: Commit encrypted files to Git

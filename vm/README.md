@@ -138,6 +138,7 @@ dagger call -m vm commit-to-git \
 
 ```bash
 # Full pipeline: execute Ansible, encrypt exported files, commit to Git
+# Use --export-target-names to rename the file in the target repository
 dagger call -m vm execute-ansible-encrypt-and-commit \
 --playbooks "sthings.rke.k3s" \
 --hosts 10.31.103.22 \
@@ -147,10 +148,32 @@ dagger call -m vm execute-ansible-encrypt-and-commit \
 --parameters "k3s_k8s_version=1.35.1 k3s_release_kind=k3s1 cluster_setup=singlenode fetched_kubeconfig_path=/tmp/k3s.yaml prepare_rancher_ha_nodes=true" \
 --inventory-type cluster \
 --export-paths "/tmp/k3s.yaml" \
+--export-target-names "prod-kubeconfig.yaml" \
 --age-public-key=env:AGE_PUBLIC_KEY \
 --git-repository "stuttgart-things/k8s-configs" \
 --git-branch main \
 --git-commit-message "Add encrypted kubeconfig for k3s cluster" \
+--git-destination-path "clusters/k3s/" \
+--git-token=env:GITHUB_TOKEN \
+--progress plain -vv
+```
+
+```bash
+# Full pipeline with multiple exported files and custom target names
+dagger call -m vm execute-ansible-encrypt-and-commit \
+--playbooks "sthings.rke.k3s" \
+--hosts 10.31.103.22 \
+--ssh-user=env:SSH_USER \
+--ssh-password=env:SSH_PASSWORD \
+--requirements ./requirements.yaml \
+--parameters "k3s_k8s_version=1.35.1 k3s_release_kind=k3s1 cluster_setup=singlenode fetched_kubeconfig_path=/tmp/k3s.yaml prepare_rancher_ha_nodes=true" \
+--inventory-type cluster \
+--export-paths "/tmp/k3s.yaml,/tmp/cluster-token.txt" \
+--export-target-names "prod-kubeconfig.yaml,prod-token.txt" \
+--age-public-key=env:AGE_PUBLIC_KEY \
+--git-repository "stuttgart-things/k8s-configs" \
+--git-branch main \
+--git-commit-message "Add encrypted kubeconfig and token for k3s cluster" \
 --git-destination-path "clusters/k3s/" \
 --git-token=env:GITHUB_TOKEN \
 --progress plain -vv
@@ -167,6 +190,7 @@ dagger call -m vm execute-ansible-encrypt-and-commit \
 --parameters "k3s_k8s_version=1.35.1 k3s_release_kind=k3s1 cluster_setup=singlenode fetched_kubeconfig_path=/tmp/k3s.yaml prepare_rancher_ha_nodes=true" \
 --inventory-type cluster \
 --export-paths "/tmp/k3s.yaml" \
+--export-target-names "prod-kubeconfig.yaml" \
 --age-public-key=env:AGE_PUBLIC_KEY \
 --git-repository "stuttgart-things/k8s-configs" \
 --git-branch main \

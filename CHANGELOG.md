@@ -1,3 +1,10 @@
+# [1.68.0](https://github.com/stuttgart-things/blueprints/compare/v1.67.0...v1.68.0) (2026-03-08)
+
+
+### Features
+
+* feat/119-deploy-kcl ([ecd1907](https://github.com/stuttgart-things/blueprints/commit/ecd19070a8713111bdf1d4e164c32f2900ef137e))
+
 # [1.67.0](https://github.com/stuttgart-things/blueprints/compare/v1.66.0...v1.67.0) (2026-03-04)
 
 

@@ -26,6 +26,53 @@ dagger call -m kubernetes-deployment install-custom-resource-definitions \
 ```
 
 ```bash
+# DEPLOY KCL - RENDER + APPLY W/ OCI SOURCE + INLINE PARAMETERS
+dagger call -m kubernetes-deployment deploy-kcl \
+  --oci-source ghcr.io/stuttgart-things/kcl-ansible \
+  --parameters 'pipelineRunName=run-ansible-test-6,namespace=tekton-ci' \
+  --kube-config file:///home/sthings/.kube/movie-scripts \
+  --progress plain
+```
+
+```bash
+# DEPLOY KCL - RENDER + APPLY W/ OCI SOURCE + PARAMETERS FILE
+dagger call -m kubernetes-deployment deploy-kcl \
+  --oci-source ghcr.io/stuttgart-things/kcl-ansible \
+  --parameters-file ./params.yaml \
+  --kube-config file:///home/sthings/.kube/movie-scripts \
+  --progress plain
+```
+
+```bash
+# DEPLOY KCL - RENDER + APPLY W/ LOCAL SOURCE
+dagger call -m kubernetes-deployment deploy-kcl \
+  --source ./kcl-module \
+  --parameters-file ./profile.yaml \
+  --kube-config file:///home/sthings/.kube/movie-scripts \
+  --progress plain
+```
+
+```bash
+# DEPLOY KCL - RENDER + APPLY W/ OCI SOURCE + CUSTOM NAMESPACE
+dagger call -m kubernetes-deployment deploy-kcl \
+  --oci-source ghcr.io/stuttgart-things/kcl-flux-instance \
+  --parameters 'name=flux-system,namespace=flux-system' \
+  --kube-config file:///home/sthings/.kube/movie-scripts \
+  --namespace flux-system \
+  --progress plain
+```
+
+```bash
+# DEPLOY KCL - DELETE RESOURCES
+dagger call -m kubernetes-deployment deploy-kcl \
+  --oci-source ghcr.io/stuttgart-things/kcl-ansible \
+  --parameters 'pipelineRunName=run-ansible-test-6,namespace=tekton-ci' \
+  --kube-config file:///home/sthings/.kube/movie-scripts \
+  --operation delete \
+  --progress plain
+```
+
+```bash
 # VALIDATE AGE KEY PAIR (standalone — fails fast on mismatch)
 dagger call -m kubernetes-deployment validate-age-key-pair \
   --sops-age-key env:SOPS_AGE_KEY \

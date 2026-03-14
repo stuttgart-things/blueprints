@@ -160,7 +160,6 @@ dagger call -m kubernetes-deployment flux-bootstrap \
 dagger call -m kubernetes-deployment flux-destroy \
   --kube-config file:///home/sthings/.kube/cluster \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
-  --operator-version "0.42.1" \
   --progress plain
 ```
 

@@ -1,3 +1,12 @@
+# [1.70.0](https://github.com/stuttgart-things/blueprints/compare/v1.69.0...v1.70.0) (2026-03-14)
+
+
+### Features
+
+* add flux-destroy usage example to README ([e891702](https://github.com/stuttgart-things/blueprints/commit/e8917027ac0334f76393406e8e19d5f6d215ea49))
+* add FluxDestroy function for clean Flux teardown ([0d04338](https://github.com/stuttgart-things/blueprints/commit/0d04338dc7a00003db3c965bd5e486a98f5d8549))
+* feat/add-flux-destroy ([b790a35](https://github.com/stuttgart-things/blueprints/commit/b790a3558e3b62d66ff694687b5eaa0ff2dba838))
+
 # [1.69.0](https://github.com/stuttgart-things/blueprints/compare/v1.68.0...v1.69.0) (2026-03-08)
 
 

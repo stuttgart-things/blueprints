@@ -156,6 +156,15 @@ dagger call -m kubernetes-deployment flux-bootstrap \
 ```
 
 ```bash
+# FLUX DESTROY - FULL TEARDOWN (delete FluxInstance, secrets, operator, namespace)
+dagger call -m kubernetes-deployment flux-destroy \
+  --kube-config file:///home/sthings/.kube/cluster \
+  --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
+  --operator-version "0.42.1" \
+  --progress plain
+```
+
+```bash
 # INDIVIDUAL PHASE FUNCTIONS (each callable standalone via dagger call)
 
 # Render config only

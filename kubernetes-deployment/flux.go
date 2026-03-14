@@ -461,6 +461,110 @@ flux check
 	return strings.Join(results, "\n"), nil
 }
 
+// FluxDestroy tears down Flux from a cluster.
+//
+// Phase order:
+//
+//	0: Delete FluxInstance CR
+//	1: Delete Flux secrets
+//	2: Uninstall Flux operator (Helmfile destroy)
+//	3: Delete flux-system namespace
+//
+// Usage:
+//
+//	dagger call flux-destroy --kube-config file:///tmp/kubeconfig
+func (m *KubernetesDeployment) FluxDestroy(
+	ctx context.Context,
+	// Kubeconfig secret for cluster access
+	kubeConfig *dagger.Secret,
+	// Target namespace
+	// +optional
+	// +default="flux-system"
+	namespace string,
+	// Helmfile reference for Flux operator
+	// +optional
+	// +default="helmfile.yaml"
+	helmfileRef string,
+	// Directory containing the helmfile
+	// +optional
+	src *dagger.Directory,
+	// Flux operator version for Helmfile state values
+	// +optional
+	// +default="0.42.1"
+	operatorVersion string,
+) (string, error) {
+
+	var results []string
+	kubectlImage := "bitnami/kubectl:latest"
+
+	// =========================================================================
+	// Phase 0: Delete FluxInstance CR
+	// =========================================================================
+
+	_, err := dag.Container().
+		From(kubectlImage).
+		WithMountedSecret("/tmp/kubeconfig", kubeConfig, dagger.ContainerWithMountedSecretOpts{
+			Mode: 0444,
+		}).
+		WithEnvVariable("KUBECONFIG", "/tmp/kubeconfig").
+		WithExec([]string{"kubectl", "delete", "fluxinstance", "--all", "-n", namespace, "--ignore-not-found=true"}).
+		Stdout(ctx)
+	if err != nil {
+		results = append(results, fmt.Sprintf("Phase 0: Warning — delete FluxInstance: %v", err))
+	} else {
+		results = append(results, "Phase 0: FluxInstance CRs deleted")
+	}
+
+	// =========================================================================
+	// Phase 1: Delete Flux secrets
+	// =========================================================================
+
+	_, err = dag.Container().
+		From(kubectlImage).
+		WithMountedSecret("/tmp/kubeconfig", kubeConfig, dagger.ContainerWithMountedSecretOpts{
+			Mode: 0444,
+		}).
+		WithEnvVariable("KUBECONFIG", "/tmp/kubeconfig").
+		WithExec([]string{"kubectl", "delete", "secret", "--all", "-n", namespace, "--ignore-not-found=true"}).
+		Stdout(ctx)
+	if err != nil {
+		results = append(results, fmt.Sprintf("Phase 1: Warning — delete secrets: %v", err))
+	} else {
+		results = append(results, "Phase 1: Flux secrets deleted")
+	}
+
+	// =========================================================================
+	// Phase 2: Uninstall Flux operator (Helmfile destroy)
+	// =========================================================================
+
+	err = m.DeployHelmfile(ctx, src, helmfileRef, "destroy", nil, kubeConfig, nil, nil, nil, "", "approle", "version="+operatorVersion)
+	if err != nil {
+		results = append(results, fmt.Sprintf("Phase 2: Warning — helmfile destroy: %v", err))
+	} else {
+		results = append(results, "Phase 2: Flux operator uninstalled via Helmfile destroy")
+	}
+
+	// =========================================================================
+	// Phase 3: Delete flux-system namespace
+	// =========================================================================
+
+	_, err = dag.Container().
+		From(kubectlImage).
+		WithMountedSecret("/tmp/kubeconfig", kubeConfig, dagger.ContainerWithMountedSecretOpts{
+			Mode: 0444,
+		}).
+		WithEnvVariable("KUBECONFIG", "/tmp/kubeconfig").
+		WithExec([]string{"kubectl", "delete", "namespace", namespace, "--ignore-not-found=true", "--timeout=120s"}).
+		Stdout(ctx)
+	if err != nil {
+		results = append(results, fmt.Sprintf("Phase 3: Warning — delete namespace: %v", err))
+	} else {
+		results = append(results, fmt.Sprintf("Phase 3: Namespace %s deleted", namespace))
+	}
+
+	return strings.Join(results, "\n"), nil
+}
+
 // FluxBootstrap orchestrates a full Flux bootstrap lifecycle.
 //
 // Phase order:

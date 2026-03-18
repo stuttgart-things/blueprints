@@ -405,7 +405,7 @@ func (m *KubernetesDeployment) FluxWaitForReconciliation(
 	reconciliationTimeout string,
 	// Flux CLI container image
 	// +optional
-	// +default="ghcr.io/fluxcd/flux-cli:v2.7.5"
+	// +default="ghcr.io/fluxcd/flux-cli:v2.8.3"
 	fluxCliImage string,
 ) (string, error) {
 	timeoutSecs := parseTimeout(reconciliationTimeout)
@@ -675,7 +675,7 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	applyConfig bool,
 	// Flux CLI container image
 	// +optional
-	// +default="ghcr.io/fluxcd/flux-cli:v2.7.5"
+	// +default="ghcr.io/fluxcd/flux-cli:v2.8.3"
 	fluxCliImage string,
 	// Flux operator version for Helmfile state values
 	// +optional

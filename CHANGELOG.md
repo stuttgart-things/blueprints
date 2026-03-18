@@ -1,3 +1,10 @@
+# [1.71.0](https://github.com/stuttgart-things/blueprints/compare/v1.70.0...v1.71.0) (2026-03-18)
+
+
+### Features
+
+* feat/update-flux-cli ([7a3156f](https://github.com/stuttgart-things/blueprints/commit/7a3156f6f88e7aad55c0fa3510c63841e24f7666))
+
 # [1.70.0](https://github.com/stuttgart-things/blueprints/compare/v1.69.0...v1.70.0) (2026-03-14)
 
 

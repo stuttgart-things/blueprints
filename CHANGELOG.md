@@ -1,3 +1,10 @@
+# [1.72.0](https://github.com/stuttgart-things/blueprints/compare/v1.71.0...v1.72.0) (2026-03-27)
+
+
+### Features
+
+* feat/add-vmtemplate-rendering ([ca13375](https://github.com/stuttgart-things/blueprints/commit/ca133751716ffd15a65d1e8e8de01759bc399220))
+
 # [1.71.0](https://github.com/stuttgart-things/blueprints/compare/v1.70.0...v1.71.0) (2026-03-18)
 
 

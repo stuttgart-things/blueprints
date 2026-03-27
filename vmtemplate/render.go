@@ -213,25 +213,19 @@ func (m *Vmtemplate) RenderAndCommit(
 		}
 	}
 
-	if commitConfig {
-		if packerDestinationPath != "" {
-			fmt.Printf("COMMITTING PACKER FILES TO %s/%s\n", branchName, packerDestinationPath)
-			if _, err := dag.Git().AddFolderToGithubBranch(
-				ctx, repository, branchName, commitMessage, token,
-				renderedPackerDir.WithDirectory(".", buildDir), packerDestinationPath,
-			); err != nil {
-				return outputDir, fmt.Errorf("committing packer files failed: %w", err)
-			}
+	if commitConfig && packerDestinationPath != "" {
+		// BUILD SINGLE COMMIT DIRECTORY WITH ALL FILES
+		commitDir := renderedPackerDir.WithDirectory(".", buildDir)
+		if renderedTestVmDir != nil {
+			commitDir = commitDir.WithDirectory("test-vm", renderedTestVmDir)
 		}
 
-		if renderedTestVmDir != nil && testVmDestinationPath != "" {
-			fmt.Printf("COMMITTING TEST VM FILES TO %s/%s\n", branchName, testVmDestinationPath)
-			if _, err := dag.Git().AddFolderToGithubBranch(
-				ctx, repository, branchName, commitMessage+" (test-vm)", token,
-				renderedTestVmDir, testVmDestinationPath,
-			); err != nil {
-				return outputDir, fmt.Errorf("committing test VM files failed: %w", err)
-			}
+		fmt.Printf("COMMITTING ALL FILES TO %s/%s\n", branchName, packerDestinationPath)
+		if _, err := dag.Git().AddFolderToGithubBranch(
+			ctx, repository, branchName, commitMessage, token,
+			commitDir, packerDestinationPath,
+		); err != nil {
+			return outputDir, fmt.Errorf("committing files failed: %w", err)
 		}
 	}
 

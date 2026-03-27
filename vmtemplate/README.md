@@ -170,7 +170,6 @@ render-and-commit \
 --branch-name "feat/rendered-ubuntu25-labul-config" \
 --commit-config \
 --packer-destination-path "packer/builds/ubuntu25-labul-vsphere-base-os" \
---test-vm-destination-path "packer/builds/ubuntu25-labul-vsphere-base-os/test-vm" \
 --create-pull-request \
 --progress plain -vv
 ```
@@ -245,8 +244,7 @@ bake \
 | `--base-branch` | `string` | no | `main` | Base branch to create from |
 | `--create-branch` | `bool` | no | `false` | Create a new branch |
 | `--commit-config` | `bool` | no | `false` | Commit rendered files |
-| `--packer-destination-path` | `string` | no | - | Destination path for packer files in repo |
-| `--test-vm-destination-path` | `string` | no | - | Destination path for test VM files in repo |
+| `--packer-destination-path` | `string` | no | - | Destination path for all rendered files in repo (test-vm included as subfolder) |
 | `--create-pull-request` | `bool` | no | `false` | Create a PR after committing |
 | `--pull-request-title` | `string` | no | auto-generated | PR title |
 | `--pull-request-body` | `string` | no | auto-generated | PR body |

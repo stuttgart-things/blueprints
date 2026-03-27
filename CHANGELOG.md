@@ -1,3 +1,10 @@
+# [1.73.0](https://github.com/stuttgart-things/blueprints/compare/v1.72.0...v1.73.0) (2026-03-27)
+
+
+### Features
+
+* feat/update-template-git ([d893041](https://github.com/stuttgart-things/blueprints/commit/d893041dfe0e9cb3af4f09c7a9c105c85cc0d529))
+
 # [1.72.0](https://github.com/stuttgart-things/blueprints/compare/v1.71.0...v1.72.0) (2026-03-27)
 
 

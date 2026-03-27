@@ -1,0 +1,19 @@
+os: {{ .osName }}
+label: {{ .osLabel }}
+datacenter: {{ .datacenter }}
+cluster: {{ .cluster }}
+network: {{ .network }}
+cpus: {{ .cpus }}
+ram: {{ .ram }}
+iso:
+  url: {{ .isoUrl }}
+  checksum: {{ .isoChecksum }}
+collections:
+{{- range .ansibleCollections }}
+  - name: {{ .name }}
+    version: {{ .version }}
+{{- end }}
+sthings:
+{{- range .ansibleSthingsCollections }}
+  - {{ . }}
+{{- end }}

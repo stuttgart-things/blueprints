@@ -82,7 +82,7 @@ tasks:
       CODE_TEST_DIR: tests/{{ .MODULE }}/calculator
 
   test-vmtemplate:
-    desc: Test vmtemplate module
+    desc: Test vmtemplate module (bake)
     cmds:
       - |
         dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
@@ -96,6 +96,41 @@ tasks:
       CODE_TEST_DIR: tests/{{ .MODULE }}/hello
       TEST_CONFIG: hello.pkr.hcl
       PACKER_VERSION: 1.13.1
+
+  test-vmtemplate-render:
+    desc: Test vmtemplate render-build-config (local rendering)
+    cmds:
+      - |
+        rm -rf {{ .EXPORT_PATH }} || true
+        mkdir -p {{ .EXPORT_PATH }} || true
+      - |
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --templates-dir {{ .TEMPLATES_DIR }} \
+        --templates "{{ .TEMPLATES }}" \
+        --build-dir {{ .BUILD_DIR }} \
+        --env-dir {{ .ENV_DIR }} \
+        --variables-files "{{ .VARIABLES_FILES }}" \
+        --overrides "{{ .OVERRIDES }}" \
+        --progress plain -vv \
+        export --path={{ .EXPORT_PATH }}
+      - |
+        echo "✓ Rendering completed successfully"
+        echo ""
+        echo "Rendered files:"
+        find {{ .EXPORT_PATH }} -type f | sort
+        echo ""
+        echo "Content:"
+        cat {{ .EXPORT_PATH }}/config.yaml
+    vars:
+      MODULE: vmtemplate
+      FUNCTION: render-build-config
+      TEMPLATES_DIR: tests/{{ .MODULE }}/render/templates
+      TEMPLATES: "greeting.txt.tmpl,config.yaml.tmpl"
+      BUILD_DIR: tests/{{ .MODULE }}/render/build
+      ENV_DIR: tests/{{ .MODULE }}/render
+      VARIABLES_FILES: "env.yaml,build-vars.yaml"
+      OVERRIDES: "name=override-test,cpus=16"
+      EXPORT_PATH: /tmp/vmtemplate-render-test
 
   test-vm:
     desc: Test vm module

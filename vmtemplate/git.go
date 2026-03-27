@@ -15,7 +15,7 @@ func (m *Vmtemplate) CloneGitRepository(
 
 	switch scm {
 	case "github":
-		return dag.Git().CloneGitHub(repository, token)
+		return dag.Git().CloneGithub(repository, token)
 
 	default:
 		panic(fmt.Sprintf("unsupported git type: %s", scm))

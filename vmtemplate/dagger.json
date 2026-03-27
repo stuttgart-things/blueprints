@@ -1,14 +1,14 @@
 {
   "name": "vmtemplate",
-  "engineVersion": "v0.18.12",
+  "engineVersion": "v0.20.0",
   "sdk": {
     "source": "go"
   },
   "dependencies": [
     {
       "name": "git",
-      "source": "github.com/stuttgart-things/dagger/git@v0.16.0",
-      "pin": "b368eab925a6b849e964ea017dec3885afea2919"
+      "source": "github.com/stuttgart-things/dagger/git@v0.86.0",
+      "pin": "2dc146fd7c32848394ea4b5e5b7e66b920035233"
     },
     {
       "name": "packer",
@@ -19,6 +19,16 @@
       "name": "terraform",
       "source": "github.com/stuttgart-things/dagger/terraform@v0.22.0",
       "pin": "2820e73fb4c0dc247fb7f369194859e9dcb81691"
+    },
+    {
+      "name": "vm",
+      "source": "../vm"
+    },
+    {
+      "name": "templating",
+      "source": "github.com/stuttgart-things/dagger/templating@v0.86.0",
+      "pin": "2dc146fd7c32848394ea4b5e5b7e66b920035233"
     }
-  ]
+  ],
+  "disableDefaultFunctionCaching": true
 }

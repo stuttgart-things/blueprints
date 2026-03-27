@@ -1,0 +1,16 @@
+# build layer (OS-specific, overrides env)
+osName: ubuntu99
+osLabel: "Ubuntu 99.04 (Example)"
+cpus: 8
+ram: 8192
+isoUrl: "https://example.com/ubuntu-99.04-live-server-amd64.iso"
+isoChecksum: "0000000000000000000000000000000000000000000000000000000000000000"
+
+ansibleCollections:
+  - name: community.general
+    version: 99.0.0
+  - name: ansible.posix
+    version: 99.0.0
+
+ansibleSthingsCollections:
+  - "https://example.com/sthings-baseos-99.0.0.tar.gz"

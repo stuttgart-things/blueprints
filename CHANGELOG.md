@@ -1,3 +1,10 @@
+# [1.75.0](https://github.com/stuttgart-things/blueprints/compare/v1.74.0...v1.75.0) (2026-03-28)
+
+
+### Features
+
+* **vmtemplate:** bump git module to v0.87.1 (idempotent CreateGithubBranch) ([18fc4c7](https://github.com/stuttgart-things/blueprints/commit/18fc4c7dd71c6d72ffad690f1fc6f4f975de0859))
+
 # [1.74.0](https://github.com/stuttgart-things/blueprints/compare/v1.73.0...v1.74.0) (2026-03-28)
 
 

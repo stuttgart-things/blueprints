@@ -28,7 +28,7 @@ These blueprints are designed for platform engineers, SREs, and developers who w
 
 Example: Run AI-powered linting analysis
 
-```sh
+```bash
 dagger call -m repository-linting analyze-report --report-file /tmp/all-findings.txt export --path=/tmp/ai.txt
 ```
 

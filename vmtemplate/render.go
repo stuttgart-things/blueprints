@@ -214,8 +214,8 @@ func (m *Vmtemplate) RenderAndCommit(
 	}
 
 	if commitConfig && packerDestinationPath != "" {
-		// BUILD SINGLE COMMIT DIRECTORY WITH ALL FILES
-		commitDir := renderedPackerDir.WithDirectory(".", buildDir)
+		// BUILD SINGLE COMMIT DIRECTORY: static files (base) + rendered files (overlay)
+		commitDir := buildDir.WithDirectory(".", renderedPackerDir)
 		if renderedTestVmDir != nil {
 			commitDir = commitDir.WithDirectory("test-vm", renderedTestVmDir)
 		}

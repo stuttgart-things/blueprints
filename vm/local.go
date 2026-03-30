@@ -5,6 +5,7 @@ import (
 	"dagger/vm/internal/dagger"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -69,6 +70,28 @@ func (v *Vm) BakeLocal(
 	// +optional
 	// +default="simple"
 	inventoryType string,
+	// Comma-separated list of file paths to export from the Ansible container
+	// +optional
+	exportPaths string,
+	// AGE public key for SOPS encryption of exported files
+	// +optional
+	agePublicKey *dagger.Secret,
+	// File extension for SOPS encryption (e.g., "yaml", "json")
+	// +optional
+	// +default="yaml"
+	sopsFileExtension string,
+	// SOPS config file (.sops.yaml)
+	// +optional
+	sopsConfig *dagger.File,
+	// Comma-separated list of target filenames for exported files (maps 1:1 to exportPaths)
+	// If not set, original filenames are used
+	// +optional
+	exportTargetNames string,
+	// Destination path for encrypted exports within the result directory
+	// Use "./" to place files at the root level (no subdirectory)
+	// +optional
+	// +default="encrypted-exports"
+	exportDestinationPath string,
 ) (*dagger.Directory, error) {
 	workDir := "/src"
 
@@ -199,33 +222,107 @@ func (v *Vm) BakeLocal(
 	// SLEEP BEFORE ANSIBLE (GIVE MACHINES TIME TO BE READY)
 	time.Sleep(time.Duration(ansibleWaitTimeout) * time.Second)
 
-	// RUN ANSIBLE
-	ansibleSuccess, err := v.
-		ExecuteAnsible(
-			ctx,
-			terraformDirResult,
-			ansiblePlaybooks,
-			ansibleRequirementsFile,
-			terraformDirResult.File("inventory.yaml"),
-			"",
-			ansibleParameters,
-			nil,
-			vaultRoleID,
-			vaultSecretID,
-			vaultURL,
-			ansibleUser,
-			ansiblePassword,
-			requirementsTemplate,
-			requirementsData,
-			inventoryType,
-		)
+	// RUN ANSIBLE (with or without export)
+	if exportPaths != "" {
+		// EXECUTE ANSIBLE WITH EXPORT
+		exportDir, err := v.
+			ExecuteAnsibleWithExport(
+				ctx,
+				terraformDirResult,
+				ansiblePlaybooks,
+				exportPaths,
+				ansibleRequirementsFile,
+				terraformDirResult.File("inventory.yaml"),
+				"",
+				ansibleParameters,
+				nil,
+				vaultRoleID,
+				vaultSecretID,
+				vaultURL,
+				ansibleUser,
+				ansiblePassword,
+				requirementsTemplate,
+				requirementsData,
+				inventoryType,
+			)
+		if err != nil {
+			return nil, fmt.Errorf("ansible execution with export failed: %w", err)
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("running ansible failed: %w", err)
-	}
+		// ENCRYPT EXPORTED FILES WITH SOPS
+		if agePublicKey != nil {
+			entries, err := exportDir.Entries(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to list exported files: %w", err)
+			}
 
-	if !ansibleSuccess {
-		return nil, fmt.Errorf("ansible execution failed")
+			// Build rename map from exportTargetNames if provided
+			renameMap := make(map[string]string)
+			if exportTargetNames != "" {
+				targetNames := strings.Split(exportTargetNames, ",")
+				exportPathsList := strings.Split(exportPaths, ",")
+				if len(targetNames) != len(exportPathsList) {
+					return nil, fmt.Errorf("exportTargetNames count (%d) must match exportPaths count (%d)", len(targetNames), len(exportPathsList))
+				}
+				for i, ep := range exportPathsList {
+					baseName := filepath.Base(strings.TrimSpace(ep))
+					renameMap[baseName] = strings.TrimSpace(targetNames[i])
+				}
+			}
+
+			encryptedDir := dag.Directory()
+			for _, entry := range entries {
+				plaintextFile := exportDir.File(entry)
+
+				encryptedContent, err := v.EncryptFile(ctx, agePublicKey, plaintextFile, sopsFileExtension, sopsConfig)
+				if err != nil {
+					return nil, fmt.Errorf("failed to encrypt file %s: %w", entry, err)
+				}
+
+				targetName := entry
+				if mapped, ok := renameMap[entry]; ok {
+					targetName = mapped
+				}
+
+				encryptedDir = encryptedDir.WithNewFile(targetName, encryptedContent)
+			}
+
+			// Merge encrypted files into the result directory
+			if exportDestinationPath == "./" || exportDestinationPath == "." {
+				terraformDirResult = terraformDirResult.WithDirectory("/", encryptedDir)
+			} else {
+				terraformDirResult = terraformDirResult.WithDirectory(exportDestinationPath, encryptedDir)
+			}
+		}
+	} else {
+		// STANDARD ANSIBLE EXECUTION (no exports)
+		ansibleSuccess, err := v.
+			ExecuteAnsible(
+				ctx,
+				terraformDirResult,
+				ansiblePlaybooks,
+				ansibleRequirementsFile,
+				terraformDirResult.File("inventory.yaml"),
+				"",
+				ansibleParameters,
+				nil,
+				vaultRoleID,
+				vaultSecretID,
+				vaultURL,
+				ansibleUser,
+				ansiblePassword,
+				requirementsTemplate,
+				requirementsData,
+				inventoryType,
+			)
+
+		if err != nil {
+			return nil, fmt.Errorf("running ansible failed: %w", err)
+		}
+
+		if !ansibleSuccess {
+			return nil, fmt.Errorf("ansible execution failed")
+		}
 	}
 
 	// RETURN UPDATED WORKDIR WITH INVENTORY
@@ -244,6 +341,10 @@ type ProfileConfig struct {
 	AnsibleRequirementsFile string   `yaml:"ansibleRequirementsFile"`
 	TerraformMaxRetries     int      `yaml:"terraformMaxRetries"`
 	TerraformRetryDelay     int      `yaml:"terraformRetryDelay"`
+	ExportPaths             []string `yaml:"exportPaths"`
+	ExportTargetNames       []string `yaml:"exportTargetNames"`
+	SopsFileExtension       string   `yaml:"sopsFileExtension"`
+	ExportDestinationPath   string   `yaml:"exportDestinationPath"`
 }
 
 func (v *Vm) BakeLocalByProfile(
@@ -280,6 +381,12 @@ func (v *Vm) BakeLocalByProfile(
 	// +optional
 	// +default="simple"
 	inventoryType string,
+	// AGE public key for SOPS encryption of exported files
+	// +optional
+	agePublicKey *dagger.Secret,
+	// SOPS config file (.sops.yaml)
+	// +optional
+	sopsConfig *dagger.File,
 ) (*dagger.Directory, error) {
 
 	// READ AND PARSE PROFILE
@@ -301,6 +408,8 @@ func (v *Vm) BakeLocalByProfile(
 	variables := strings.Join(config.Variables, ",")
 	ansiblePlaybooks := strings.Join(config.AnsiblePlaybooks, ",")
 	ansibleParameters := strings.Join(config.AnsibleParameters, ",")
+	exportPaths := strings.Join(config.ExportPaths, ",")
+	exportTargetNames := strings.Join(config.ExportTargetNames, ",")
 
 	// GET FILE REFERENCES FROM CONFIG
 	var encryptedFile *dagger.File
@@ -321,6 +430,12 @@ func (v *Vm) BakeLocalByProfile(
 	retryDelay := config.TerraformRetryDelay
 	if retryDelay <= 0 {
 		retryDelay = 10
+	}
+
+	// SET SOPS FILE EXTENSION DEFAULT
+	sopsFileExtension := config.SopsFileExtension
+	if sopsFileExtension == "" {
+		sopsFileExtension = "yaml"
 	}
 
 	// CALL BakeLocal WITH CONVERTED PARAMETERS
@@ -349,5 +464,11 @@ func (v *Vm) BakeLocalByProfile(
 		maxRetries,
 		retryDelay,
 		inventoryType,
+		exportPaths,
+		agePublicKey,
+		sopsFileExtension,
+		sopsConfig,
+		exportTargetNames,
+		config.ExportDestinationPath,
 	)
 }

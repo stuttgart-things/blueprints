@@ -1,3 +1,10 @@
+# [1.76.0](https://github.com/stuttgart-things/blueprints/compare/v1.75.0...v1.76.0) (2026-03-30)
+
+
+### Features
+
+* feat/add-sops-vm-bake ([b6036f1](https://github.com/stuttgart-things/blueprints/commit/b6036f1bf72f4e34ca795b6000e76bedfd2b768a))
+
 # [1.75.0](https://github.com/stuttgart-things/blueprints/compare/v1.74.0...v1.75.0) (2026-03-28)
 
 

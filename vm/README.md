@@ -283,6 +283,66 @@ dagger call -m vm bake \
 export --path=~/projects/terraform/vms/sthings-runner/
 ```
 
+```bash
+# BAKE LOCAL + ANSIBLE EXPORT + SOPS ENCRYPT
+# Runs Terraform + Ansible, exports files from the Ansible container,
+# encrypts them with SOPS, and includes them in the result under encrypted-exports/
+dagger call -m vm bake-local \
+--terraform-dir ~/projects/terraform/vms/k3s-cluster/ \
+--encrypted-file ./terraform.tfvars.enc.json \
+--operation apply \
+--sops-key=env:SOPS_AGE_KEY \
+--ansible-playbooks "sthings.rke.k3s" \
+--ansible-parameters "k3s_k8s_version=1.35.1 k3s_release_kind=k3s1 cluster_setup=singlenode fetched_kubeconfig_path=/tmp/k3s.yaml" \
+--ansible-requirements-file ./requirements.yaml \
+--inventory-type cluster \
+--export-paths "/tmp/k3s.yaml" \
+--export-target-names "kubeconfig.yaml" \
+--age-public-key=env:AGE_PUBLIC_KEY \
+--sops-file-extension yaml \
+-vv --progress plain \
+export --path=./output/
+```
+
+```bash
+# BAKE LOCAL + MULTIPLE EXPORTS + SOPS ENCRYPT
+dagger call -m vm bake-local \
+--terraform-dir ~/projects/terraform/vms/k3s-cluster/ \
+--encrypted-file ./terraform.tfvars.enc.json \
+--operation apply \
+--sops-key=env:SOPS_AGE_KEY \
+--ansible-playbooks "sthings.rke.k3s" \
+--ansible-parameters "k3s_k8s_version=1.35.1 k3s_release_kind=k3s1 cluster_setup=singlenode fetched_kubeconfig_path=/tmp/k3s.yaml" \
+--ansible-requirements-file ./requirements.yaml \
+--inventory-type cluster \
+--export-paths "/tmp/k3s.yaml,/tmp/cluster-token.txt" \
+--export-target-names "kubeconfig.yaml,cluster-token.txt" \
+--age-public-key=env:AGE_PUBLIC_KEY \
+--sops-config ./.sops.yaml \
+-vv --progress plain \
+export --path=./output/
+```
+
+```bash
+# BAKE LOCAL + EXPORT + SOPS ENCRYPT AT ROOT LEVEL (no subdirectory)
+# Use --export-destination-path="./" to place encrypted files at root
+dagger call -m vm bake-local \
+--terraform-dir ~/projects/terraform/vms/k3s-cluster/ \
+--encrypted-file ./terraform.tfvars.enc.json \
+--operation apply \
+--sops-key=env:SOPS_AGE_KEY \
+--ansible-playbooks "sthings.rke.k3s" \
+--ansible-parameters "k3s_k8s_version=1.35.1 k3s_release_kind=k3s1 cluster_setup=singlenode fetched_kubeconfig_path=/tmp/k3s.yaml" \
+--ansible-requirements-file ./requirements.yaml \
+--inventory-type cluster \
+--export-paths "/tmp/k3s.yaml" \
+--export-target-names "kubeconfig.yaml" \
+--age-public-key=env:AGE_PUBLIC_KEY \
+--export-destination-path "./" \
+-vv --progress plain \
+export --path=./output/
+```
+
 </details>
 
 <details><summary>BAKE LOCAL BY PROFILE</summary>
@@ -341,6 +401,86 @@ dagger call -m vm bake-local-by-profile \
 --sops-key env:SOPS_AGE_KEY \
 --awsAccessKeyID env:AWS_ACCESS_KEY_ID \
 --awsSecretAccessKey env:AWS_SECRET_ACCESS_KEY \
+--progress plain -vv \
+export --path ./
+```
+
+```bash
+# PROFILE w/ ANSIBLE EXPORT + SOPS ENCRYPT
+# Exported files are encrypted with SOPS and placed under encrypted-exports/
+
+cat <<EOF >> vm-export.yaml
+---
+operation: apply
+variables:
+  - vault_addr=https://vault-vsphere.tiab.labda.sva.de:8200
+ansiblePlaybooks:
+  - "sthings.rke.k3s"
+ansibleParameters:
+  - "k3s_k8s_version=1.35.1"
+  - "k3s_release_kind=k3s1"
+  - "cluster_setup=singlenode"
+  - "fetched_kubeconfig_path=/tmp/k3s.yaml"
+ansibleInventoryType: default
+ansibleWaitTimeout: 60
+ansibleRequirementsFile: ./requirements.yaml
+encryptedFile: ""
+exportPaths:
+  - "/tmp/k3s.yaml"
+exportTargetNames:
+  - "kubeconfig.yaml"
+sopsFileExtension: yaml
+EOF
+```
+
+```bash
+dagger call -m vm bake-local-by-profile \
+--src ./ \
+--profile vm-export.yaml \
+--vault-secret-id env:VAULT_SECRET_ID \
+--vault-role-id env:VAULT_ROLE_ID \
+--ansible-user env:ANSIBLE_USER \
+--ansible-password env:ANSIBLE_PASSWORD \
+--age-public-key env:AGE_PUBLIC_KEY \
+--progress plain -vv \
+export --path ./
+```
+
+```bash
+# PROFILE w/ MULTIPLE EXPORTS + SOPS CONFIG FILE
+
+cat <<EOF >> vm-multi-export.yaml
+---
+operation: apply
+ansiblePlaybooks:
+  - "sthings.rke.k3s"
+ansibleParameters:
+  - "k3s_k8s_version=1.35.1"
+  - "k3s_release_kind=k3s1"
+  - "cluster_setup=singlenode"
+  - "fetched_kubeconfig_path=/tmp/k3s.yaml"
+ansibleInventoryType: default
+ansibleWaitTimeout: 60
+ansibleRequirementsFile: ./requirements.yaml
+encryptedFile: ./terraform.tfvars.enc.json
+exportPaths:
+  - "/tmp/k3s.yaml"
+  - "/tmp/cluster-token.txt"
+exportTargetNames:
+  - "kubeconfig.yaml"
+  - "cluster-token.txt"
+sopsFileExtension: yaml
+exportDestinationPath: "./"  # place encrypted files at root (no subdirectory)
+EOF
+```
+
+```bash
+dagger call -m vm bake-local-by-profile \
+--src ./ \
+--profile vm-multi-export.yaml \
+--sops-key env:SOPS_AGE_KEY \
+--age-public-key env:AGE_PUBLIC_KEY \
+--sops-config ./.sops.yaml \
 --progress plain -vv \
 export --path ./
 ```

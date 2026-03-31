@@ -1,3 +1,10 @@
+# [1.77.0](https://github.com/stuttgart-things/blueprints/compare/v1.76.0...v1.77.0) (2026-03-31)
+
+
+### Features
+
+* feat/update-docker ([c925e83](https://github.com/stuttgart-things/blueprints/commit/c925e830cee0fac8ff0a7c0ab6868d1adc36835b))
+
 # [1.76.0](https://github.com/stuttgart-things/blueprints/compare/v1.75.0...v1.76.0) (2026-03-30)
 
 

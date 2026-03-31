@@ -7,28 +7,28 @@
   "dependencies": [
     {
       "name": "crane",
-      "source": "github.com/stuttgart-things/dagger/crane@v0.89.0",
-      "pin": "038a2e9113f13d93fc582a4d58f54e4d6024256b"
+      "source": "github.com/stuttgart-things/dagger/crane@v0.90.0",
+      "pin": "eb783b5dee0d156fa5965c4b00a23c5b627e40e6"
     },
     {
       "name": "docker",
-      "source": "github.com/stuttgart-things/dagger/docker@v0.89.0",
-      "pin": "038a2e9113f13d93fc582a4d58f54e4d6024256b"
+      "source": "github.com/stuttgart-things/dagger/docker@v0.90.0",
+      "pin": "eb783b5dee0d156fa5965c4b00a23c5b627e40e6"
     },
     {
       "name": "helm",
-      "source": "github.com/stuttgart-things/dagger/helm@v0.89.0",
-      "pin": "038a2e9113f13d93fc582a4d58f54e4d6024256b"
+      "source": "github.com/stuttgart-things/dagger/helm@v0.90.0",
+      "pin": "eb783b5dee0d156fa5965c4b00a23c5b627e40e6"
     },
     {
       "name": "kubernetes",
-      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.89.0",
-      "pin": "038a2e9113f13d93fc582a4d58f54e4d6024256b"
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.90.0",
+      "pin": "eb783b5dee0d156fa5965c4b00a23c5b627e40e6"
     },
     {
       "name": "trivy",
-      "source": "github.com/stuttgart-things/dagger/trivy@v0.89.0",
-      "pin": "038a2e9113f13d93fc582a4d58f54e4d6024256b"
+      "source": "github.com/stuttgart-things/dagger/trivy@v0.90.0",
+      "pin": "eb783b5dee0d156fa5965c4b00a23c5b627e40e6"
     }
   ],
   "disableDefaultFunctionCaching": true

@@ -1,3 +1,10 @@
+## [1.78.1](https://github.com/stuttgart-things/blueprints/compare/v1.78.0...v1.78.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* fix/update-dagger-moudle-deps ([f289330](https://github.com/stuttgart-things/blueprints/commit/f289330571bc6ff126383ddfaa91e95a9ca7724f))
+
 # [1.78.0](https://github.com/stuttgart-things/blueprints/compare/v1.77.0...v1.78.0) (2026-03-31)
 
 

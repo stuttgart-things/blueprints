@@ -13,6 +13,8 @@ require (
 
 require (
 	github.com/99designs/gqlgen v0.17.81 // indirect
+	github.com/adrg/xdg v0.5.3 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.14.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.14.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.38.0 // indirect
@@ -28,7 +30,7 @@ require (
 )
 
 require (
-	dagger.io/dagger v0.19.11
+	dagger.io/dagger v0.20.0
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

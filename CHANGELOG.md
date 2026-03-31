@@ -1,3 +1,10 @@
+# [1.78.0](https://github.com/stuttgart-things/blueprints/compare/v1.77.0...v1.78.0) (2026-03-31)
+
+
+### Features
+
+* feat/update-dagger-go-mod ([382b583](https://github.com/stuttgart-things/blueprints/commit/382b583854923a5e640fbe457096d1ca289f15ea))
+
 # [1.77.0](https://github.com/stuttgart-things/blueprints/compare/v1.76.0...v1.77.0) (2026-03-31)
 
 

@@ -111,6 +111,135 @@ export --path=/tmp/vm/
 
 
 
+<details><summary>TERRAFORM APPLY</summary>
+
+### Basic apply with SOPS decryption and Kubernetes backend
+
+```bash
+dagger call -m configuration terraform-apply \
+  --terraform-dir /path/to/terraform/configs \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypted-files "terraform.tfvars.sops.json" \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-config-path "/path/to/.kube/my-cluster" \
+  --progress plain -vv
+```
+
+### Apply with terraform output --json
+
+```bash
+dagger call -m configuration terraform-apply \
+  --terraform-dir /path/to/terraform/configs \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypted-files "terraform.tfvars.sops.json" \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-config-path "/path/to/.kube/my-cluster" \
+  --export-tf-output \
+  file --path output.json contents \
+  --progress plain -vv
+```
+
+### Apply with AWS/S3 backend
+
+```bash
+dagger call -m configuration terraform-apply \
+  --terraform-dir /path/to/terraform/configs \
+  --aws-access-key-id env:AWS_ACCESS_KEY_ID \
+  --aws-secret-access-key env:AWS_SECRET_ACCESS_KEY \
+  --progress plain -vv
+```
+
+### Apply with Vault credentials
+
+```bash
+dagger call -m configuration terraform-apply \
+  --terraform-dir /path/to/terraform/configs \
+  --vault-token env:VAULT_TOKEN \
+  --progress plain -vv
+```
+
+### Apply with Kubernetes secret lookup (e.g. retrieve Vault token from cluster)
+
+```bash
+dagger call -m configuration terraform-apply \
+  --terraform-dir /path/to/terraform/configs \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypted-files "terraform.tfvars.sops.json" \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-config-path "/path/to/.kube/my-cluster" \
+  --kube-secret-name "vault-root-token" \
+  --kube-secret-namespace "vault" \
+  --kube-secret-jsonpath ".data.root_token" \
+  --kube-secret-tf-var "vault_token" \
+  --progress plain -vv
+```
+
+### Terraform destroy
+
+```bash
+dagger call -m configuration terraform-apply \
+  --terraform-dir /path/to/terraform/configs \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypted-files "terraform.tfvars.sops.json" \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-config-path "/path/to/.kube/my-cluster" \
+  --operation destroy \
+  --progress plain -vv
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `--terraform-dir` | Directory | yes | Directory containing terraform configurations |
+| `--sops-age-key` | Secret | no | AGE key for SOPS decryption |
+| `--encrypted-files` | string | no | Comma-separated SOPS-encrypted file paths to decrypt |
+| `--operation` | string | no | Terraform operation: `apply` (default), `destroy`, `init` |
+| `--variables` | string | no | Comma-separated terraform variables (e.g. `name=patrick,food=schnitzel`) |
+| `--kube-config` | Secret | no | Kubeconfig for Kubernetes state backend |
+| `--kube-config-path` | string | no | Container path for kubeconfig (must match `config_path` in backend.tf) |
+| `--encrypted-kube-config` | File | no | SOPS-encrypted kubeconfig file |
+| `--kube-secret-name` | string | no | Kubernetes secret name to read |
+| `--kube-secret-namespace` | string | no | Kubernetes namespace for the secret |
+| `--kube-secret-jsonpath` | string | no | JSONPath to extract from the Kubernetes secret |
+| `--kube-secret-tf-var` | string | no | Terraform variable name to set from the extracted secret value |
+| `--aws-access-key-id` | Secret | no | AWS access key for S3/MinIO backend |
+| `--aws-secret-access-key` | Secret | no | AWS secret access key for S3/MinIO backend |
+| `--vault-role-id` | Secret | no | Vault role ID |
+| `--vault-secret-id` | Secret | no | Vault secret ID |
+| `--vault-token` | Secret | no | Vault token |
+| `--export-tf-output` | bool | no | Run `terraform output --json` after apply, writes `output.json` |
+
+### SOPS env var handling
+
+SOPS-encrypted JSON files containing `VAULT_TOKEN`, `VAULT_ADDR`, or `VAULT_SKIP_VERIFY` are automatically extracted as container environment variables instead of being written as terraform variable files. Remaining keys are written to `terraform.tfvars.json` as usual.
+
+</details>
+
+<details><summary>TERRAFORM OUTPUT</summary>
+
+### Retrieve terraform outputs from an existing state
+
+```bash
+dagger call -m configuration terraform-output \
+  --terraform-dir /path/to/terraform/state-dir \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-config-path "/path/to/.kube/my-cluster" \
+  --progress plain -vv
+```
+
+### With AWS/S3 backend
+
+```bash
+dagger call -m configuration terraform-output \
+  --terraform-dir /path/to/terraform/state-dir \
+  --aws-access-key-id env:AWS_ACCESS_KEY_ID \
+  --aws-secret-access-key env:AWS_SECRET_ACCESS_KEY \
+  --progress plain -vv
+```
+
+</details>
+
 ## CREATE LOCAL CONFIG
 
 ```bash

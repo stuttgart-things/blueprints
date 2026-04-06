@@ -1,3 +1,10 @@
+# [1.79.0](https://github.com/stuttgart-things/blueprints/compare/v1.78.1...v1.79.0) (2026-04-06)
+
+
+### Features
+
+* feat/add-tf-config ([274834c](https://github.com/stuttgart-things/blueprints/commit/274834cb93305e8513ce6158dc55f09d413f1850))
+
 ## [1.78.1](https://github.com/stuttgart-things/blueprints/compare/v1.78.0...v1.78.1) (2026-03-31)
 
 

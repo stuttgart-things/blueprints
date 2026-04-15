@@ -1,3 +1,10 @@
+# [1.80.0](https://github.com/stuttgart-things/blueprints/compare/v1.79.0...v1.80.0) (2026-04-15)
+
+
+### Features
+
+* feat/add-sops-generation ([8d9429b](https://github.com/stuttgart-things/blueprints/commit/8d9429ba5c68cd5d5732037609458a299aaf6175))
+
 # [1.79.0](https://github.com/stuttgart-things/blueprints/compare/v1.78.1...v1.79.0) (2026-04-06)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "kubernetes-deployment",
-  "engineVersion": "v0.20.0",
+  "engineVersion": "v0.20.3",
   "sdk": {
     "source": "go"
   },
@@ -29,6 +29,11 @@
       "name": "sops",
       "source": "github.com/stuttgart-things/dagger/sops@v0.75.0",
       "pin": "1d5b83e0a4ddb02acff6698a2a54204faf818a9f"
+    },
+    {
+      "name": "templating",
+      "source": "github.com/stuttgart-things/dagger/templating@v0.93.1",
+      "pin": "aa2f4dd20e187d07ba6551d4369509072a2958d8"
     }
   ]
 }

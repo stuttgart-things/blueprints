@@ -177,14 +177,14 @@ func (v *Configuration) TerraformApply(
 	if awsAccessKeyID != nil {
 		execOpts.AwsAccessKeyID = awsAccessKeyID
 	}
-	if awsSecretAccessKey != nil {
-		execOpts.AwsSecretAccessKey = awsSecretAccessKey
+	if awsSecretAccessKey != nil { // pragma: allowlist secret
+		execOpts.AwsSecretAccessKey = awsSecretAccessKey // pragma: allowlist secret
 	}
 	if vaultRoleID != nil {
 		execOpts.VaultRoleID = vaultRoleID
 	}
-	if vaultSecretID != nil {
-		execOpts.VaultSecretID = vaultSecretID
+	if vaultSecretID != nil { // pragma: allowlist secret
+		execOpts.VaultSecretID = vaultSecretID // pragma: allowlist secret
 	}
 	if vaultToken != nil {
 		execOpts.VaultToken = vaultToken
@@ -252,8 +252,8 @@ func (v *Configuration) TerraformOutput(
 	if awsAccessKeyID != nil {
 		opts.AwsAccessKeyID = awsAccessKeyID
 	}
-	if awsSecretAccessKey != nil {
-		opts.AwsSecretAccessKey = awsSecretAccessKey
+	if awsSecretAccessKey != nil { // pragma: allowlist secret
+		opts.AwsSecretAccessKey = awsSecretAccessKey // pragma: allowlist secret
 	}
 	if kubeConfig != nil {
 		opts.KubeConfig = kubeConfig

@@ -73,6 +73,32 @@ dagger call -m kubernetes-deployment deploy-kcl \
 ```
 
 ```bash
+# CREATE SOPS-ENCRYPTED KUBERNETES SECRET FROM NAME/NAMESPACE/KEY-VALUES
+# (default: exports encrypted manifest as file)
+dagger call -m kubernetes-deployment create-sops-secret \
+  --name my-secret \
+  --namespace default \
+  --key-values "user=admin,password=s3cret" \
+  --age-public-key env:AGE_PUB \
+  export --path ./secret.enc.yaml
+
+# Print encrypted manifest to stdout (no file written) via `contents`
+dagger call -m kubernetes-deployment create-sops-secret \
+  --name my-secret \
+  --namespace default \
+  --key-values "user=admin,password=s3cret" \
+  --age-public-key env:AGE_PUB \
+  contents
+
+# Same, but return the encrypted manifest as a string directly
+dagger call -m kubernetes-deployment create-sops-secret-string \
+  --name my-secret \
+  --namespace default \
+  --key-values "user=admin,password=s3cret" \
+  --age-public-key env:AGE_PUB
+```
+
+```bash
 # VALIDATE AGE KEY PAIR (standalone — fails fast on mismatch)
 dagger call -m kubernetes-deployment validate-age-key-pair \
   --sops-age-key env:SOPS_AGE_KEY \

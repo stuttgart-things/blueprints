@@ -34,14 +34,14 @@ data:
 //
 //	dagger call create-sops-secret \
 //	  --name my-secret --namespace default \
-//	  --key-values "user=admin,password=s3cret" \
+//	  --key-values "user=admin,password=s3cret" \ # pragma: allowlist secret
 //	  --age-public-key env:AGE_PUB \
 //	  export --path ./secret.enc.yaml
 func (m *KubernetesDeployment) CreateSopsSecret(
 	ctx context.Context,
 	name string,
 	namespace string,
-	// Comma-separated key=value pairs (e.g. "user=admin,password=s3cret")
+	// Comma-separated key=value pairs (e.g. "user=admin,password=s3cret") # pragma: allowlist secret
 	keyValues string,
 	// AGE public key for SOPS encryption
 	agePublicKey *dagger.Secret,

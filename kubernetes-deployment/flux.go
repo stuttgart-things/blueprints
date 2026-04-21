@@ -589,7 +589,7 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	configParameters string,
 	// Flux instance version
 	// +optional
-	// +default="2.8"
+	// +default="2.8.5"
 	fluxVersion string,
 	// KCL entrypoint file name
 	// +optional
@@ -675,11 +675,11 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	applyConfig bool,
 	// Flux CLI container image
 	// +optional
-	// +default="ghcr.io/fluxcd/flux-cli:v2.8.3"
+	// +default="ghcr.io/fluxcd/flux-cli:v2.8.5"
 	fluxCliImage string,
 	// Flux operator version for Helmfile state values
 	// +optional
-	// +default="0.42.1"
+	// +default="0.47.0"
 	operatorVersion string,
 ) (string, error) {
 

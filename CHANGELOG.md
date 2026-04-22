@@ -1,3 +1,10 @@
+# [1.82.0](https://github.com/stuttgart-things/blueprints/compare/v1.81.0...v1.82.0) (2026-04-22)
+
+
+### Features
+
+* feat/add-create-secrets-file ([4c7aad2](https://github.com/stuttgart-things/blueprints/commit/4c7aad2c4df05c155dc2e7b9d22257b17c188751))
+
 # [1.81.0](https://github.com/stuttgart-things/blueprints/compare/v1.80.0...v1.81.0) (2026-04-21)
 
 

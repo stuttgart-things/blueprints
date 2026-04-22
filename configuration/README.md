@@ -107,9 +107,63 @@ export --path=/tmp/vm/
 
 </details>
 
+<details><summary>CREATE SECRETS FILE</summary>
 
+Decrypts a SOPS-encrypted data file with an AGE key, renders a Go template against the decrypted values, and optionally re-encrypts the rendered output with SOPS.
 
+### Render and re-encrypt (default)
 
+```bash
+dagger call -m configuration create-secrets-file \
+  --age-key env:SOPS_AGE_KEY \
+  --age-recipient cmd:"echo age19vgzvmpt9tdlcsu8rzaacj397yz8gguz38nsmuy6eeelt5vjsyms542xtm" \
+  --encrypted-data-file tests/vm/terraform.tfvars.enc.json \
+  --template-file tests/configuration/vault-secret.json.tmpl \
+  --file-extension json \
+  --progress plain -vv \
+  export --path /tmp/secrets/vault-secret.enc.json
+```
+
+### Render plaintext (skip re-encryption)
+
+```bash
+dagger call -m configuration create-secrets-file \
+  --age-key env:SOPS_AGE_KEY \
+  --encrypted-data-file tests/vm/terraform.tfvars.enc.json \
+  --template-file tests/configuration/vault-secret.json.tmpl \
+  --encrypt=false \
+  --progress plain -vv \
+  export --path /tmp/secrets/vault-secret.json
+```
+
+### With a custom .sops.yaml
+
+```bash
+dagger call -m configuration create-secrets-file \
+  --age-key env:SOPS_AGE_KEY \
+  --age-recipient env:SOPS_AGE_RECIPIENT \
+  --encrypted-data-file ./secrets/vault-infra-labul.enc.yaml \
+  --template-file ./templates/vault-secret.json.tmpl \
+  --sops-config ./.sops.yaml \
+  --file-extension json \
+  export --path /tmp/secrets/vault-secret.enc.json
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `--age-key` | Secret | yes | Private AGE key (`AGE-SECRET-KEY-...`) used to decrypt the input |
+| `--age-recipient` | Secret | when `encrypt=true` | Public AGE recipient (`age1...`) used to re-encrypt the output |
+| `--encrypted-data-file` | File | yes | SOPS-encrypted YAML/JSON data file |
+| `--template-file` | File | yes | Go template rendered against the decrypted values |
+| `--file-extension` | string | no | Output extension for SOPS re-encryption (default `json`) |
+| `--sops-config` | File | no | Optional `.sops.yaml` used for decrypt and encrypt |
+| `--encrypt` | bool | no | Re-encrypt rendered output (default `true`); `false` returns plaintext |
+
+Template keys reference fields from the decrypted data via Go template syntax (`{{ .myKey }}`). The template uses strict mode — missing keys fail the render.
+
+</details>
 
 <details><summary>TERRAFORM APPLY</summary>
 

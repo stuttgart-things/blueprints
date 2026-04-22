@@ -21,6 +21,7 @@ tasks:
       - task: test-crossplane-configuration
       - task: test-presentation-init
       - task: test-presentation-add-content
+      - task: test-create-secrets-file
 
   test-crossplane-configuration:
     desc: Test crossplane-configuration module
@@ -131,6 +132,46 @@ tasks:
       VARIABLES_FILES: "env.yaml,build-vars.yaml"
       OVERRIDES: "name=override-test,cpus=16"
       EXPORT_PATH: /tmp/vmtemplate-render-test
+
+  test-create-secrets-file:
+    desc: Test configuration create-secrets-file (decrypt → render → re-encrypt)
+    cmds:
+      - |
+        rm -rf {{ .EXPORT_PATH }} || true
+        mkdir -p $(dirname {{ .EXPORT_PATH }}) || true
+      - |
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --age-key={{ .SOPS_KEY }} \
+        --age-recipient="{{ .SOPS_RECIPIENT }}" \
+        --encrypted-data-file {{ .ENCRYPTED_DATA_FILE }} \
+        --template-file {{ .TEMPLATE_FILE }} \
+        --file-extension {{ .FILE_EXTENSION }} \
+        --progress plain -vv \
+        export --path={{ .EXPORT_PATH }}
+      - |
+        echo "✓ Encrypted secrets file rendered"
+        echo "Output: {{ .EXPORT_PATH }}"
+      - |
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --age-key={{ .SOPS_KEY }} \
+        --encrypted-data-file {{ .ENCRYPTED_DATA_FILE }} \
+        --template-file {{ .TEMPLATE_FILE }} \
+        --encrypt=false \
+        --progress plain -vv \
+        export --path={{ .PLAIN_EXPORT_PATH }}
+      - |
+        echo "✓ Plaintext render:"
+        cat {{ .PLAIN_EXPORT_PATH }}
+    vars:
+      MODULE: configuration
+      FUNCTION: create-secrets-file
+      SOPS_KEY: env:SOPS_AGE_KEY
+      SOPS_RECIPIENT: cmd:echo age19vgzvmpt9tdlcsu8rzaacj397yz8gguz38nsmuy6eeelt5vjsyms542xtm
+      ENCRYPTED_DATA_FILE: tests/vm/terraform.tfvars.enc.json
+      TEMPLATE_FILE: tests/configuration/vault-secret.json.tmpl
+      FILE_EXTENSION: json
+      EXPORT_PATH: /tmp/secrets/vault-secret.enc.json
+      PLAIN_EXPORT_PATH: /tmp/secrets/vault-secret.json
 
   test-vm:
     desc: Test vm module

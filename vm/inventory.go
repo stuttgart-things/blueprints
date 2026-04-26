@@ -182,7 +182,7 @@ func CreateClusterAnsibleInventoryFromHosts(hostsString string) (string, error) 
 	var hosts []Host
 
 	// Split comma-separated hosts
-	for _, host := range splitHostsForInventory(hostsString) {
+	for _, host := range splitHosts(hostsString) {
 		hosts = append(hosts, Host{FQDN: host})
 	}
 
@@ -201,8 +201,9 @@ func CreateClusterAnsibleInventoryFromHosts(hostsString string) (string, error) 
 	return buf.String(), nil
 }
 
-// splitHostsForInventory splits comma-separated hosts (helper for inventory.go)
-func splitHostsForInventory(hosts string) []string {
+// splitHosts splits comma-separated hosts and trims whitespace.
+// Shared between inventory generation and Ansible host targeting.
+func splitHosts(hosts string) []string {
 	var result []string
 	for _, host := range strings.Split(hosts, ",") {
 		host = strings.TrimSpace(host)

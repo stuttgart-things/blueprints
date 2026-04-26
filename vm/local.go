@@ -219,6 +219,22 @@ func (v *Vm) BakeLocal(
 	// WRITE INVENTORY TO terraformDirResult
 	terraformDirResult = terraformDirResult.WithNewFile("inventory.yaml", inventory)
 
+	// WRITE STAGE OUTPUTS FOR DOWNSTREAM CONSUMERS (e.g. Dapr workflow chain).
+	// Consumers download outputs.json as a GitHub Actions artifact named "stage-outputs".
+	ips, ipsErr := ParseIPsFromTfOutput(tfOutput)
+	if ipsErr != nil {
+		// Don't fail the apply — IPs are also reflected in inventory.yaml.
+		ips = nil
+	}
+	stageOutputs := map[string]any{
+		"vm_ips": ips,
+	}
+	stageOutputsBytes, err := json.Marshal(stageOutputs)
+	if err != nil {
+		return nil, fmt.Errorf("marshal stage outputs: %w", err)
+	}
+	terraformDirResult = terraformDirResult.WithNewFile("outputs.json", string(stageOutputsBytes))
+
 	// SLEEP BEFORE ANSIBLE (GIVE MACHINES TIME TO BE READY)
 	time.Sleep(time.Duration(ansibleWaitTimeout) * time.Second)
 

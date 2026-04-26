@@ -1,5 +1,18 @@
 # stuttgart-things/blueprints/vm
 
+## OUTPUTS
+
+After a successful `apply` operation, `BakeLocal` / `BakeLocalByProfile` write the following files into the returned directory:
+
+- `inventory.yaml` — generated Ansible inventory (default or cluster layout)
+- `outputs.json` — flat JSON object with stage outputs for downstream consumers (e.g. chained Dapr workflows). Current shape:
+
+  ```json
+  { "vm_ips": ["10.x.x.x", "10.x.x.y"] }
+  ```
+
+  `vm_ips` is always a list (single-VM apply yields a one-element list). The file is omitted for non-`apply` operations.
+
 ## FUNCTIONS
 
 <details><summary>RUN ANSIBLE</summary>

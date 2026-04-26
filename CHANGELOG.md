@@ -1,3 +1,10 @@
+# [1.83.0](https://github.com/stuttgart-things/blueprints/compare/v1.82.0...v1.83.0) (2026-04-26)
+
+
+### Features
+
+* feat/add-vm-outputs-return ([dc4ffb1](https://github.com/stuttgart-things/blueprints/commit/dc4ffb1c92b54b2942c5ff11267996be48142b86))
+
 # [1.82.0](https://github.com/stuttgart-things/blueprints/compare/v1.81.0...v1.82.0) (2026-04-22)
 
 

@@ -1,5 +1,5 @@
 {
-  "name": "vmtemplate",
+  "name": "flux",
   "engineVersion": "v0.20.6",
   "sdk": {
     "source": "go"
@@ -11,24 +11,24 @@
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
-      "name": "packer",
-      "source": "github.com/stuttgart-things/dagger/packer@v0.110.0",
+      "name": "helm",
+      "source": "github.com/stuttgart-things/dagger/helm@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
-      "name": "terraform",
-      "source": "github.com/stuttgart-things/dagger/terraform@v0.110.0",
+      "name": "kcl",
+      "source": "github.com/stuttgart-things/dagger/kcl@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
-      "name": "vm",
-      "source": "../vm"
+      "name": "kubernetes",
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
-      "name": "templating",
-      "source": "github.com/stuttgart-things/dagger/templating@v0.110.0",
+      "name": "sops",
+      "source": "github.com/stuttgart-things/dagger/sops@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     }
-  ],
-  "disableDefaultFunctionCaching": true
+  ]
 }

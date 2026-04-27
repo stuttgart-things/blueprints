@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"dagger/kubernetes-deployment/internal/dagger"
+	"dagger/flux/internal/dagger"
 )
 
 // FluxDeployOperator deploys the Flux operator via Helmfile.
-func (m *KubernetesDeployment) FluxDeployOperator(
+func (m *Flux) FluxDeployOperator(
 	ctx context.Context,
 	// Kubeconfig secret for cluster access
 	kubeConfig *dagger.Secret,
@@ -25,24 +25,21 @@ func (m *KubernetesDeployment) FluxDeployOperator(
 	// +optional
 	stateValues string,
 ) error {
-	return m.DeployHelmfile(
+	return dag.Helm().HelmfileOperation(
 		ctx,
-		src,
-		helmfileRef,
-		"apply",
-		nil,
-		kubeConfig,
-		nil,
-		nil,
-		nil,
-		"",
-		"approle",
-		stateValues,
+		dagger.HelmHelmfileOperationOpts{
+			Src:             src,
+			HelmfileRef:     helmfileRef,
+			Operation:       "apply",
+			KubeConfig:      kubeConfig,
+			StateValues:     stateValues,
+			VaultAuthMethod: "approle",
+		},
 	)
 }
 
 // FluxApplyConfig applies rendered config (non-secret) manifests to the cluster.
-func (m *KubernetesDeployment) FluxApplyConfig(
+func (m *Flux) FluxApplyConfig(
 	ctx context.Context,
 	// Config YAML content
 	configContent string,
@@ -81,7 +78,7 @@ metadata:
 
 // FluxWaitForReconciliation runs flux check with retry, reconciles sources,
 // and gets all Flux resources.
-func (m *KubernetesDeployment) FluxWaitForReconciliation(
+func (m *Flux) FluxWaitForReconciliation(
 	ctx context.Context,
 	// Target namespace
 	// +optional

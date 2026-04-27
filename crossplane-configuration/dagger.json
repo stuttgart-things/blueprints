@@ -1,34 +1,34 @@
 {
   "name": "crossplane-configuration",
-  "engineVersion": "v0.19.11",
+  "engineVersion": "v0.20.6",
   "sdk": {
     "source": "go"
   },
   "dependencies": [
     {
       "name": "crossplane",
-      "source": "github.com/stuttgart-things/dagger/crossplane@v0.59.0",
-      "pin": "d3c9a4012383155ad5b8a54d5e9ea394fcb2a091"
+      "source": "github.com/stuttgart-things/dagger/crossplane@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "kcl",
-      "source": "github.com/stuttgart-things/dagger/kcl@v0.66.0",
-      "pin": "215785f29a9a2dda89efa4672cb3c9eab59dc408"
+      "source": "github.com/stuttgart-things/dagger/kcl@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "kubernetes",
-      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.70.0",
-      "pin": "65455222342fd3546dbe4971859a967d48bed70d"
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "sops",
-      "source": "github.com/stuttgart-things/dagger/sops@v0.75.0",
-      "pin": "1d5b83e0a4ddb02acff6698a2a54204faf818a9f"
+      "source": "github.com/stuttgart-things/dagger/sops@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "templating",
-      "source": "github.com/stuttgart-things/dagger/templating@v0.63.0",
-      "pin": "7238809bbf195ee5367194ad8b29f2b7829d6f23"
+      "source": "github.com/stuttgart-things/dagger/templating@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     }
   ]
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"dagger/kubernetes-deployment/internal/dagger"
+	"dagger/flux/internal/dagger"
 )
 
 // FluxDestroy tears down Flux from a cluster.
@@ -20,7 +20,7 @@ import (
 // Usage:
 //
 //	dagger call flux-destroy --kube-config file:///tmp/kubeconfig
-func (m *KubernetesDeployment) FluxDestroy(
+func (m *Flux) FluxDestroy(
 	ctx context.Context,
 	// Kubeconfig secret for cluster access
 	kubeConfig *dagger.Secret,
@@ -84,7 +84,17 @@ func (m *KubernetesDeployment) FluxDestroy(
 	// Phase 2: Uninstall Flux operator (Helmfile destroy)
 	// =========================================================================
 
-	err = m.DeployHelmfile(ctx, src, helmfileRef, "destroy", nil, kubeConfig, nil, nil, nil, "", "approle", "version="+operatorVersion)
+	err = dag.Helm().HelmfileOperation(
+		ctx,
+		dagger.HelmHelmfileOperationOpts{
+			Src:             src,
+			HelmfileRef:     helmfileRef,
+			Operation:       "destroy",
+			KubeConfig:      kubeConfig,
+			StateValues:     "version=" + operatorVersion,
+			VaultAuthMethod: "approle",
+		},
+	)
 	if err != nil {
 		results = append(results, fmt.Sprintf("Phase 2: Warning — helmfile destroy: %v", err))
 	} else {
@@ -125,7 +135,7 @@ func (m *KubernetesDeployment) FluxDestroy(
 //	6: FluxApplySecrets — apply AFTER operator is running
 //	7: FluxVerifySecrets — confirm secrets exist
 //	8: FluxWaitForReconciliation — wait for Flux to reconcile
-func (m *KubernetesDeployment) FluxBootstrap(
+func (m *Flux) FluxBootstrap(
 	ctx context.Context,
 	// OCI KCL module source for rendering Flux instance config
 	// +optional
@@ -250,7 +260,6 @@ func (m *KubernetesDeployment) FluxBootstrap(
 	// Phase 1: Render Flux Instance Config (KCL)
 	// =========================================================================
 
-	// Build KCL parameters from dedicated flags
 	kclParams := "name=flux,namespace=" + namespace + ",version=" + fluxVersion
 	if repository != "" {
 		kclParams += ",gitUrl=https://github.com/" + repository
@@ -273,7 +282,6 @@ func (m *KubernetesDeployment) FluxBootstrap(
 		return "", fmt.Errorf("phase 1: %w", err)
 	}
 
-	// Split multi-document YAML into secret and config documents
 	docs := strings.Split(renderedContent, "---\n")
 	var secretDocs []string
 	var configDocs []string
@@ -290,7 +298,6 @@ func (m *KubernetesDeployment) FluxBootstrap(
 		}
 	}
 
-	// Log parameter keys for debugging
 	var paramKeys []string
 	for _, p := range strings.Split(kclParams, ",") {
 		if parts := strings.SplitN(p, "=", 2); len(parts) == 2 {

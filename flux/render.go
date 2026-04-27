@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"dagger/kubernetes-deployment/internal/dagger"
+	"dagger/flux/internal/dagger"
 )
 
 // FluxRenderConfig renders the Flux instance configuration using a KCL module.
 // Returns the full rendered YAML (multi-document).
-func (m *KubernetesDeployment) FluxRenderConfig(
+func (m *Flux) FluxRenderConfig(
 	ctx context.Context,
 	// OCI KCL module source
 	// +optional
@@ -77,7 +77,7 @@ func (m *KubernetesDeployment) FluxRenderConfig(
 }
 
 // FluxCommitConfig commits rendered config and optional secrets to a Git repository.
-func (m *KubernetesDeployment) FluxCommitConfig(
+func (m *Flux) FluxCommitConfig(
 	ctx context.Context,
 	// Config YAML content to commit
 	configContent string,

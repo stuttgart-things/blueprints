@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"dagger/kubernetes-deployment/internal/dagger"
+	"dagger/flux/internal/dagger"
 )
 
 // fluxCliContainer returns a container with the Flux CLI and kubeconfig mounted.

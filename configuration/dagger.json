@@ -1,44 +1,44 @@
 {
   "name": "configuration",
-  "engineVersion": "v0.20.3",
+  "engineVersion": "v0.20.6",
   "sdk": {
     "source": "go"
   },
   "dependencies": [
     {
       "name": "dependencies",
-      "source": "github.com/stuttgart-things/dagger/dependencies@v0.47.0",
-      "pin": "8481f7c326fd408bf4fec6dd96c4a34d0adb1701"
+      "source": "github.com/stuttgart-things/dagger/dependencies@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "git",
-      "source": "github.com/stuttgart-things/dagger/git@v0.49.10",
-      "pin": "ca2576307debb4b2f38d74ed2886106c3ba1ca06"
+      "source": "github.com/stuttgart-things/dagger/git@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "kcl",
-      "source": "github.com/stuttgart-things/dagger/kcl@v0.51.0",
-      "pin": "9aecef77efa94f788c11e143acd42afcf132a140"
+      "source": "github.com/stuttgart-things/dagger/kcl@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "kubernetes",
-      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.51.0",
-      "pin": "9aecef77efa94f788c11e143acd42afcf132a140"
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "sops",
-      "source": "github.com/stuttgart-things/dagger/sops@v0.90.1",
-      "pin": "09f05025c4cd7f3897d37db0012a47836c6713ef"
+      "source": "github.com/stuttgart-things/dagger/sops@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "templating",
-      "source": "github.com/stuttgart-things/dagger/templating@v0.49.2",
-      "pin": "a1567a19759663478d24bb59b2378617bfb2fc25"
+      "source": "github.com/stuttgart-things/dagger/templating@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "terraform",
-      "source": "github.com/stuttgart-things/dagger/terraform@v0.91.0",
-      "pin": "428ee1639c8b261428eea7b17b48bfff40f96e84"
+      "source": "github.com/stuttgart-things/dagger/terraform@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     }
   ]
 }

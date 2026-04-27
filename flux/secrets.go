@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"dagger/kubernetes-deployment/internal/dagger"
+	"dagger/flux/internal/dagger"
 )
 
 // ValidateAgeKeyPair derives the public key from the given AGE private key
@@ -14,7 +14,7 @@ import (
 // Usage:
 //
 //	dagger call validate-age-key-pair --sops-age-key env:SOPS_AGE_KEY --age-public-key env:AGE_PUB
-func (m *KubernetesDeployment) ValidateAgeKeyPair(
+func (m *Flux) ValidateAgeKeyPair(
 	ctx context.Context,
 	// AGE private key
 	sopsAgeKey *dagger.Secret,
@@ -48,7 +48,7 @@ func (m *KubernetesDeployment) ValidateAgeKeyPair(
 }
 
 // FluxEncryptSecrets encrypts secret YAML content with SOPS using the given AGE public key.
-func (m *KubernetesDeployment) FluxEncryptSecrets(
+func (m *Flux) FluxEncryptSecrets(
 	ctx context.Context,
 	// Plain-text secret YAML content
 	secretContent string,
@@ -75,7 +75,7 @@ func (m *KubernetesDeployment) FluxEncryptSecrets(
 }
 
 // FluxApplySecrets applies secret manifests to the cluster.
-func (m *KubernetesDeployment) FluxApplySecrets(
+func (m *Flux) FluxApplySecrets(
 	ctx context.Context,
 	// Secret YAML content
 	secretContent string,
@@ -108,7 +108,7 @@ func (m *KubernetesDeployment) FluxApplySecrets(
 
 // FluxVerifySecrets auto-extracts secret names from the YAML and verifies they
 // exist in the cluster.
-func (m *KubernetesDeployment) FluxVerifySecrets(
+func (m *Flux) FluxVerifySecrets(
 	ctx context.Context,
 	// Secret YAML content (multi-document)
 	secretContent string,
@@ -119,7 +119,6 @@ func (m *KubernetesDeployment) FluxVerifySecrets(
 	// Kubeconfig secret for cluster access
 	kubeConfig *dagger.Secret,
 ) (string, error) {
-	// Parse secret names from YAML docs
 	docs := strings.Split(secretContent, "---")
 	var secretNames []string
 	for _, doc := range docs {
@@ -142,7 +141,6 @@ func (m *KubernetesDeployment) FluxVerifySecrets(
 				inMetadata = false
 				break
 			}
-			// If we hit a non-indented line after metadata, stop looking
 			if inMetadata && !strings.HasPrefix(line, " ") && !strings.HasPrefix(line, "\t") && trimmed != "" {
 				inMetadata = false
 			}

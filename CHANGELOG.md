@@ -1,3 +1,10 @@
+# [1.85.0](https://github.com/stuttgart-things/blueprints/compare/v1.84.0...v1.85.0) (2026-04-27)
+
+
+### Features
+
+* feat/add-flux ([92db46a](https://github.com/stuttgart-things/blueprints/commit/92db46abc979dae32333f29f3a97fb426ad8accd))
+
 # [1.84.0](https://github.com/stuttgart-things/blueprints/compare/v1.83.0...v1.84.0) (2026-04-27)
 
 

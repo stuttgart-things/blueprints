@@ -141,6 +141,11 @@ dagger call -m vm bake-local \
 
 ### Execute Terraform
 
+`execute-terraform` is the canonical Terraform entry point for the repo —
+it absorbed the rich `terraform-apply` previously in the `configuration`
+module (#143). SOPS, Vault, AWS-S3 and Kubernetes-state backends, plus
+Kubernetes-secret-to-tfvar lookup, are all available here.
+
 Apply:
 
 ```bash
@@ -163,6 +168,33 @@ dagger call -m vm execute-terraform \
   --vault-secret-id env:VAULT_SECRET_ID \
   --vault-role-id env:VAULT_ROLE_ID \
   --variables "vault_addr=https://vault-example.com:8200" \
+  --progress plain -vv
+```
+
+Apply with SOPS-decrypted tfvars + Kubernetes state backend:
+
+```bash
+dagger call -m vm execute-terraform \
+  --terraform-dir /path/to/terraform/configs \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypted-files "terraform.tfvars.sops.json" \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-config-path "/path/to/.kube/my-cluster" \
+  --progress plain -vv
+```
+
+Apply with Kubernetes-secret-to-tfvar lookup (e.g. inject Vault root token):
+
+```bash
+dagger call -m vm execute-terraform \
+  --terraform-dir /path/to/terraform/configs \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypted-files "terraform.tfvars.sops.json" \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-secret-name "vault-root-token" \
+  --kube-secret-namespace "vault" \
+  --kube-secret-jsonpath ".data.root_token" \
+  --kube-secret-tf-var "vault_token" \
   --progress plain -vv
 ```
 

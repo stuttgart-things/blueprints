@@ -535,8 +535,13 @@ decrypt-sops \
 
 <details><summary>EXECUTE TERRAFORM</summary>
 
+`execute-terraform` is the canonical Terraform entry point — it absorbed the
+rich `terraform-apply` previously hosted in the `configuration` module
+(see #143). All SOPS, Vault, AWS-S3 backend, Kubernetes-state-backend and
+`--kube-secret-*` flags are available here.
+
 ```bash
-# APPLY
+# APPLY (Vault credentials)
 dagger call -m vm \
 execute-terraform \
 --terraform-dir tests/vmtemplate/tftest \
@@ -560,15 +565,87 @@ execute-terraform \
 --progress plain -vv
 ```
 
+```bash
+# APPLY with SOPS-decrypted tfvars + Kubernetes state backend
+dagger call -m vm execute-terraform \
+  --terraform-dir /path/to/terraform/configs \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypted-files "terraform.tfvars.sops.json" \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-config-path "/path/to/.kube/my-cluster" \
+  --progress plain -vv
+```
+
+```bash
+# APPLY with AWS/S3 backend
+dagger call -m vm execute-terraform \
+  --terraform-dir /path/to/terraform/configs \
+  --aws-access-key-id env:AWS_ACCESS_KEY_ID \
+  --aws-secret-access-key env:AWS_SECRET_ACCESS_KEY \
+  --progress plain -vv
+```
+
+```bash
+# APPLY with Kubernetes-secret lookup (e.g. inject Vault root token as a tfvar)
+dagger call -m vm execute-terraform \
+  --terraform-dir /path/to/terraform/configs \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypted-files "terraform.tfvars.sops.json" \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-secret-name "vault-root-token" \
+  --kube-secret-namespace "vault" \
+  --kube-secret-jsonpath ".data.root_token" \
+  --kube-secret-tf-var "vault_token" \
+  --progress plain -vv
+```
+
+```bash
+# APPLY then write terraform output --json into the result dir
+dagger call -m vm execute-terraform \
+  --terraform-dir /path/to/terraform/configs \
+  --sops-age-key env:SOPS_AGE_KEY \
+  --encrypted-files "terraform.tfvars.sops.json" \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --export-tf-output \
+  file --path output.json contents \
+  --progress plain -vv
+```
+
+#### SOPS env-var handling
+
+SOPS-encrypted JSON files containing `VAULT_TOKEN`, `VAULT_ADDR`, or
+`VAULT_SKIP_VERIFY` are extracted as container environment variables instead
+of being written as terraform variable files. Remaining keys are written to
+`terraform.tfvars.json` as usual.
+
 </details>
 
 <details><summary>OUTPUT TERRAFORM RUN</summary>
 
 ```bash
+# Local / file backend
 dagger call -m vm \
 output-terraform-run \
 --terraform-dir=~/tmp/dagger/tests/terraform/ \
---progress plain -vv \
+--progress plain -vv
+```
+
+```bash
+# AWS/S3 backend
+dagger call -m vm output-terraform-run \
+  --terraform-dir /path/to/terraform/state-dir \
+  --aws-access-key-id env:AWS_ACCESS_KEY_ID \
+  --aws-secret-access-key env:AWS_SECRET_ACCESS_KEY \
+  --progress plain -vv
+```
+
+```bash
+# Kubernetes state backend
+dagger call -m vm output-terraform-run \
+  --terraform-dir /path/to/terraform/state-dir \
+  --kube-config file:///path/to/.kube/my-cluster \
+  --kube-config-path "/path/to/.kube/my-cluster" \
+  --progress plain -vv
 ```
 
 </details>

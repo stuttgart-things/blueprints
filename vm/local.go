@@ -167,6 +167,16 @@ func (v *Vm) BakeLocal(
 				vaultRoleID,
 				vaultSecretID,
 				vaultToken,
+				nil, // sopsAgeKey
+				"",  // encryptedFiles
+				nil, // kubeConfig
+				"",  // kubeConfigPath
+				nil, // encryptedKubeConfig
+				"",  // kubeSecretName
+				"",  // kubeSecretNamespace
+				"",  // kubeSecretJsonpath
+				"",  // kubeSecretTfVar
+				false, // exportTfOutput
 			)
 
 		if terraformErr == nil {

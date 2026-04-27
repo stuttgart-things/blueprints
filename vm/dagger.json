@@ -7,8 +7,8 @@
   "dependencies": [
     {
       "name": "ansible",
-      "source": "github.com/stuttgart-things/dagger/ansible@v0.84.0",
-      "pin": "4475a80a3f51a7c3b22276d5d6f57c6f5170c044"
+      "source": "github.com/stuttgart-things/dagger/ansible@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "configuration",
@@ -16,23 +16,23 @@
     },
     {
       "name": "git",
-      "source": "github.com/stuttgart-things/dagger/git@v0.70.0",
-      "pin": "65455222342fd3546dbe4971859a967d48bed70d"
+      "source": "github.com/stuttgart-things/dagger/git@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "go",
-      "source": "github.com/stuttgart-things/dagger/go@v0.13.5",
-      "pin": "040c935e6840b7df68686c457280236e7a91a448"
+      "source": "github.com/stuttgart-things/dagger/go@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "sops",
-      "source": "github.com/stuttgart-things/dagger/sops@v0.75.0",
-      "pin": "1d5b83e0a4ddb02acff6698a2a54204faf818a9f"
+      "source": "github.com/stuttgart-things/dagger/sops@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
       "name": "terraform",
-      "source": "github.com/stuttgart-things/dagger/terraform@v0.79.0",
-      "pin": "f8045d379ca4446808391343e4365a718a4ff9aa"
+      "source": "github.com/stuttgart-things/dagger/terraform@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     }
   ],
   "disableDefaultFunctionCaching": true

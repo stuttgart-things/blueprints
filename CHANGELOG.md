@@ -1,3 +1,10 @@
+# [1.84.0](https://github.com/stuttgart-things/blueprints/compare/v1.83.0...v1.84.0) (2026-04-27)
+
+
+### Features
+
+* feat/update-git-deps ([0b6ca06](https://github.com/stuttgart-things/blueprints/commit/0b6ca06c5c9c8116112e2503ca12862589407c92))
+
 # [1.83.0](https://github.com/stuttgart-things/blueprints/compare/v1.82.0...v1.83.0) (2026-04-26)
 
 

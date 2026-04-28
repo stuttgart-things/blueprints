@@ -8,7 +8,7 @@ import (
 	"dagger/flux/internal/dagger"
 )
 
-// FluxDestroy tears down Flux from a cluster.
+// Destroy tears down Flux from a cluster.
 //
 // Phase order:
 //
@@ -19,8 +19,8 @@ import (
 //
 // Usage:
 //
-//	dagger call flux-destroy --kube-config file:///tmp/kubeconfig
-func (m *Flux) FluxDestroy(
+//	dagger call -m flux destroy --kube-config file:///tmp/kubeconfig
+func (m *Flux) Destroy(
 	ctx context.Context,
 	// Kubeconfig secret for cluster access
 	kubeConfig *dagger.Secret,
@@ -122,20 +122,20 @@ func (m *Flux) FluxDestroy(
 	return strings.Join(results, "\n"), nil
 }
 
-// FluxBootstrap orchestrates a full Flux bootstrap lifecycle.
+// Bootstrap orchestrates a full Flux bootstrap lifecycle.
 //
 // Phase order:
 //
-//	0: ValidateAgeKeyPair — fail fast on key mismatch
-//	1: FluxRenderConfig — render all manifests
-//	2: FluxEncryptSecrets — encrypt before committing
-//	3: FluxCommitConfig — push to Git
-//	4: FluxDeployOperator — install operator (Helmfile)
-//	5: FluxApplyConfig — apply FluxInstance CR
-//	6: FluxApplySecrets — apply AFTER operator is running
-//	7: FluxVerifySecrets — confirm secrets exist
-//	8: FluxWaitForReconciliation — wait for Flux to reconcile
-func (m *Flux) FluxBootstrap(
+//	0: ValidateAgeKeyPair (secrets module) — fail fast on key mismatch
+//	1: RenderConfig — render all manifests
+//	2: EncryptString (secrets module) — encrypt before committing
+//	3: CommitConfig — push to Git
+//	4: DeployOperator — install operator (Helmfile)
+//	5: ApplyConfig — apply FluxInstance CR
+//	6: ApplySecrets — apply AFTER operator is running
+//	7: VerifySecrets — confirm secrets exist
+//	8: WaitForReconciliation — wait for Flux to reconcile
+func (m *Flux) Bootstrap(
 	ctx context.Context,
 	// OCI KCL module source for rendering Flux instance config
 	// +optional
@@ -243,11 +243,11 @@ func (m *Flux) FluxBootstrap(
 	var results []string
 
 	// =========================================================================
-	// Phase 0: Validate AGE Key Pair
+	// Phase 0: Validate AGE Key Pair (delegated to secrets module)
 	// =========================================================================
 
 	if sopsAgeKey != nil && agePublicKey != nil {
-		msg, err := m.ValidateAgeKeyPair(ctx, sopsAgeKey, agePublicKey)
+		msg, err := dag.Secrets().ValidateAgeKeyPair(ctx, sopsAgeKey, agePublicKey)
 		if err != nil {
 			return "", fmt.Errorf("phase 0: %w", err)
 		}
@@ -274,7 +274,7 @@ func (m *Flux) FluxBootstrap(
 		kclParams += "," + configParameters
 	}
 
-	renderedContent, err := m.FluxRenderConfig(
+	renderedContent, err := m.RenderConfig(
 		ctx, ociSource, kclParams, entrypoint, renderSecrets,
 		gitUsername, gitPassword, sopsAgeKey,
 	)
@@ -307,7 +307,7 @@ func (m *Flux) FluxBootstrap(
 	results = append(results, fmt.Sprintf("Phase 1: KCL parameter keys: %v — rendered %d config doc(s) and %d secret doc(s)", paramKeys, len(configDocs), len(secretDocs)))
 
 	// =========================================================================
-	// Phase 2: Encrypt Secrets with SOPS
+	// Phase 2: Encrypt Secrets with SOPS (delegated to secrets module)
 	// =========================================================================
 
 	secretContent := strings.Join(secretDocs, "---\n")
@@ -318,7 +318,15 @@ func (m *Flux) FluxBootstrap(
 			return "", fmt.Errorf("phase 2: encryptSecrets=true but agePublicKey is nil") // pragma: allowlist secret
 		}
 
-		encrypted, err := m.FluxEncryptSecrets(ctx, secretContent, agePublicKey, sopsConfig) // pragma: allowlist secret
+		encrypted, err := dag.Secrets().EncryptString( // pragma: allowlist secret
+			ctx,
+			agePublicKey,
+			secretContent,
+			dagger.SecretsEncryptStringOpts{
+				FileExtension: "yaml",
+				SopsConfig:    sopsConfig,
+			},
+		)
 		if err != nil {
 			return "", fmt.Errorf("phase 2: %w", err)
 		}
@@ -344,7 +352,7 @@ func (m *Flux) FluxBootstrap(
 		}
 
 		configContent := strings.Join(configDocs, "---\n")
-		msg, err := m.FluxCommitConfig(ctx, configContent, repository, branchName, destinationPath, gitToken, secretsForCommit)
+		msg, err := m.CommitConfig(ctx, configContent, repository, branchName, destinationPath, gitToken, secretsForCommit)
 		if err != nil {
 			return "", fmt.Errorf("phase 3: %w", err)
 		}
@@ -358,7 +366,7 @@ func (m *Flux) FluxBootstrap(
 	// =========================================================================
 
 	if deployOperator {
-		err := m.FluxDeployOperator(ctx, kubeConfig, helmfileRef, src, "version="+operatorVersion)
+		err := m.DeployOperator(ctx, kubeConfig, helmfileRef, src, "version="+operatorVersion)
 		if err != nil {
 			return "", fmt.Errorf("phase 4: deploy flux operator: %w", err)
 		}
@@ -373,7 +381,7 @@ func (m *Flux) FluxBootstrap(
 
 	if applyConfig && len(configDocs) > 0 {
 		configContent := strings.Join(configDocs, "---\n")
-		msg, err := m.FluxApplyConfig(ctx, configContent, namespace, kubeConfig)
+		msg, err := m.ApplyConfig(ctx, configContent, namespace, kubeConfig)
 		if err != nil {
 			return "", fmt.Errorf("phase 5: %w", err)
 		}
@@ -387,7 +395,7 @@ func (m *Flux) FluxBootstrap(
 	// =========================================================================
 
 	if applySecrets && len(secretDocs) > 0 {
-		msg, err := m.FluxApplySecrets(ctx, secretContent, namespace, kubeConfig)
+		msg, err := m.ApplySecrets(ctx, secretContent, namespace, kubeConfig)
 		if err != nil {
 			return "", fmt.Errorf("phase 6: %w", err)
 		}
@@ -401,7 +409,7 @@ func (m *Flux) FluxBootstrap(
 	// =========================================================================
 
 	if applySecrets && len(secretDocs) > 0 {
-		msg, err := m.FluxVerifySecrets(ctx, secretContent, namespace, kubeConfig)
+		msg, err := m.VerifySecrets(ctx, secretContent, namespace, kubeConfig)
 		if err != nil {
 			results = append(results, fmt.Sprintf("Phase 7: Warning — %v", err))
 		} else {
@@ -416,7 +424,7 @@ func (m *Flux) FluxBootstrap(
 	// =========================================================================
 
 	if waitForReconciliation {
-		msg, err := m.FluxWaitForReconciliation(ctx, namespace, kubeConfig, reconciliationTimeout, fluxCliImage)
+		msg, err := m.WaitForReconciliation(ctx, namespace, kubeConfig, reconciliationTimeout, fluxCliImage)
 		if err != nil {
 			return "", fmt.Errorf("phase 8: %w", err)
 		}

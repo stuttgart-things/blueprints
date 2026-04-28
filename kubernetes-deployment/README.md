@@ -72,33 +72,14 @@ dagger call -m kubernetes-deployment deploy-kcl \
   --progress plain
 ```
 
-```bash
-# CREATE SOPS-ENCRYPTED KUBERNETES SECRET FROM NAME/NAMESPACE/KEY-VALUES
-# (default: exports encrypted manifest as file)
-dagger call -m kubernetes-deployment create-sops-secret \
-  --name my-secret \
-  --namespace default \
-  --key-values "user=admin,password=s3cret" \
-  --age-public-key env:AGE_PUB \
-  export --path ./secret.enc.yaml
-
-# Print encrypted manifest to stdout (no file written) via `contents`
-dagger call -m kubernetes-deployment create-sops-secret \
-  --name my-secret \
-  --namespace default \
-  --key-values "user=admin,password=s3cret" \
-  --age-public-key env:AGE_PUB \
-  contents
-
-# Same, but return the encrypted manifest as a string directly
-dagger call -m kubernetes-deployment create-sops-secret-string \
-  --name my-secret \
-  --namespace default \
-  --key-values "user=admin,password=s3cret" \
-  --age-public-key env:AGE_PUB
-```
+> **SOPS-encrypted Kubernetes Secret generation moved.** `create-sops-secret`
+> and `create-sops-secret-string` now live in the
+> [`secrets`](../secrets/README.md) module as `create-kubernetes-secret`
+> and `create-kubernetes-secret-string` (flags unchanged).
 
 > **Flux workflows moved.** Bootstrap, render, apply, verify, destroy, and
 > AGE-key validation now live in the dedicated [`flux`](../flux/README.md)
-> module. Replace `dagger call -m kubernetes-deployment flux-*` with
-> `dagger call -m flux flux-*` (function names and flags unchanged).
+> module. The redundant `flux-` prefix has been dropped — `dagger call -m
+> kubernetes-deployment flux-bootstrap` is now `dagger call -m flux
+> bootstrap`, `flux-destroy` → `destroy`, etc. AGE-key validation moved to
+> `dagger call -m secrets validate-age-key-pair`.

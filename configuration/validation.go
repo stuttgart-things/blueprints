@@ -42,7 +42,7 @@ func analyzeConfigString(configString string, mandatoryKeys map[string]bool) (ma
 
 // AnalyzeConfigString parses a key=value configuration string and validates mandatory keys
 // Dagger-compatible wrapper that returns JSON string representation of the map
-func (v *Configuration) AnalyzeConfigString(
+func (m *Configuration) AnalyzeConfigString(
 	ctx context.Context,
 	configString string,
 	// Comma-separated list of mandatory keys (e.g., "name,template,disk")

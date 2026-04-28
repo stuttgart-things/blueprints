@@ -6,11 +6,6 @@
   },
   "dependencies": [
     {
-      "name": "dependencies",
-      "source": "github.com/stuttgart-things/dagger/dependencies@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
-    },
-    {
       "name": "git",
       "source": "github.com/stuttgart-things/dagger/git@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
@@ -26,18 +21,8 @@
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {
-      "name": "sops",
-      "source": "github.com/stuttgart-things/dagger/sops@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
-    },
-    {
       "name": "templating",
       "source": "github.com/stuttgart-things/dagger/templating@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
-    },
-    {
-      "name": "terraform",
-      "source": "github.com/stuttgart-things/dagger/terraform@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     }
   ]

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (v *Vm) BakeFromGit(
+func (m *Vm) BakeFromGit(
 	ctx context.Context,
 	// Repository to clone from GitHub
 	gitRepository string,
@@ -31,7 +31,7 @@ func (v *Vm) BakeFromGit(
 	workDir = "/tmp/repo"
 
 	// INIT WORKING CONTAINER
-	ctr, err := v.container(ctx)
+	ctr, err := m.container(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("container init failed: %w", err)
 	}

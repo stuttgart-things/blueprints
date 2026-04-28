@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func (v *Vm) BakeLocal(
+func (m *Vm) BakeLocal(
 	ctx context.Context,
 	terraformDir *dagger.Directory,
 	// +optional
@@ -94,7 +94,7 @@ func (v *Vm) BakeLocal(
 	workDir := "/src"
 
 	// INIT WORKING CONTAINER
-	ctr, err := v.container(ctx)
+	ctr, err := m.container(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("container init failed: %w", err)
 	}
@@ -110,12 +110,7 @@ func (v *Vm) BakeLocal(
 
 	// OPTIONAL SOPS DECRYPTION
 	if encryptedFile != nil {
-		decryptedContent, err := v.
-			DecryptSops(
-				ctx,
-				sopsKey,
-				encryptedFile,
-			)
+		decryptedContent, err := dag.Secrets().Decrypt(ctx, sopsKey, encryptedFile)
 		if err != nil {
 			return nil, fmt.Errorf("decrypting sops file failed: %w", err)
 		}
@@ -156,7 +151,7 @@ func (v *Vm) BakeLocal(
 	}
 
 	for attempt := 1; attempt <= maxRetries; attempt++ {
-		terraformDirResult, terraformErr = v.
+		terraformDirResult, terraformErr = m.
 			ExecuteTerraform(
 				ctx,
 				ctr.Directory(workDir),
@@ -199,7 +194,7 @@ func (v *Vm) BakeLocal(
 	}
 
 	// GET TERRAFORM OUTPUT (WITH AWS CREDS FOR REMOTE BACKEND)
-	tfOutput, err := v.
+	tfOutput, err := m.
 		OutputTerraformRunWithCreds(
 			ctx,
 			terraformDirResult,
@@ -249,7 +244,7 @@ func (v *Vm) BakeLocal(
 	// RUN ANSIBLE (with or without export)
 	if exportPaths != "" {
 		// EXECUTE ANSIBLE WITH EXPORT
-		exportDir, err := v.
+		exportDir, err := m.
 			ExecuteAnsibleWithExport(
 				ctx,
 				terraformDirResult,
@@ -298,7 +293,7 @@ func (v *Vm) BakeLocal(
 			for _, entry := range entries {
 				plaintextFile := exportDir.File(entry)
 
-				encryptedContent, err := v.EncryptFile(ctx, agePublicKey, plaintextFile, sopsFileExtension, sopsConfig)
+				encryptedContent, err := dag.Secrets().EncryptFile(ctx, agePublicKey, plaintextFile, dagger.SecretsEncryptFileOpts{FileExtension: sopsFileExtension, SopsConfig: sopsConfig})
 				if err != nil {
 					return nil, fmt.Errorf("failed to encrypt file %s: %w", entry, err)
 				}
@@ -320,7 +315,7 @@ func (v *Vm) BakeLocal(
 		}
 	} else {
 		// STANDARD ANSIBLE EXECUTION (no exports)
-		ansibleSuccess, err := v.
+		ansibleSuccess, err := m.
 			ExecuteAnsible(
 				ctx,
 				terraformDirResult,

@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func (v *Configuration) RenderFluxKustomization(
+func (m *Configuration) RenderFluxKustomization(
 	ctx context.Context,
 	// +optional
 	src *dagger.Directory,

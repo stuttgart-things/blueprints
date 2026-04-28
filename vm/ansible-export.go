@@ -190,7 +190,7 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 	for _, entry := range entries {
 		plaintextFile := exportDir.File(entry)
 
-		encryptedContent, err := m.EncryptFile(ctx, agePublicKey, plaintextFile, sopsFileExtension, sopsConfig)
+		encryptedContent, err := dag.Secrets().EncryptFile(ctx, agePublicKey, plaintextFile, dagger.SecretsEncryptFileOpts{FileExtension: sopsFileExtension, SopsConfig: sopsConfig})
 		if err != nil {
 			return "", fmt.Errorf("failed to encrypt file %s: %w", entry, err)
 		}

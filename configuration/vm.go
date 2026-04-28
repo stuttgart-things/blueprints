@@ -24,7 +24,7 @@ type VmTshirtSizesConfig struct {
 // Example:
 //
 //	dagger call get-vm-size --config-file=vm_tshirt_sizes.yaml --size=small
-func (v *Configuration) GetVmSize(
+func (m *Configuration) GetVmSize(
 	ctx context.Context,
 	// YAML file containing VM t-shirt sizes
 	configFile *dagger.File,

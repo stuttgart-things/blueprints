@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
+	"dagger/secrets/internal/dagger"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
-
-	"dagger/kubernetes-deployment/internal/dagger"
 )
 
 // secretManifestTemplate renders a v1/Secret with base64-encoded data entries.
@@ -23,21 +22,21 @@ data:
 {{range $k := .keys}}  {{$k}}: {{index $.items $k}}
 {{end}}`
 
-// CreateSopsSecret builds a Kubernetes Secret manifest from name, namespace,
-// and comma-separated key=value pairs, then encrypts it with SOPS using the
-// given AGE public key. Returns the encrypted manifest as a *dagger.File.
+// CreateKubernetesSecret builds a Kubernetes Secret manifest from name,
+// namespace, and comma-separated key=value pairs, then encrypts it with SOPS
+// using the given AGE public key. Returns the encrypted manifest as a *dagger.File.
 //
 // Values are base64-encoded and placed under `data:` to match the standard
 // Kubernetes Secret layout.
 //
 // Usage:
 //
-//	dagger call create-sops-secret \
+//	dagger call -m secrets create-kubernetes-secret \
 //	  --name my-secret --namespace default \
 //	  --key-values "user=admin,password=s3cret" \ # pragma: allowlist secret
 //	  --age-public-key env:AGE_PUB \
 //	  export --path ./secret.enc.yaml
-func (m *KubernetesDeployment) CreateSopsSecret(
+func (m *Secrets) CreateKubernetesSecret(
 	ctx context.Context,
 	name string,
 	namespace string,
@@ -51,7 +50,7 @@ func (m *KubernetesDeployment) CreateSopsSecret(
 ) (*dagger.File, error) {
 	manifest, err := renderSecretManifest(ctx, name, namespace, keyValues)
 	if err != nil {
-		return nil, fmt.Errorf("create-sops-secret: %w", err)
+		return nil, fmt.Errorf("create-kubernetes-secret: %w", err)
 	}
 
 	plainFile := dag.Directory().
@@ -68,8 +67,9 @@ func (m *KubernetesDeployment) CreateSopsSecret(
 	), nil
 }
 
-// CreateSopsSecretString is the string-returning variant of CreateSopsSecret.
-func (m *KubernetesDeployment) CreateSopsSecretString(
+// CreateKubernetesSecretString is the string-returning variant of
+// CreateKubernetesSecret.
+func (m *Secrets) CreateKubernetesSecretString(
 	ctx context.Context,
 	name string,
 	namespace string,
@@ -78,7 +78,7 @@ func (m *KubernetesDeployment) CreateSopsSecretString(
 	// +optional
 	sopsConfig *dagger.File,
 ) (string, error) {
-	f, err := m.CreateSopsSecret(ctx, name, namespace, keyValues, agePublicKey, sopsConfig)
+	f, err := m.CreateKubernetesSecret(ctx, name, namespace, keyValues, agePublicKey, sopsConfig)
 	if err != nil {
 		return "", err
 	}

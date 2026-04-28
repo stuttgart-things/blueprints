@@ -97,9 +97,7 @@ func (m *Vm) ExecuteTerraform(
 			}
 
 			encFile := tfDir.File(filePath)
-			decryptedFile := dag.Sops().Decrypt(sopsAgeKey, encFile)
-
-			decryptedContent, err := decryptedFile.Contents(ctx)
+			decryptedContent, err := dag.Secrets().Decrypt(ctx, sopsAgeKey, encFile)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decrypt %s: %w", filePath, err)
 			}
@@ -135,9 +133,7 @@ func (m *Vm) ExecuteTerraform(
 
 	// DECRYPT KUBECONFIG IF ENCRYPTED
 	if encryptedKubeConfig != nil && sopsAgeKey != nil {
-		decryptedKubeFile := dag.Sops().Decrypt(sopsAgeKey, encryptedKubeConfig)
-
-		kubeContent, err := decryptedKubeFile.Contents(ctx)
+		kubeContent, err := dag.Secrets().Decrypt(ctx, sopsAgeKey, encryptedKubeConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decrypt kubeconfig: %w", err)
 		}

@@ -8,9 +8,9 @@ import (
 	"dagger/flux/internal/dagger"
 )
 
-// FluxRenderConfig renders the Flux instance configuration using a KCL module.
+// RenderConfig renders the Flux instance configuration using a KCL module.
 // Returns the full rendered YAML (multi-document).
-func (m *Flux) FluxRenderConfig(
+func (m *Flux) RenderConfig(
 	ctx context.Context,
 	// OCI KCL module source
 	// +optional
@@ -44,7 +44,7 @@ func (m *Flux) FluxRenderConfig(
 		if gitUsername != nil {
 			val, err := gitUsername.Plaintext(ctx) // pragma: allowlist secret
 			if err != nil {
-				return "", fmt.Errorf("flux-render-config: read gitUsername: %w", err)
+				return "", fmt.Errorf("render-config: read gitUsername: %w", err)
 			}
 			params += ",gitUsername=" + val
 		}
@@ -52,7 +52,7 @@ func (m *Flux) FluxRenderConfig(
 		if gitPassword != nil { // pragma: allowlist secret
 			val, err := gitPassword.Plaintext(ctx) // pragma: allowlist secret
 			if err != nil {
-				return "", fmt.Errorf("flux-render-config: read gitPassword: %w", err)
+				return "", fmt.Errorf("render-config: read gitPassword: %w", err)
 			}
 			params += ",gitPassword=" + val
 		}
@@ -60,7 +60,7 @@ func (m *Flux) FluxRenderConfig(
 		if sopsAgeKey != nil {
 			val, err := sopsAgeKey.Plaintext(ctx)
 			if err != nil {
-				return "", fmt.Errorf("flux-render-config: read sopsAgeKey: %w", err)
+				return "", fmt.Errorf("render-config: read sopsAgeKey: %w", err)
 			}
 			params += ",sopsAgeKey=" + val
 		}
@@ -76,8 +76,8 @@ func (m *Flux) FluxRenderConfig(
 	return renderedFile.Contents(ctx)
 }
 
-// FluxCommitConfig commits rendered config and optional secrets to a Git repository.
-func (m *Flux) FluxCommitConfig(
+// CommitConfig commits rendered config and optional secrets to a Git repository.
+func (m *Flux) CommitConfig(
 	ctx context.Context,
 	// Config YAML content to commit
 	configContent string,
@@ -117,7 +117,7 @@ func (m *Flux) FluxCommitConfig(
 		if strings.Contains(err.Error(), "no changes to commit") {
 			return fmt.Sprintf("No changes to commit (config already up-to-date in %s)", repository), nil
 		}
-		return "", fmt.Errorf("flux-commit-config: %w", err)
+		return "", fmt.Errorf("commit-config: %w", err)
 	}
 
 	return fmt.Sprintf("Committed to %s branch %s at %s", repository, branchName, destinationPath), nil

@@ -16,6 +16,7 @@ These blueprints are designed for platform engineers, SREs, and developers who w
 | ☸️ [Kubernetes Microservice](./kubernetes-microservice/README.md) | Build/stage/scan images, lint Dockerfiles, static stages, AI-powered Helmfile analysis. |
 | 📦 [Kubernetes Deployment](./kubernetes-deployment/README.md) | Render Helmfiles, apply manifests and install CRDs. |
 | 🌊 [Flux](./flux/README.md) | Bootstrap, render, apply, verify and destroy Flux CD on Kubernetes (KCL config, SOPS-encrypted secrets, Helmfile-driven operator). |
+| 🔐 [Secrets](./secrets/README.md) | SOPS encrypt/decrypt, AGE key validation, SOPS-driven template rendering, Kubernetes Secret manifest generation. |
 | 📝 [Repository Linting](./repository-linting/README.md) | Multi-tech repo validation (YAML/Markdown/Pre-commit/Secrets), AI analysis, GitHub issues. |
 | 💻 [VM](./vm/README.md) | Terraform + Ansible workflows with SOPS/Vault, profile-driven local/remote execution. |
 | 🖼️ [VM-Template](./vmtemplate/README.md) | Packer workflows with Vault/Git (build/test), plus test VM via Terraform. |
@@ -44,7 +45,9 @@ dagger call -m repository-linting analyze-report --report-file /tmp/all-findings
 - Kubernetes Deployment (render Helmfile):
 	- `dagger call -m kubernetes-deployment deploy-helmfile --operation template --helmfile-ref git::https://github.com/stuttgart-things/helm.git@apps/nginx.yaml.gotmpl`
 - Flux (bootstrap on a cluster):
-	- `dagger call -m flux flux-bootstrap --kube-config file://~/.kube/cluster --helmfile-ref git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl --operator-version 0.42.1`
+	- `dagger call -m flux bootstrap --kube-config file://~/.kube/cluster --helmfile-ref git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl --operator-version 0.42.1`
+- Secrets (decrypt a SOPS file):
+	- `dagger call -m secrets decrypt --sops-key env:SOPS_AGE_KEY --encrypted-file ./terraform.tfvars.enc.json`
 - Kubernetes Microservice (build image):
 	- `dagger call -m kubernetes-microservice bake-image --src tests/kubernetes-microservice --repository-name stuttgart-things/test --registry-url ttl.sh --tag 1.2.3 -vv`
 - Repository Linting (validate):

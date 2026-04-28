@@ -1,19 +1,14 @@
 # FLUX
 
 Bootstrap, render, apply, verify, and destroy workflows for Flux CD on
-Kubernetes. Extracted from `kubernetes-deployment` — see issue #143.
+Kubernetes. Extracted from `kubernetes-deployment` (#143). The redundant
+`flux-` prefix on every function was dropped in favour of the dominant
+verb-first convention used elsewhere in the repo. AGE-key validation and
+SOPS encryption now live in the [`secrets`](../secrets/README.md) module.
 
 ```bash
-# VALIDATE AGE KEY PAIR (standalone — fails fast on mismatch)
-dagger call -m flux validate-age-key-pair \
-  --sops-age-key env:SOPS_AGE_KEY \
-  --age-public-key env:AGE_PUB \
-  --progress plain
-```
-
-```bash
-# FLUX BOOTSTRAP - FULL LIFECYCLE (validate keys, render, deploy operator, apply config, apply secrets, verify, wait)
-dagger call -m flux flux-bootstrap \
+# BOOTSTRAP - FULL LIFECYCLE (validate keys, render, deploy operator, apply config, apply secrets, verify, wait)
+dagger call -m flux bootstrap \
   --kube-config file:///home/sthings/.kube/vre2.yaml \
   --deploy-operator=true \
   --commit-to-git=true \
@@ -35,8 +30,8 @@ dagger call -m flux flux-bootstrap \
 ```
 
 ```bash
-# FLUX BOOTSTRAP - RENDER + ENCRYPT + COMMIT TO GIT (no cluster deploy)
-dagger call -m flux flux-bootstrap \
+# BOOTSTRAP - RENDER + ENCRYPT + COMMIT TO GIT (no cluster deploy)
+dagger call -m flux bootstrap \
   --kube-config file:///home/sthings/.kube/cluster \
   --repository "my-org/fleet" \
   --destination-path "clusters/staging/" \
@@ -54,8 +49,8 @@ dagger call -m flux flux-bootstrap \
 ```
 
 ```bash
-# FLUX BOOTSTRAP - DEPLOY OPERATOR ONLY (skip rendering and git)
-dagger call -m flux flux-bootstrap \
+# BOOTSTRAP - DEPLOY OPERATOR ONLY (skip rendering and git)
+dagger call -m flux bootstrap \
   --kube-config file:///home/sthings/.kube/cluster \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
   --operator-version "0.42.1" \
@@ -67,7 +62,7 @@ dagger call -m flux flux-bootstrap \
 
 ```bash
 # ONLY CREATE SECRETS ON CLUSTER
-dagger call -m flux flux-bootstrap \
+dagger call -m flux bootstrap \
   --kube-config file:///home/sthings/.kube/vre2.yaml \
   --deploy-operator=false \
   --commit-to-git=false \
@@ -87,8 +82,8 @@ dagger call -m flux flux-bootstrap \
 ```
 
 ```bash
-# FLUX DESTROY - FULL TEARDOWN (delete FluxInstance, secrets, operator, namespace)
-dagger call -m flux flux-destroy \
+# DESTROY - FULL TEARDOWN (delete FluxInstance, secrets, operator, namespace)
+dagger call -m flux destroy \
   --kube-config file:///home/sthings/.kube/cluster \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
   --progress plain
@@ -98,43 +93,52 @@ dagger call -m flux flux-destroy \
 # INDIVIDUAL PHASE FUNCTIONS (each callable standalone via dagger call)
 
 # Render config only
-dagger call -m flux flux-render-config \
+dagger call -m flux render-config \
   --config-parameters "name=flux-system,namespace=flux-system,version=2.8" \
   --progress plain
 
-# Encrypt secrets
-dagger call -m flux flux-encrypt-secrets \
-  --secret-content "$(cat secrets.yaml)" \
-  --age-public-key env:AGE_PUB \
-  --progress plain
-
 # Apply config to cluster
-dagger call -m flux flux-apply-config \
+dagger call -m flux apply-config \
   --config-content "$(cat config.yaml)" \
   --kube-config file:///home/sthings/.kube/cluster \
   --progress plain
 
 # Apply secrets to cluster
-dagger call -m flux flux-apply-secrets \
+dagger call -m flux apply-secrets \
   --secret-content "$(cat secrets.yaml)" \
   --kube-config file:///home/sthings/.kube/cluster \
   --progress plain
 
 # Verify secrets exist in cluster
-dagger call -m flux flux-verify-secrets \
+dagger call -m flux verify-secrets \
   --secret-content "$(cat secrets.yaml)" \
   --kube-config file:///home/sthings/.kube/cluster \
   --progress plain
 
 # Deploy operator only
-dagger call -m flux flux-deploy-operator \
+dagger call -m flux deploy-operator \
   --kube-config file:///home/sthings/.kube/cluster \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
   --state-values "version=0.42.1" \
   --progress plain
 
 # Wait for reconciliation
-dagger call -m flux flux-wait-for-reconciliation \
+dagger call -m flux wait-for-reconciliation \
   --kube-config file:///home/sthings/.kube/cluster \
   --progress plain
+
+# Commit rendered config to git
+dagger call -m flux commit-config \
+  --config-content "$(cat config.yaml)" \
+  --repository my-org/fleet \
+  --destination-path clusters/staging/ \
+  --git-token env:GITHUB_TOKEN \
+  --progress plain
 ```
+
+## Moved out of this module
+
+| Old call | New call |
+|---|---|
+| `dagger call -m flux validate-age-key-pair` | `dagger call -m secrets validate-age-key-pair` |
+| `dagger call -m flux flux-encrypt-secrets --secret-content $X` | `dagger call -m secrets encrypt-string --plaintext $X` |

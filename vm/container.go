@@ -6,14 +6,14 @@ import (
 	"dagger/vm/internal/dagger"
 )
 
-func (v *Vm) container(
+func (m *Vm) container(
 	ctx context.Context) (*dagger.Container, error) {
-	if v.BaseImage == "" {
-		v.BaseImage = "cgr.dev/chainguard/wolfi-base:latest"
+	if m.BaseImage == "" {
+		m.BaseImage = "cgr.dev/chainguard/wolfi-base:latest"
 	}
 
 	ctr := dag.Container().
-		From(v.BaseImage)
+		From(m.BaseImage)
 
 	return ctr, nil
 }

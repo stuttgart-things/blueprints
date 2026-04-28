@@ -524,12 +524,13 @@ dagger call -m vm bake-local \
 
 <details><summary>DECRYPT FILE w/ SOPS</summary>
 
-```bash
-dagger call -m vm \
-decrypt-sops \
---sops-key=env:SOPS_AGE_KEY \
---encrypted-file tests/vm/terraform.tfvars.enc.json
-```
+> SOPS decrypt/encrypt now lives in the [`secrets`](../secrets/README.md) module:
+>
+> ```bash
+> dagger call -m secrets decrypt \
+>   --sops-key env:SOPS_AGE_KEY \
+>   --encrypted-file tests/vm/terraform.tfvars.enc.json
+> ```
 
 </details>
 

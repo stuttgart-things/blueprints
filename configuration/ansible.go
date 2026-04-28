@@ -5,7 +5,7 @@ import (
 	"dagger/configuration/internal/dagger"
 )
 
-func (v *Configuration) CreateAnsibleRequirementFiles(
+func (m *Configuration) CreateAnsibleRequirementFiles(
 	ctx context.Context,
 	// +optional
 	src *dagger.Directory,

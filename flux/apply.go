@@ -8,8 +8,8 @@ import (
 	"dagger/flux/internal/dagger"
 )
 
-// FluxDeployOperator deploys the Flux operator via Helmfile.
-func (m *Flux) FluxDeployOperator(
+// DeployOperator deploys the Flux operator via Helmfile.
+func (m *Flux) DeployOperator(
 	ctx context.Context,
 	// Kubeconfig secret for cluster access
 	kubeConfig *dagger.Secret,
@@ -38,8 +38,8 @@ func (m *Flux) FluxDeployOperator(
 	)
 }
 
-// FluxApplyConfig applies rendered config (non-secret) manifests to the cluster.
-func (m *Flux) FluxApplyConfig(
+// ApplyConfig applies rendered config (non-secret) manifests to the cluster.
+func (m *Flux) ApplyConfig(
 	ctx context.Context,
 	// Config YAML content
 	configContent string,
@@ -70,15 +70,15 @@ metadata:
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("flux-apply-config: %w", err)
+		return "", fmt.Errorf("apply-config: %w", err)
 	}
 
 	return "Config applied to cluster", nil
 }
 
-// FluxWaitForReconciliation runs flux check with retry, reconciles sources,
+// WaitForReconciliation runs flux check with retry, reconciles sources,
 // and gets all Flux resources.
-func (m *Flux) FluxWaitForReconciliation(
+func (m *Flux) WaitForReconciliation(
 	ctx context.Context,
 	// Target namespace
 	// +optional
@@ -123,7 +123,7 @@ flux check
 		WithExec([]string{"sh", "-c", retryScript}).
 		Stdout(ctx)
 	if err != nil {
-		return "", fmt.Errorf("flux-wait: flux check failed: %w", err)
+		return "", fmt.Errorf("wait-for-reconciliation: flux check failed: %w", err)
 	}
 	results = append(results, fmt.Sprintf("Flux check passed:\n%s", checkOutput))
 

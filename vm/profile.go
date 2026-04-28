@@ -27,7 +27,7 @@ type ProfileConfig struct {
 	ExportDestinationPath   string   `yaml:"exportDestinationPath"`
 }
 
-func (v *Vm) BakeLocalByProfile(
+func (m *Vm) BakeLocalByProfile(
 	ctx context.Context,
 	src *dagger.Directory,
 	// +optional
@@ -119,7 +119,7 @@ func (v *Vm) BakeLocalByProfile(
 	}
 
 	// CALL BakeLocal WITH CONVERTED PARAMETERS
-	return v.BakeLocal(
+	return m.BakeLocal(
 		ctx,
 		src,
 		config.Operation,

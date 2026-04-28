@@ -17,7 +17,7 @@ import (
 //	  --src ./tests/configuration \
 //	  --template-path README.md.tmpl \
 //	  --data-files vm-ansible.yaml,additional-vars.yaml
-func (v *Configuration) RenderMetadata(
+func (m *Configuration) RenderMetadata(
 	ctx context.Context,
 	// +optional
 	// Source directory containing template and variables files

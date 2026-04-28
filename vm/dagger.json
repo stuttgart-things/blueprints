@@ -15,6 +15,10 @@
       "source": "../configuration"
     },
     {
+      "name": "secrets",
+      "source": "../secrets"
+    },
+    {
       "name": "git",
       "source": "github.com/stuttgart-things/dagger/git@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
@@ -27,11 +31,6 @@
     {
       "name": "go",
       "source": "github.com/stuttgart-things/dagger/go@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
-    },
-    {
-      "name": "sops",
-      "source": "github.com/stuttgart-things/dagger/sops@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
     },
     {

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (v *Configuration) VsphereVm(
+func (m *Configuration) VsphereVm(
 	ctx context.Context,
 	src *dagger.Directory,
 	// +optional
@@ -152,7 +152,7 @@ func (v *Configuration) VsphereVm(
 
 	// RENDER ANSIBLE REQUIREMENTS IF REQUESTED
 	if renderAnsibleRequirements {
-		ansibleReqs, err := v.CreateAnsibleRequirementFiles(
+		ansibleReqs, err := m.CreateAnsibleRequirementFiles(
 			ctx,
 			src,
 			ansibleRequirementsTemplate,
@@ -185,7 +185,7 @@ func (v *Configuration) VsphereVm(
 
 	// RENDER EXECUTION FILE IF REQUESTED
 	if renderExecutionfile {
-		executionFile, err := v.RenderMetadata(
+		executionFile, err := m.RenderMetadata(
 			ctx,
 			src,
 			configParameters,

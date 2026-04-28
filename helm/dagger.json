@@ -1,0 +1,14 @@
+{
+  "name": "helm",
+  "engineVersion": "v0.20.6",
+  "sdk": {
+    "source": "go"
+  },
+  "dependencies": [
+    {
+      "name": "helm",
+      "source": "github.com/stuttgart-things/dagger/helm@v0.110.0",
+      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
+    }
+  ]
+}

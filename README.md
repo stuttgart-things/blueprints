@@ -14,7 +14,8 @@ These blueprints are designed for platform engineers, SREs, and developers who w
 | 🧭 [Crossplane Configuration](./crossplane-configuration/README.md) | Generate XRD/Composition/Configuration with variable merging and cluster/secret helpers. |
 | 🚀 [Go Microservice](./go-microservice/README.md) | Lint, test, security scan and build (ldflags/ko) for Go services. |
 | ☸️ [Kubernetes Microservice](./kubernetes-microservice/README.md) | Build/stage/scan images, lint Dockerfiles, static stages, AI-powered Helmfile analysis. |
-| 📦 [Kubernetes Deployment](./kubernetes-deployment/README.md) | Render Helmfiles, apply manifests and install CRDs. |
+| 📦 [Kubernetes Deployment](./kubernetes-deployment/README.md) | Thin orchestrator over `kcl` + `kubectl`: KCL-based deployments, raw manifest application, CRD installation. |
+| ⎈ [Helm](./helm/README.md) | Helmfile-driven deployment workflows (apply / destroy / template / diff) with optional Vault and registry credentials. |
 | 🌊 [Flux](./flux/README.md) | Bootstrap, render, apply, verify and destroy Flux CD on Kubernetes (KCL config, SOPS-encrypted secrets, Helmfile-driven operator). |
 | 🔐 [Secrets](./secrets/README.md) | SOPS encrypt/decrypt, AGE key validation, SOPS-driven template rendering, Kubernetes Secret manifest generation. |
 | 📝 [Repository Linting](./repository-linting/README.md) | Multi-tech repo validation (YAML/Markdown/Pre-commit/Secrets), AI analysis, GitHub issues. |
@@ -42,8 +43,10 @@ dagger call -m repository-linting analyze-report --report-file /tmp/all-findings
 	- `dagger call -m ./crossplane-configuration add-cluster --clusterName=demo --kubeconfig-crossplane-cluster file://~/.kube/xplane -vv`
 - Go Microservice (build with ldflags):
 	- `dagger call -m go-microservice run-build-stage --src tests/go-microservice/ldflags/ --ko-build=false --ldflags "main.Version=1.2.5; main.Commit=abc1234" -vv`
-- Kubernetes Deployment (render Helmfile):
-	- `dagger call -m kubernetes-deployment deploy-helmfile --operation template --helmfile-ref git::https://github.com/stuttgart-things/helm.git@apps/nginx.yaml.gotmpl`
+- Kubernetes Deployment (apply manifests by URL):
+	- `dagger call -m kubernetes-deployment apply-manifests --source-url https://example.com/cm.yaml --kube-config file://~/.kube/cluster`
+- Helm (render Helmfile):
+	- `dagger call -m helm deploy-helmfile --operation template --helmfile-ref git::https://github.com/stuttgart-things/helm.git@apps/nginx.yaml.gotmpl`
 - Flux (bootstrap on a cluster):
 	- `dagger call -m flux bootstrap --kube-config file://~/.kube/cluster --helmfile-ref git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl --operator-version 0.42.1`
 - Secrets (decrypt a SOPS file):

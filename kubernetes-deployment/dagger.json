@@ -6,16 +6,6 @@
   },
   "dependencies": [
     {
-      "name": "git",
-      "source": "github.com/stuttgart-things/dagger/git@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
-    },
-    {
-      "name": "helm",
-      "source": "github.com/stuttgart-things/dagger/helm@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
-    },
-    {
       "name": "kcl",
       "source": "github.com/stuttgart-things/dagger/kcl@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
@@ -24,10 +14,6 @@
       "name": "kubernetes",
       "source": "github.com/stuttgart-things/dagger/kubernetes@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
-    },
-    {
-      "name": "secrets",
-      "source": "../secrets"
     }
   ]
 }

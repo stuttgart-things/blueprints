@@ -1,13 +1,11 @@
 # KUBERNETES-DEPLOYMENT
 
-```bash
-# RENDERS HELMFILE
-dagger call -m kubernetes-deployment \
-deploy-helmfile \
---operation template \
---helmfile-ref "git::https://github.com/stuttgart-things/helm.git@apps/nginx.yaml.gotmpl" \
---progress plain
-```
+Thin orchestrator over `kcl` (manifest rendering) and `kubectl` (apply):
+KCL-based deployments, raw manifest application, and CRD installation.
+Helmfile workflows live in the dedicated [`helm`](../helm/README.md)
+module; Flux bootstrap/render/apply/destroy lives in the dedicated
+[`flux`](../flux/README.md) module; SOPS / k8s Secret manifest workflows
+live in the dedicated [`secrets`](../secrets/README.md) module.
 
 ```bash
 # APPLY BY SOURCE URL
@@ -71,6 +69,12 @@ dagger call -m kubernetes-deployment deploy-kcl \
   --operation delete \
   --progress plain
 ```
+
+> **Helmfile workflows moved.** `deploy-helmfile` and `deploy-microservices`
+> now live in the dedicated [`helm`](../helm/README.md) module. Replace
+> `dagger call -m kubernetes-deployment deploy-helmfile ...` with
+> `dagger call -m helm deploy-helmfile ...` (function names and flags
+> unchanged).
 
 > **SOPS-encrypted Kubernetes Secret generation moved.** `create-sops-secret`
 > and `create-sops-secret-string` now live in the

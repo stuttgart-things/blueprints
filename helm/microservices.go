@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
-	"dagger/kubernetes-deployment/internal/dagger"
 	"strings"
+
+	"dagger/helm/internal/dagger"
 )
 
-func (m *KubernetesDeployment) DeployMicroservices(
+// DeployMicroservices runs a sequence of Helmfile operations from a
+// comma-separated list of helmfile references against the same cluster.
+func (m *Helm) DeployMicroservices(
 	ctx context.Context,
 	// +optional
 	src *dagger.Directory,
@@ -37,20 +40,14 @@ func (m *KubernetesDeployment) DeployMicroservices(
 	stateValues string,
 ) error {
 
-	// Parse comma-separated helmfile references
 	refs := strings.Split(helmfileRefs, ",")
 
-	// Deploy each helmfile
 	for _, ref := range refs {
-		// Trim whitespace from each reference
 		ref = strings.TrimSpace(ref)
-
-		// Skip empty references
 		if ref == "" {
 			continue
 		}
 
-		// Deploy this helmfile
 		if err := m.DeployHelmfile(
 			ctx,
 			src,

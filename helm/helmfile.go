@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 
-	"dagger/kubernetes-deployment/internal/dagger"
+	"dagger/helm/internal/dagger"
 )
 
-func (m *KubernetesDeployment) DeployHelmfile(
+// DeployHelmfile runs a Helmfile operation (apply / destroy / template / diff)
+// against a cluster, with optional Vault and registry credentials.
+func (m *Helm) DeployHelmfile(
 	ctx context.Context,
 	// +optional
 	src *dagger.Directory,

@@ -22,6 +22,7 @@ tasks:
       - task: test-presentation-init
       - task: test-presentation-add-content
       - task: test-create-secrets-file
+      - task: test-bootstrap-clusterbook-cluster
 
   test-crossplane-configuration:
     desc: Test crossplane-configuration module
@@ -134,7 +135,7 @@ tasks:
       EXPORT_PATH: /tmp/vmtemplate-render-test
 
   test-create-secrets-file:
-    desc: Test configuration create-secrets-file (decrypt → render → re-encrypt)
+    desc: Test secrets render-template (decrypt → render → re-encrypt)
     cmds:
       - |
         rm -rf {{ .EXPORT_PATH }} || true
@@ -163,8 +164,8 @@ tasks:
         echo "✓ Plaintext render:"
         cat {{ .PLAIN_EXPORT_PATH }}
     vars:
-      MODULE: configuration
-      FUNCTION: create-secrets-file
+      MODULE: secrets
+      FUNCTION: render-template
       SOPS_KEY: env:SOPS_AGE_KEY
       SOPS_RECIPIENT: cmd:echo age19vgzvmpt9tdlcsu8rzaacj397yz8gguz38nsmuy6eeelt5vjsyms542xtm
       ENCRYPTED_DATA_FILE: tests/vm/terraform.tfvars.enc.json
@@ -172,6 +173,32 @@ tasks:
       FILE_EXTENSION: json
       EXPORT_PATH: /tmp/secrets/vault-secret.enc.json
       PLAIN_EXPORT_PATH: /tmp/secrets/vault-secret.json
+
+  test-bootstrap-clusterbook-cluster:
+    desc: Test argocd bootstrap-clusterbook-cluster (KCL render of Argo CD cluster registration)
+    cmds:
+      - |
+        mkdir -p $(dirname {{ .EXPORT_PATH }}) || true
+        rm -f {{ .EXPORT_PATH }} || true
+      - |
+        dagger call -m {{ .MODULE }} {{ .FUNCTION }} \
+        --name={{ .CLUSTER_NAME }} \
+        --network-key={{ .NETWORK_KEY }} \
+        --cluster-name={{ .CLUSTER_NAME }} \
+        --kubeconfig-secret-name={{ .CLUSTER_NAME }} \
+        --cluster-labels='{{ .CLUSTER_LABELS }}' \
+        --progress plain -vv \
+        export --path={{ .EXPORT_PATH }}
+      - |
+        echo "✓ Rendered manifests:"
+        cat {{ .EXPORT_PATH }}
+    vars:
+      MODULE: argocd
+      FUNCTION: bootstrap-clusterbook-cluster
+      CLUSTER_NAME: philly
+      NETWORK_KEY: 10.31.101
+      CLUSTER_LABELS: '{"env":"lab","role":"mgmt","auto-project":"true"}'
+      EXPORT_PATH: /tmp/argocd/clusterbook-philly.yaml
 
   test-vm:
     desc: Test vm module

@@ -1,3 +1,43 @@
+# [2.0.0](https://github.com/stuttgart-things/blueprints/compare/v1.85.0...v2.0.0) (2026-04-29)
+
+
+### Code Refactoring
+
+* consolidate Terraform execution into vm module ([#143](https://github.com/stuttgart-things/blueprints/issues/143)) ([#150](https://github.com/stuttgart-things/blueprints/issues/150)) ([4cebc27](https://github.com/stuttgart-things/blueprints/commit/4cebc271d9ee4173aa94e04897902559354f4cc2))
+* extract helm module from kubernetes-deployment ([#143](https://github.com/stuttgart-things/blueprints/issues/143)) ([#152](https://github.com/stuttgart-things/blueprints/issues/152)) ([5adc083](https://github.com/stuttgart-things/blueprints/commit/5adc083efb11f8068c11bf107b9df1c7960a4c30)), closes [#3](https://github.com/stuttgart-things/blueprints/issues/3)
+
+
+### Features
+
+* feat/add-argocd-cluster ([6a8ac3a](https://github.com/stuttgart-things/blueprints/commit/6a8ac3a42e481658191ca110d9d641e1d751520f))
+
+
+### BREAKING CHANGES
+
+* for callers
+===========================
+
+  dagger call -m kubernetes-deployment deploy-helmfile      → dagger call -m helm deploy-helmfile
+  dagger call -m kubernetes-deployment deploy-microservices → dagger call -m helm deploy-microservices
+
+All flags carry over unchanged. The remaining kubernetes-deployment
+functions (deploy-kcl, apply-manifests, install-custom-resource-definitions)
+stay where they are.
+
+Docs
+====
+- New helm/README.md with apply / destroy / template + multi-helmfile
+  examples and a migration table
+- kubernetes-deployment/README.md gains a "thin orchestrator" intro and
+  a "moved to helm" pointer
+* for callers:
+  dagger call -m configuration terraform-apply  ->  dagger call -m vm execute-terraform
+  dagger call -m configuration terraform-output ->  dagger call -m vm output-terraform-run
+All flags carry over unchanged.
+
+Co-authored-by: sthings user <sthings@dev-vm3.tiab.labda.sva.de>
+Co-authored-by: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+
 # [1.85.0](https://github.com/stuttgart-things/blueprints/compare/v1.84.0...v1.85.0) (2026-04-27)
 
 

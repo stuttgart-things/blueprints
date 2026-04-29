@@ -40,5 +40,9 @@ repos:
                "--exclude-files", "go-microservice/dagger.json",
                "--exclude-files", "presentations/dagger.json",
                "--exclude-files", "kubernetes-deployment/dagger.json",
-               "--exclude-files", "kubernetes-microservice/dagger.json"
+               "--exclude-files", "kubernetes-microservice/dagger.json",
+               "--exclude-files", "flux/dagger.json",
+               "--exclude-files", "helm/dagger.json",
+               "--exclude-files", "secrets/dagger.json",
+               "--exclude-files", "argocd/dagger.json"
                ]

@@ -17,6 +17,7 @@ These blueprints are designed for platform engineers, SREs, and developers who w
 | 📦 [Kubernetes Deployment](./kubernetes-deployment/README.md) | Thin orchestrator over `kcl` + `kubectl`: KCL-based deployments, raw manifest application, CRD installation. |
 | ⎈ [Helm](./helm/README.md) | Helmfile-driven deployment workflows (apply / destroy / template / diff) with optional Vault and registry credentials. |
 | 🌊 [Flux](./flux/README.md) | Bootstrap, render, apply, verify and destroy Flux CD on Kubernetes (KCL config, SOPS-encrypted secrets, Helmfile-driven operator). |
+| 🐙 [ArgoCD](./argocd/README.md) | Render/apply/commit clusterbook-driven Argo CD cluster registrations; orchestrator covers render → deploy → git commit/PR/auto-merge. |
 | 🔐 [Secrets](./secrets/README.md) | SOPS encrypt/decrypt, AGE key validation, SOPS-driven template rendering, Kubernetes Secret manifest generation. |
 | 📝 [Repository Linting](./repository-linting/README.md) | Multi-tech repo validation (YAML/Markdown/Pre-commit/Secrets), AI analysis, GitHub issues. |
 | 💻 [VM](./vm/README.md) | Terraform + Ansible workflows with SOPS/Vault, profile-driven local/remote execution. |
@@ -49,6 +50,8 @@ dagger call -m repository-linting analyze-report --report-file /tmp/all-findings
 	- `dagger call -m helm deploy-helmfile --operation template --helmfile-ref git::https://github.com/stuttgart-things/helm.git@apps/nginx.yaml.gotmpl`
 - Flux (bootstrap on a cluster):
 	- `dagger call -m flux bootstrap --kube-config file://~/.kube/cluster --helmfile-ref git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl --operator-version 0.42.1`
+- ArgoCD (render + deploy a clusterbook cluster registration):
+	- `dagger call -m argocd bootstrap-clusterbook-cluster --name=philly --network-key=10.31.101 --deploy=true --kube-config env:KUBECONFIG`
 - Secrets (decrypt a SOPS file):
 	- `dagger call -m secrets decrypt --sops-key env:SOPS_AGE_KEY --encrypted-file ./terraform.tfvars.enc.json`
 - Kubernetes Microservice (build image):

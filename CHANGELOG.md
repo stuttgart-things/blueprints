@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/stuttgart-things/blueprints/compare/v2.0.0...v2.1.0) (2026-05-01)
+
+
+### Features
+
+* feat/add-cluster-network-detection ([562ce2e](https://github.com/stuttgart-things/blueprints/commit/562ce2e527695a40d8ad5b2b593cb9f56758b450))
+
 # [2.0.0](https://github.com/stuttgart-things/blueprints/compare/v1.85.0...v2.0.0) (2026-04-29)
 
 

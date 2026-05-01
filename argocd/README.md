@@ -9,6 +9,8 @@ helpers live in the [`secrets`](../secrets/README.md) module.
 | Function | Purpose |
 |---|---|
 | `render-clusterbook-cluster-config` | Render the [`clusterbook-cluster-gen`](https://github.com/stuttgart-things/clusterbook-cluster-gen) KCL module. Returns the rendered manifests as a Dagger `File`. |
+| `render-kubeconfig-secret` | Wrap a SOPS-encrypted source file (e.g. a cluster kubeconfig) in a `v1/Secret` manifest under `data.<key>`; optionally re-encrypts the manifest with SOPS for safe git commit. Returns the manifest as a Dagger `File`. |
+| `detect-network-key` | Run `kubectl get nodes -o json` against the target cluster and return the dominant /24 prefix of the nodes' `InternalIP` addresses (e.g. `10.31.102`) — the format expected by `--network-key`. |
 | `apply-config` | Apply a rendered config file to a cluster (creates the target namespace first). |
 | `commit-config` | Commit a rendered file to a Git repo at `<destinationPath>/<fileName>` on a branch; optionally open a PR against a base branch and optionally merge it. |
 | `bootstrap-clusterbook-cluster` | Orchestrator: render → optional `--deploy` → optional `--commit-to-git`. Returns the rendered file. |
@@ -67,6 +69,105 @@ dagger call -m argocd render-clusterbook-cluster-config \
   --values-file=/tmp/philly-values.yaml \
   --argocd-namespace=argocd-prod \
   export --path=/tmp/argocd/philly.yaml
+```
+
+## Render a kubeconfig Secret from a SOPS-encrypted file
+
+`render-kubeconfig-secret` decrypts a SOPS-encrypted source file (e.g. a
+cluster kubeconfig under `stuttgart-things/secrets/kubeconfigs/`) and wraps
+the plaintext into a `v1/Secret` manifest under `data.<dataKey>`. Equivalent
+to:
+
+```bash
+sops --decrypt kind-dev-test1.yaml > kubeconfig.yaml
+kubectl create secret generic kind-dev-test1 -n argocd \
+  --from-file=kubeconfig=kubeconfig.yaml \
+  --dry-run=client -o yaml
+```
+
+By default the rendered manifest is re-encrypted with SOPS using
+`--age-public-key` so it can be safely committed to git via `commit-config`.
+Pass `--encrypt=false` to get the plaintext manifest for direct
+`kubectl apply` via `apply-config`.
+
+```bash
+# RENDER — encrypted Secret manifest, ready to commit to git
+dagger call -m argocd render-kubeconfig-secret \
+  --source-file=/home/sthings/projects/stuttgart-things/secrets/kubeconfigs/kind-dev-test1.yaml \
+  --sops-key=env:SOPS_AGE_KEY \
+  --age-public-key=env:AGE_PUBLIC_KEY \
+  --name=kind-dev-test1 \
+  --namespace=argocd \
+  export --path=/tmp/argocd/kind-dev-test1.secret.enc.yaml
+```
+
+```bash
+# RENDER — plaintext manifest for direct kubectl apply (no encryption)
+dagger call -m argocd render-kubeconfig-secret \
+  --source-file=/home/sthings/projects/stuttgart-things/secrets/kubeconfigs/kind-dev-test1.yaml \
+  --sops-key=env:SOPS_AGE_KEY \
+  --name=target-cluster-kubeconfig \
+  --namespace=argocd \
+  --data-key=kubeconfig \
+  --encrypt=false \
+  export --path=/tmp/argocd/kind-dev-test1.secret.yaml
+```
+
+```bash
+# RENDER + COMMIT — encrypted Secret straight to git via commit-config
+dagger call -m argocd render-kubeconfig-secret \
+  --source-file=/home/sthings/projects/stuttgart-things/secrets/kubeconfigs/kind-dev-test1.yaml \
+  --sops-key=env:SOPS_AGE_KEY \
+  --age-public-key=env:AGE_PUBLIC_KEY \
+  --name=kind-dev-test1 \
+  export --path=/tmp/argocd/kind-dev-test1.secret.enc.yaml
+
+dagger call -m argocd commit-config \
+  --config-file=/tmp/argocd/kind-dev-test1.secret.enc.yaml \
+  --repository stuttgart-things/fleet \
+  --branch-name argocd/kubeconfig-kind-dev-test1 \
+  --destination-path argocd/kubeconfigs/ \
+  --file-name kind-dev-test1.yaml \
+  --commit-message "Add kubeconfig Secret: kind-dev-test1" \
+  --git-token env:GITHUB_TOKEN \
+  --create-pr=true --base-branch main \
+  --progress plain
+```
+
+### Parameters
+
+| Flag | Required | Default | Notes |
+|---|---|---|---|
+| `--source-file` | yes | — | SOPS-encrypted source (e.g. a kubeconfig YAML). |
+| `--sops-key` | yes | — | AGE private key (`AGE-SECRET-KEY-…`) used to decrypt `--source-file`. |
+| `--name` | yes | — | Name of the rendered `v1/Secret`. |
+| `--namespace` | no | `argocd` | Namespace of the rendered Secret. |
+| `--data-key` | no | `kubeconfig` | Key under `data:` (i.e. `data.<dataKey>` holds the base64 payload). |
+| `--encrypt` | no | `true` | Re-encrypt the manifest with SOPS. Set `false` for direct `kubectl apply`. |
+| `--age-public-key` | yes¹ | — | AGE public key (`age1…`) for re-encryption. |
+| `--sops-config` | no | _(none)_ | `.sops.yaml` to drive recipient/regex selection during re-encryption. |
+
+¹ Only required when `--encrypt=true` (the default).
+
+## Detect the cluster network key
+
+`detect-network-key` queries the target cluster and returns the dominant
+`/24` prefix of the nodes' `InternalIP` addresses. Useful for piping
+straight into `render-clusterbook-cluster-config --network-key`.
+
+```bash
+# Detect the network key (e.g. "10.31.102")
+dagger call -m argocd detect-network-key \
+  --kube-config=env:KUBECONFIG
+```
+
+```bash
+# Detect and feed into render in one shell pipeline
+NETWORK_KEY=$(dagger call -m argocd detect-network-key --kube-config=env:KUBECONFIG)
+dagger call -m argocd render-clusterbook-cluster-config \
+  --name=platform-sthings \
+  --network-key="${NETWORK_KEY}" \
+  export --path=/tmp/argocd/platform-sthings.yaml
 ```
 
 ## Apply rendered manifests to a cluster
@@ -137,9 +238,17 @@ dagger call -m argocd commit-config \
 ## Bootstrap (orchestrator)
 
 `bootstrap-clusterbook-cluster` runs the full pipeline in a single Dagger
-session: render → `apply-config` (when `--deploy`) → `commit-config` (when
-`--commit-to-git`). The rendered file is returned so you can also `export`
-it locally on the same call.
+session: optional `detect-network-key` → `render-clusterbook-cluster-config`
+→ optional `render-kubeconfig-secret` → `apply-config` (when `--deploy`) →
+`commit-config` (when `--commit-to-git`). The rendered cluster-config file
+is returned so you can also `export` it locally on the same call.
+
+Two boolean gates wire in the helpers:
+
+| Flag | Effect |
+|---|---|
+| `--detect-network-key` | When `--network-key` is empty, populate it via `kubectl get nodes -o json` against `--kube-config`. |
+| `--render-kubeconfig-secret` | Render a `v1/Secret` from `--kubeconfig-source-file`. On `--deploy=true` the plaintext Secret is applied alongside the cluster config; on `--commit-to-git=true` the SOPS-encrypted Secret is committed alongside it as `<destination-path>/<kubeconfig-file-name>`. |
 
 ```bash
 # BOOTSTRAP — render only, export rendered YAML
@@ -184,6 +293,27 @@ dagger call -m argocd bootstrap-clusterbook-cluster \
   --destination-path argocd/clusters/ \
   --file-name philly.yaml \
   --create-pr=true --merge-pr=true --merge-method squash \
+  --progress plain
+```
+
+```bash
+# BOOTSTRAP — auto-detect network-key + render & commit kubeconfig Secret
+dagger call -m argocd bootstrap-clusterbook-cluster \
+  --name=kind-dev-test1 \
+  --kube-config=env:KUBECONFIG \
+  --detect-network-key=true \
+  --render-kubeconfig-secret=true \
+  --kubeconfig-source-file=/home/sthings/projects/stuttgart-things/secrets/kubeconfigs/kind-dev-test1.yaml \
+  --sops-key=env:SOPS_AGE_KEY \
+  --age-public-key=env:AGE_PUBLIC_KEY \
+  --commit-to-git=true \
+  --repository=stuttgart-things/fleet \
+  --git-token=env:GITHUB_TOKEN \
+  --branch-name=argocd/cluster-kind-dev-test1 \
+  --destination-path=argocd/clusters/ \
+  --file-name=kind-dev-test1.yaml \
+  --kubeconfig-file-name=kind-dev-test1.kubeconfig.yaml \
+  --create-pr=true --base-branch=main \
   --progress plain
 ```
 

@@ -19,6 +19,10 @@
       "name": "kubernetes",
       "source": "github.com/stuttgart-things/dagger/kubernetes@v0.110.0",
       "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
+    },
+    {
+      "name": "secrets",
+      "source": "../secrets"
     }
   ]
 }

@@ -75,11 +75,11 @@ func (m *Argocd) RenderClusterbookClusterConfig(
 		if clusterName == "" {
 			clusterName = name
 		}
-		if kubeconfigSecretName == "" {
-			kubeconfigSecretName = name
+		if kubeconfigSecretName == "" { // pragma: allowlist secret
+			kubeconfigSecretName = name // pragma: allowlist secret
 		}
 		if kubeconfigSecretNamespace == "" {
-			kubeconfigSecretNamespace = "argocd"
+			kubeconfigSecretNamespace = "argocd" // pragma: allowlist secret
 		}
 		if argocdNamespace == "" {
 			argocdNamespace = "argocd"

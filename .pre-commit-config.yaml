@@ -44,5 +44,6 @@ repos:
                "--exclude-files", "flux/dagger.json",
                "--exclude-files", "helm/dagger.json",
                "--exclude-files", "secrets/dagger.json",
-               "--exclude-files", "argocd/dagger.json"
+               "--exclude-files", "argocd/dagger.json",
+               "--exclude-files", "argocd/dagger.gen.go"
                ]

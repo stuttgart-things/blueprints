@@ -61,13 +61,52 @@ func (m *Argocd) BootstrapClusterbookCluster(
 	// +optional
 	// +default=false
 	deploy bool,
-	// Kubeconfig secret — required when deploy=true
+	// Kubeconfig secret — required when deploy=true or detect-network-key=true
 	// +optional
 	kubeConfig *dagger.Secret,
 	// Target namespace for apply
 	// +optional
 	// +default="argocd"
 	deployNamespace string,
+
+	// --- Auto-detect network-key step (optional) ---
+
+	// Run kubectl get nodes -o json against --kube-config and use the
+	// dominant /24 InternalIP prefix as --network-key. Only fires when
+	// --network-key is empty.
+	// +optional
+	// +default=false
+	detectNetworkKey bool,
+
+	// --- Render kubeconfig Secret step (optional) ---
+
+	// Render a v1/Secret wrapping a SOPS-encrypted kubeconfig source file;
+	// applied alongside the cluster config on --deploy=true and committed
+	// alongside it on --commit-to-git=true.
+	// +optional
+	// +default=false
+	renderKubeconfigSecret bool,
+	// SOPS-encrypted kubeconfig source — required when render-kubeconfig-secret=true // pragma: allowlist secret
+	// +optional
+	kubeconfigSourceFile *dagger.File,
+	// AGE private key for decrypting kubeconfig-source-file
+	// +optional
+	sopsKey *dagger.Secret,
+	// AGE public key for re-encrypting the rendered Secret — required when
+	// render-kubeconfig-secret=true and commit-to-git=true // pragma: allowlist secret
+	// +optional
+	agePublicKey *dagger.Secret,
+	// SOPS config file (.sops.yaml) used during re-encryption
+	// +optional
+	sopsConfigFile *dagger.File,
+	// Data key under data: in the rendered Secret
+	// +optional
+	// +default="kubeconfig"
+	kubeconfigDataKey string,
+	// File name to use when committing the kubeconfig Secret (joined with destination-path)
+	// +optional
+	// +default="kubeconfig.yaml"
+	kubeconfigFileName string,
 
 	// --- Commit step (optional) ---
 
@@ -118,6 +157,17 @@ func (m *Argocd) BootstrapClusterbookCluster(
 	// +default="squash"
 	mergeMethod string,
 ) (*dagger.File, error) {
+	if detectNetworkKey && networkKey == "" {
+		if kubeConfig == nil {
+			return nil, fmt.Errorf("detect-network-key=true requires --kube-config")
+		}
+		detected, err := m.DetectNetworkKey(ctx, kubeConfig)
+		if err != nil {
+			return nil, fmt.Errorf("detect-network-key: %w", err)
+		}
+		networkKey = detected
+	}
+
 	rendered, err := m.RenderClusterbookClusterConfig(
 		ctx,
 		name, networkKey, valuesFile, ociSource, clusterName,
@@ -129,12 +179,76 @@ func (m *Argocd) BootstrapClusterbookCluster(
 		return nil, fmt.Errorf("render: %w", err)
 	}
 
+	var (
+		encryptedKubeconfigSecret *dagger.File
+		plaintextKubeconfigSecret *dagger.File
+	)
+	if renderKubeconfigSecret {
+		if kubeconfigSourceFile == nil {
+			return nil, fmt.Errorf("render-kubeconfig-secret=true requires --kubeconfig-source-file") // pragma: allowlist secret
+		}
+		if sopsKey == nil {
+			return nil, fmt.Errorf("render-kubeconfig-secret=true requires --sops-key") // pragma: allowlist secret
+		}
+
+		secretName := kubeconfigSecretName // pragma: allowlist secret
+		if secretName == "" {
+			secretName = name // pragma: allowlist secret
+		}
+		secretNamespace := kubeconfigSecretNamespace // pragma: allowlist secret
+		if secretNamespace == "" {
+			secretNamespace = "argocd" // pragma: allowlist secret
+		}
+		dataKey := kubeconfigDataKey
+		if dataKey == "" {
+			dataKey = "kubeconfig"
+		}
+		secretFileName := kubeconfigFileName // pragma: allowlist secret
+		if secretFileName == "" {
+			secretFileName = "kubeconfig.yaml" // pragma: allowlist secret
+		}
+
+		if commitToGit {
+			if agePublicKey == nil {
+				return nil, fmt.Errorf("render-kubeconfig-secret=true with commit-to-git=true requires --age-public-key") // pragma: allowlist secret
+			}
+			encryptedKubeconfigSecret, err = m.RenderKubeconfigSecret(
+				ctx, kubeconfigSourceFile, sopsKey, secretName, secretNamespace,
+				dataKey, true, agePublicKey, sopsConfigFile,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("render-kubeconfig-secret (encrypted): %w", err)
+			}
+		}
+		if deploy {
+			plaintextKubeconfigSecret, err = m.RenderKubeconfigSecret(
+				ctx, kubeconfigSourceFile, sopsKey, secretName, secretNamespace,
+				dataKey, false, nil, nil,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("render-kubeconfig-secret (plaintext): %w", err)
+			}
+		}
+
+		// Stash for downstream commit step
+		_ = secretFileName
+	}
+
 	if deploy {
 		if kubeConfig == nil {
 			return nil, fmt.Errorf("deploy=true requires --kube-config")
 		}
 		if _, err := m.ApplyConfig(ctx, rendered, kubeConfig, deployNamespace); err != nil {
 			return nil, fmt.Errorf("deploy: %w", err)
+		}
+		if plaintextKubeconfigSecret != nil { // pragma: allowlist secret
+			ns := kubeconfigSecretNamespace
+			if ns == "" {
+				ns = "argocd"
+			}
+			if _, err := m.ApplyConfig(ctx, plaintextKubeconfigSecret, kubeConfig, ns); err != nil {
+				return nil, fmt.Errorf("deploy kubeconfig secret: %w", err)
+			}
 		}
 	}
 
@@ -152,6 +266,25 @@ func (m *Argocd) BootstrapClusterbookCluster(
 			mergePR, mergeMethod,
 		); err != nil {
 			return nil, fmt.Errorf("commit-to-git: %w", err)
+		}
+		if encryptedKubeconfigSecret != nil { // pragma: allowlist secret
+			secretFileName := kubeconfigFileName // pragma: allowlist secret
+			if secretFileName == "" {
+				secretFileName = "kubeconfig.yaml" // pragma: allowlist secret
+			}
+			// Commit the encrypted Secret onto the same branch the cluster
+			// config went to. PR creation/merge is intentionally skipped here
+			// — those happened on the cluster-config commit above and any
+			// follow-up commit lands on the existing PR's branch.
+			if _, err := m.CommitConfig(
+				ctx, encryptedKubeconfigSecret, repository, gitToken,
+				branchName, destinationPath, secretFileName,
+				"Add kubeconfig Secret: "+name,
+				false, baseBranch, "", "",
+				false, mergeMethod,
+			); err != nil {
+				return nil, fmt.Errorf("commit kubeconfig secret: %w", err)
+			}
 		}
 	}
 

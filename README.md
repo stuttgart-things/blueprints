@@ -17,7 +17,7 @@ These blueprints are designed for platform engineers, SREs, and developers who w
 | 📦 [Kubernetes Deployment](./kubernetes-deployment/README.md) | Thin orchestrator over `kcl` + `kubectl`: KCL-based deployments, raw manifest application, CRD installation. |
 | ⎈ [Helm](./helm/README.md) | Helmfile-driven deployment workflows (apply / destroy / template / diff) with optional Vault and registry credentials. |
 | 🌊 [Flux](./flux/README.md) | Bootstrap, render, apply, verify and destroy Flux CD on Kubernetes (KCL config, SOPS-encrypted secrets, Helmfile-driven operator). |
-| 🐙 [ArgoCD](./argocd/README.md) | Render/apply/commit clusterbook-driven Argo CD cluster registrations; orchestrator covers render → deploy → git commit/PR/auto-merge. |
+| 🐙 [ArgoCD](./argocd/README.md) | Render/apply/commit clusterbook-driven Argo CD cluster registrations; wrap a SOPS-encrypted kubeconfig as a `v1/Secret`; orchestrator covers render → deploy → git commit/PR/auto-merge. |
 | 🔐 [Secrets](./secrets/README.md) | SOPS encrypt/decrypt, AGE key validation, SOPS-driven template rendering, Kubernetes Secret manifest generation. |
 | 📝 [Repository Linting](./repository-linting/README.md) | Multi-tech repo validation (YAML/Markdown/Pre-commit/Secrets), AI analysis, GitHub issues. |
 | 💻 [VM](./vm/README.md) | Terraform + Ansible workflows with SOPS/Vault, profile-driven local/remote execution. |

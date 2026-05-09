@@ -201,27 +201,21 @@ func branchExists(
 	branchName string,
 	gitToken *dagger.Secret,
 ) (bool, error) {
+	// `git ls-remote --heads <remote> <ref>` prints a single line on
+	// match, nothing on miss, exit 0 in both cases. Authenticated via
+	// the x-access-token URL form so we don't need the gh CLI.
 	probeCmd := fmt.Sprintf(
-		`gh api -i "repos/%s/git/refs/heads/%s" 2>&1 | head -n1 || true`,
+		`git ls-remote --heads "https://x-access-token:${GH_TOKEN}@github.com/%s.git" "refs/heads/%s"`,
 		repository, branchName)
 
 	out, err := dag.Container().
-		From("cgr.dev/chainguard/wolfi-base:latest").
-		WithExec([]string{"apk", "add", "--no-cache", "github-cli"}).
+		From("alpine/git:latest").
 		WithSecretVariable("GH_TOKEN", gitToken).
-		WithExec([]string{"sh", "-c", probeCmd}, dagger.ContainerWithExecOpts{Expect: dagger.ReturnTypeAny}).
+		WithExec([]string{"sh", "-c", probeCmd}).
 		Stdout(ctx)
 	if err != nil {
 		return false, fmt.Errorf("branch probe: %w", err)
 	}
 
-	first := strings.TrimSpace(out)
-	switch {
-	case strings.Contains(first, " 200 "):
-		return true, nil
-	case strings.Contains(first, " 404 "):
-		return false, nil
-	default:
-		return false, fmt.Errorf("unexpected gh api response probing %s on %s: %s", branchName, repository, first)
-	}
+	return strings.TrimSpace(out) != "", nil
 }

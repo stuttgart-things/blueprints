@@ -1,3 +1,11 @@
+## [2.1.1](https://github.com/stuttgart-things/blueprints/compare/v2.1.0...v2.1.1) (2026-05-09)
+
+
+### Bug Fixes
+
+* **argocd:** preserve PR branch state on render failure (closes [#156](https://github.com/stuttgart-things/blueprints/issues/156)) ([95e20e1](https://github.com/stuttgart-things/blueprints/commit/95e20e103b130b9a643068dfbccc75c296fe6d47)), closes [stuttgart-things/stuttgart-things#2136](https://github.com/stuttgart-things/stuttgart-things/issues/2136)
+* fix/update-argocd-git ([2db8503](https://github.com/stuttgart-things/blueprints/commit/2db8503ef4ea1334e01e4d00d77f09b5e87b3e5e))
+
 # [2.1.0](https://github.com/stuttgart-things/blueprints/compare/v2.0.0...v2.1.0) (2026-05-01)
 
 

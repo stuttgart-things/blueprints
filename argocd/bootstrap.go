@@ -272,32 +272,31 @@ func (m *Argocd) BootstrapClusterbookCluster(
 		if gitToken == nil {
 			return nil, fmt.Errorf("commit-to-git=true requires --git-token")
 		}
-		if _, err := m.CommitConfig(
-			ctx, rendered, repository, gitToken,
-			branchName, destinationPath, fileName, commitMessage,
+
+		// Bundle cluster.yaml and (optionally) kubeconfig.yaml into a single
+		// directory and push them in ONE commit. Two back-to-back
+		// dag.Git().AddFileToGithubBranch calls collide because the second
+		// call's CloneGithub returns a Dagger-cached Directory that pre-dates
+		// the first push, so `git push` is rejected as non-fast-forward
+		// (`Updates were rejected because the remote contains work that you
+		// do not have locally`). One commit avoids the race entirely and is
+		// also the right shape for a Backstage-PR — both files appear in the
+		// same diff.
+		secretFileName := kubeconfigFileName // pragma: allowlist secret
+		if secretFileName == "" {
+			secretFileName = "kubeconfig.yaml" // pragma: allowlist secret
+		}
+		filesDir := dag.Directory().WithFile(fileName, rendered)
+		if encryptedKubeconfigSecret != nil { // pragma: allowlist secret
+			filesDir = filesDir.WithFile(secretFileName, encryptedKubeconfigSecret)
+		}
+		if _, err := m.CommitFiles(
+			ctx, filesDir, repository, gitToken,
+			branchName, destinationPath, commitMessage,
 			createPR, baseBranch, prTitle, prBody,
 			mergePR, mergeMethod,
 		); err != nil {
 			return nil, fmt.Errorf("commit-to-git: %w", err)
-		}
-		if encryptedKubeconfigSecret != nil { // pragma: allowlist secret
-			secretFileName := kubeconfigFileName // pragma: allowlist secret
-			if secretFileName == "" {
-				secretFileName = "kubeconfig.yaml" // pragma: allowlist secret
-			}
-			// Commit the encrypted Secret onto the same branch the cluster
-			// config went to. PR creation/merge is intentionally skipped here
-			// — those happened on the cluster-config commit above and any
-			// follow-up commit lands on the existing PR's branch.
-			if _, err := m.CommitConfig(
-				ctx, encryptedKubeconfigSecret, repository, gitToken,
-				branchName, destinationPath, secretFileName,
-				"Add kubeconfig Secret: "+name,
-				false, baseBranch, "", "",
-				false, mergeMethod,
-			); err != nil {
-				return nil, fmt.Errorf("commit kubeconfig secret: %w", err)
-			}
 		}
 	}
 

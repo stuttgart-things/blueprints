@@ -187,6 +187,187 @@ func (m *Argocd) CommitConfig(
 	return strings.Join(results, "\n"), nil
 }
 
+// CommitFiles commits every file in sourceDir into <destinationFolder>
+// on <branchName> in <repository> as a single commit / single push.
+// Optionally opens a pull request against <baseBranch> and optionally
+// merges it.
+//
+// Distinct from CommitConfig in two ways:
+//
+//  1. It accepts a Directory (multiple files) so callers can push e.g.
+//     cluster.yaml + kubeconfig.yaml in one commit. Two back-to-back
+//     CommitConfig calls (one file each) hit a Dagger CloneGithub cache
+//     race — the second clone is served from cache and pre-dates the
+//     first push, so `git push` is rejected as non-fast-forward. Bundling
+//     into one commit avoids it entirely.
+//  2. destinationFolder is a folder (without filename); each file in
+//     sourceDir is placed under that folder. Filenames in the source
+//     directory are preserved verbatim.
+//
+// Returns a multi-line summary of what was committed / opened / merged.
+func (m *Argocd) CommitFiles(
+	ctx context.Context,
+	// Source directory whose files (top level) should be committed
+	sourceDir *dagger.Directory,
+	// Repository in "owner/repo" format
+	repository string,
+	// GitHub token for git operations
+	gitToken *dagger.Secret,
+	// Branch to commit the files to
+	// +optional
+	// +default="main"
+	branchName string,
+	// Destination folder within the repository (without leading slash)
+	// +optional
+	// +default="argocd/clusters/"
+	destinationFolder string,
+	// Commit message
+	// +optional
+	// +default="Add Argo CD cluster registration"
+	commitMessage string,
+	// Open a pull request from branchName into baseBranch
+	// +optional
+	// +default=false
+	createPR bool,
+	// Base branch for the PR
+	// +optional
+	// +default="main"
+	baseBranch string,
+	// PR title (defaults to commitMessage when empty)
+	// +optional
+	prTitle string,
+	// PR body
+	// +optional
+	prBody string,
+	// Merge the PR after creation
+	// +optional
+	// +default=false
+	mergePR bool,
+	// Merge method: "squash", "merge", or "rebase"
+	// +optional
+	// +default="squash"
+	mergeMethod string,
+) (string, error) {
+	if sourceDir == nil {
+		return "", fmt.Errorf("source-dir is required")
+	}
+
+	destFolder := strings.TrimSuffix(destinationFolder, "/")
+	if destFolder == "" {
+		// Upstream AddFolderToGithubBranch joins workDir + "/" + dest, so an
+		// empty dest would land at the repo root with a trailing slash.
+		// Default to argocd/clusters/ to mirror the CommitConfig behavior.
+		destFolder = "argocd/clusters"
+	}
+
+	var results []string
+
+	if branchName != baseBranch {
+		exists, err := branchExists(ctx, repository, branchName, gitToken)
+		if err != nil {
+			return "", fmt.Errorf("ensure-branch (probe): %w", err)
+		}
+		if exists {
+			results = append(results, fmt.Sprintf("Branch %s already exists; committing on top", branchName))
+		} else {
+			if _, err := dag.Git().CreateGithubBranch(
+				ctx,
+				repository,
+				branchName,
+				gitToken,
+				dagger.GitCreateGithubBranchOpts{BaseBranch: baseBranch},
+			); err != nil {
+				return "", fmt.Errorf("ensure-branch: %w", err)
+			}
+			results = append(results, fmt.Sprintf("Created branch %s from %s", branchName, baseBranch))
+		}
+	}
+
+	commitSHA, err := dag.Git().AddFolderToGithubBranch(
+		ctx,
+		repository,
+		branchName,
+		commitMessage,
+		gitToken,
+		sourceDir,
+		destFolder+"/",
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "no changes to commit") {
+			results = append(results, fmt.Sprintf("No changes to commit (files already up-to-date in %s on %s)", repository, branchName))
+		} else {
+			return "", fmt.Errorf("commit-files: %w", err)
+		}
+	} else {
+		results = append(results, fmt.Sprintf("Committed files to %s/ in %s on %s (sha=%s)", destFolder, repository, branchName, commitSHA))
+	}
+
+	if !createPR {
+		return strings.Join(results, "\n"), nil
+	}
+
+	if branchName == baseBranch {
+		return "", fmt.Errorf("create-pr: branchName (%q) must differ from baseBranch (%q)", branchName, baseBranch)
+	}
+
+	if prTitle == "" {
+		prTitle = commitMessage
+	}
+
+	prURL, err := dag.Git().CreateGithubPullRequest(
+		ctx,
+		repository,
+		branchName,
+		prTitle,
+		prBody,
+		gitToken,
+		dagger.GitCreateGithubPullRequestOpts{BaseBranch: baseBranch},
+	)
+	if err != nil {
+		// Tolerate "already exists" — the Backstage scaffolder typically
+		// opens the PR before the worker fires, so a second open attempt
+		// is expected.
+		if strings.Contains(err.Error(), "already exists") || strings.Contains(err.Error(), "A pull request already exists") {
+			results = append(results, fmt.Sprintf("PR for %s → %s already exists", branchName, baseBranch))
+		} else {
+			return "", fmt.Errorf("create-pr: %w", err)
+		}
+	} else {
+		results = append(results, fmt.Sprintf("Opened PR: %s", prURL))
+	}
+
+	if !mergePR {
+		return strings.Join(results, "\n"), nil
+	}
+
+	method := strings.ToLower(strings.TrimSpace(mergeMethod))
+	switch method {
+	case "squash", "merge", "rebase":
+	default:
+		return "", fmt.Errorf("merge-pr: unknown mergeMethod %q (use squash|merge|rebase)", mergeMethod)
+	}
+
+	mergeOutput, err := dag.Container().
+		From("alpine/git:latest").
+		WithExec([]string{"sh", "-c",
+			`apk add --no-cache github-cli >/dev/null 2>&1 || ` +
+				`(curl -fsSL https://github.com/cli/cli/releases/download/v2.71.2/gh_2.71.2_linux_amd64.tar.gz | tar xz -C /tmp && mv /tmp/gh_*/bin/gh /usr/local/bin/gh)`,
+		}).
+		WithSecretVariable("GH_TOKEN", gitToken).
+		WithExec([]string{
+			"gh", "pr", "merge", strings.TrimSpace(prURL),
+			"--" + method,
+			"--delete-branch",
+		}).
+		Stdout(ctx)
+	if err != nil {
+		return strings.Join(results, "\n"), fmt.Errorf("merge-pr: %w", err)
+	}
+	results = append(results, fmt.Sprintf("Merged PR (%s):\n%s", method, strings.TrimSpace(mergeOutput)))
+
+	return strings.Join(results, "\n"), nil
+}
+
 // branchExists checks whether <repository>'s <branchName> ref exists on
 // GitHub. Returns (true, nil) when the ref resolves, (false, nil) when
 // GitHub returns 404, and (false, err) on any other failure (auth, rate

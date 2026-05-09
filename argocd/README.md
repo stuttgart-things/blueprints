@@ -345,7 +345,7 @@ for that key.
 
 ## Equivalent `kcl` CLI
 
-The render function wraps the following invocation:
+The render function wraps the following invocation
 
 ```bash
 kcl run oci://ghcr.io/stuttgart-things/clusterbook-cluster-gen --tag 0.1.0 \

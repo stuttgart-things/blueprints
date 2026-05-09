@@ -179,6 +179,19 @@ func (m *Argocd) BootstrapClusterbookCluster(
 		return nil, fmt.Errorf("render: %w", err)
 	}
 
+	// Force the render pipeline to actually execute (KCL run) before any
+	// downstream git or apply step. Dagger evaluates *dagger.File lazily —
+	// without this Sync, KCL only fires when CommitConfig reads the file,
+	// which happens *after* CreateGithubBranch has already touched the
+	// remote branch. A KCL failure at that point would leave the branch
+	// in a partially-mutated state with the scaffolder's commits already
+	// reset (see stuttgart-things/blueprints#156). Materializing here
+	// makes render failures stop the pipeline cleanly.
+	rendered, err = rendered.Sync(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("render: %w", err)
+	}
+
 	var (
 		encryptedKubeconfigSecret *dagger.File
 		plaintextKubeconfigSecret *dagger.File

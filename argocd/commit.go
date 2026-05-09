@@ -84,18 +84,31 @@ func (m *Argocd) CommitConfig(
 	var results []string
 
 	if branchName != baseBranch {
-		if _, err := dag.Git().CreateGithubBranch(
-			ctx,
-			repository,
-			branchName,
-			gitToken,
-			dagger.GitCreateGithubBranchOpts{BaseBranch: baseBranch},
-		); err != nil {
-			msg := err.Error()
-			if !strings.Contains(msg, "already exists") {
+		// Probe whether the branch already exists. The underlying
+		// dag.Git().CreateGithubBranch silently force-resets an existing
+		// branch back to baseBranch's SHA (see
+		// stuttgart-things/blueprints#156 — the impl tries `gh api refs`
+		// to create, and on failure runs a PATCH with force=true). For a
+		// PR-driven workflow where the branch was opened by the Backstage
+		// scaffolder with the user's values.yaml, that wipes the
+		// scaffolder's commits. Skip CreateGithubBranch when the branch
+		// is already there and just commit on top.
+		exists, err := branchExists(ctx, repository, branchName, gitToken)
+		if err != nil {
+			return "", fmt.Errorf("ensure-branch (probe): %w", err)
+		}
+		if exists {
+			results = append(results, fmt.Sprintf("Branch %s already exists; committing on top", branchName))
+		} else {
+			if _, err := dag.Git().CreateGithubBranch(
+				ctx,
+				repository,
+				branchName,
+				gitToken,
+				dagger.GitCreateGithubBranchOpts{BaseBranch: baseBranch},
+			); err != nil {
 				return "", fmt.Errorf("ensure-branch: %w", err)
 			}
-		} else {
 			results = append(results, fmt.Sprintf("Created branch %s from %s", branchName, baseBranch))
 		}
 	}
@@ -172,4 +185,43 @@ func (m *Argocd) CommitConfig(
 	results = append(results, fmt.Sprintf("Merged PR (%s):\n%s", method, strings.TrimSpace(mergeOutput)))
 
 	return strings.Join(results, "\n"), nil
+}
+
+// branchExists checks whether <repository>'s <branchName> ref exists on
+// GitHub. Returns (true, nil) when the ref resolves, (false, nil) when
+// GitHub returns 404, and (false, err) on any other failure (auth, rate
+// limit, network).
+//
+// Uses `gh api -i` (response with headers) so we can distinguish a real
+// 404 from a 401/403 (auth) or transient errors. We don't use `git
+// ls-remote` here to keep the probe cheap and avoid pulling history.
+func branchExists(
+	ctx context.Context,
+	repository string,
+	branchName string,
+	gitToken *dagger.Secret,
+) (bool, error) {
+	probeCmd := fmt.Sprintf(
+		`gh api -i "repos/%s/git/refs/heads/%s" 2>&1 | head -n1 || true`,
+		repository, branchName)
+
+	out, err := dag.Container().
+		From("cgr.dev/chainguard/wolfi-base:latest").
+		WithExec([]string{"apk", "add", "--no-cache", "github-cli"}).
+		WithSecretVariable("GH_TOKEN", gitToken).
+		WithExec([]string{"sh", "-c", probeCmd}, dagger.ContainerWithExecOpts{Expect: dagger.ReturnTypeAny}).
+		Stdout(ctx)
+	if err != nil {
+		return false, fmt.Errorf("branch probe: %w", err)
+	}
+
+	first := strings.TrimSpace(out)
+	switch {
+	case strings.Contains(first, " 200 "):
+		return true, nil
+	case strings.Contains(first, " 404 "):
+		return false, nil
+	default:
+		return false, fmt.Errorf("unexpected gh api response probing %s on %s: %s", branchName, repository, first)
+	}
 }

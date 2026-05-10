@@ -165,12 +165,18 @@ func (m *Argocd) CreateVaultIssuer(
 
 	// kubectl apply via the canonical wrapper. ServerSide=true ⇒ no
 	// last-applied-configuration drift if the user ever runs
-	// `kubectl apply -f` by hand later.
+	// `kubectl apply -f` by hand later. The explicit `--kubeconfig=` flag
+	// works around the upstream Kubectl helper not setting `$KUBECONFIG`
+	// (it mounts the secret at /root/.kube/config but kubectl only picks
+	// it up automatically if the running user's HOME is /root, which the
+	// chainguard wolfi-base image used by dag.Kubernetes() does not
+	// guarantee).
 	output, err := dag.Kubernetes().Kubectl(ctx, dagger.KubernetesKubectlOpts{
-		Operation:  "apply",
-		SourceFile: manifestFile,
-		KubeConfig: kubeconfigSecret,
-		ServerSide: true,
+		Operation:       "apply",
+		SourceFile:      manifestFile,
+		KubeConfig:      kubeconfigSecret,
+		ServerSide:      true,
+		AdditionalFlags: "--kubeconfig=/root/.kube/config",
 	})
 	if err != nil {
 		return "", fmt.Errorf("kubectl apply: %w", err)

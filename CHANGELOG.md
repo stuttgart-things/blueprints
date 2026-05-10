@@ -1,3 +1,16 @@
+# [2.2.0](https://github.com/stuttgart-things/blueprints/compare/v2.1.4...v2.2.0) (2026-05-10)
+
+
+### Bug Fixes
+
+* **argocd:** bump dagger pins to v0.112.1 + render vault-issuer manifests via dag.Templating ([#165](https://github.com/stuttgart-things/blueprints/issues/165)) ([840e70f](https://github.com/stuttgart-things/blueprints/commit/840e70f91a4bb7a4bfdc7142e3f6005d4a98844e)), closes [stuttgart-things/dagger#268](https://github.com/stuttgart-things/dagger/issues/268) [#159](https://github.com/stuttgart-things/blueprints/issues/159)
+* fix/argocd-vault-k8s ([21f7ec9](https://github.com/stuttgart-things/blueprints/commit/21f7ec94d6a101dd6e691017f705f9b339baa41e))
+
+
+### Features
+
+* **argocd:** add create-vault-issuer (Vault HTTP only, GitOps for K8s) ([#164](https://github.com/stuttgart-things/blueprints/issues/164)) ([a57c885](https://github.com/stuttgart-things/blueprints/commit/a57c8853f4118bcb8a600ac874725c647471fc7f)), closes [#163](https://github.com/stuttgart-things/blueprints/issues/163) [#163](https://github.com/stuttgart-things/blueprints/issues/163)
+
 ## [2.1.4](https://github.com/stuttgart-things/blueprints/compare/v2.1.3...v2.1.4) (2026-05-10)
 
 

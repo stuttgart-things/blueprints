@@ -1,3 +1,10 @@
+## [2.1.4](https://github.com/stuttgart-things/blueprints/compare/v2.1.3...v2.1.4) (2026-05-10)
+
+
+### Bug Fixes
+
+* **deps:** pick up dagger v0.112.0 cache-bust fix ([bfd9c39](https://github.com/stuttgart-things/blueprints/commit/bfd9c392c8778d6ef66eadd2bf9f1c656bca7567)), closes [#159](https://github.com/stuttgart-things/blueprints/issues/159) [#159](https://github.com/stuttgart-things/blueprints/issues/159) [stuttgart-things/dagger#267](https://github.com/stuttgart-things/dagger/issues/267) [#160](https://github.com/stuttgart-things/blueprints/issues/160) [#158](https://github.com/stuttgart-things/blueprints/issues/158)
+
 ## [2.1.1](https://github.com/stuttgart-things/blueprints/compare/v2.1.0...v2.1.1) (2026-05-09)
 
 

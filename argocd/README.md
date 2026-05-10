@@ -13,6 +13,7 @@ helpers live in the [`secrets`](../secrets/README.md) module.
 | `detect-network-key` | Run `kubectl get nodes -o json` against the target cluster and return the dominant /24 prefix of the nodes' `InternalIP` addresses (e.g. `10.31.102`) — the format expected by `--network-key`. |
 | `apply-config` | Apply a rendered config file to a cluster (creates the target namespace first). |
 | `commit-config` | Commit a rendered file to a Git repo at `<destinationPath>/<fileName>` on a branch; optionally open a PR against a base branch and optionally merge it. |
+| `create-vault-issuer` | Bootstrap a cert-manager `vault-pki` ClusterIssuer on a target cluster: live-fetches the Vault CA, templates a `vault-base-setup` Terraform invocation inline, and applies it. State persists as a k8s Secret on the target cluster — no artefact in the caller's filesystem. Closes #162. |
 | `bootstrap-clusterbook-cluster` | Orchestrator: render → optional `--deploy` → optional `--commit-to-git`. Returns the rendered file. |
 
 The functions are designed to compose: `render-clusterbook-cluster-config`
@@ -234,6 +235,94 @@ dagger call -m argocd commit-config \
   --merge-method squash \
   --progress plain
 ```
+
+## Create a Vault-backed cert-manager ClusterIssuer
+
+Bootstraps a `vault-pki` ClusterIssuer on a target cluster using the
+[`vault-base-setup`](https://github.com/stuttgart-things/vault-base-setup)
+Terraform module (`pki_enabled=false`, `certmanager_vault_issuer_enabled=true`).
+The Terraform source is **inlined** in this module and rendered via
+`dagger/templating` at runtime — there's nothing to check out, vendor, or
+commit.
+
+### What it creates on the target cluster
+
+- `ClusterIssuer/vault-pki` (cert-manager)
+- `Secret/vault-pki-ca` in `cert-manager` namespace (the Vault PKI root CA,
+  fetched live from `${vault_addr}/v1/pki/ca/pem` at apply time)
+- A Vault token secret + RBAC pieces wired up by `vault-base-setup`
+- Terraform state as `Secret/tfstate-default-vault-<cluster-name>` in
+  `kube-system`
+
+### Prerequisites
+
+- cert-manager **must** be installed on the target cluster before this
+  function runs (the TF creates a `ClusterIssuer` CRD instance and a
+  Secret in the `cert-manager` namespace). The function defaults to
+  `--wait-for-cert-manager=true`, which waits up to
+  `--cert-manager-wait-timeout` (`5m`) for the `cert-manager-webhook`
+  Deployment to be `Available` and for the `clusterissuers.cert-manager.io`
+  CRD to be registered before invoking Terraform.
+- A Vault PKI mount + role + policy must already exist on the target
+  Vault (typically set up out-of-band per lab via `infra-sthings/vault-ca`
+  Terraform). `--pki-role` (default `sthings-vsphere`) and
+  `--policy-name` (default `pki-issue`) must match that out-of-band setup.
+
+### SOPS env file
+
+The `--vault-env-file` is a SOPS-encrypted YAML keyed as:
+
+```yaml
+vault_addr: https://vault.infra.sthings-vsphere.labul.sva.de
+vault_token: hvs.xxxx
+vault_skip_verify: true   # optional, defaults to true
+```
+
+### Usage
+
+```bash
+# CREATE — minimal call against an existing cluster
+dagger call -m argocd create-vault-issuer \
+  --cluster-name homerun2-dev \
+  --kubeconfig-source-file secrets/kubeconfigs/homerun2-dev.yaml \
+  --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
+  --sops-key env:SOPS_AGE_KEY \
+  --progress plain
+```
+
+```bash
+# CREATE — override PKI role/policy (e.g. for a different lab)
+dagger call -m argocd create-vault-issuer \
+  --cluster-name philly \
+  --kubeconfig-source-file secrets/kubeconfigs/philly.yaml \
+  --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
+  --sops-key env:SOPS_AGE_KEY \
+  --pki-role sthings-vsphere \
+  --policy-name pki-issue \
+  --progress plain
+```
+
+```bash
+# CREATE — skip the cert-manager wait (only if you're sure it's ready)
+dagger call -m argocd create-vault-issuer \
+  --cluster-name homerun2-dev \
+  --kubeconfig-source-file secrets/kubeconfigs/homerun2-dev.yaml \
+  --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
+  --sops-key env:SOPS_AGE_KEY \
+  --wait-for-cert-manager=false \
+  --progress plain
+```
+
+### Verify
+
+```bash
+kubectl get clusterissuer vault-pki
+kubectl -n cert-manager get secret vault-pki-ca
+```
+
+Both should appear within seconds of the Terraform run completing. The
+function is idempotent — re-running against the same cluster is a Terraform
+no-op.
 
 ## Bootstrap (orchestrator)
 

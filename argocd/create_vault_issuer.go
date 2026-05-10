@@ -110,6 +110,19 @@ func (m *Argocd) CreateVaultIssuer(
 	// +optional
 	// +default="pki-issue"
 	policyName string,
+	// Wait for cert-manager (CRDs + webhook Deployment) to be Ready on the
+	// target cluster before running Terraform. The TF creates a ClusterIssuer
+	// (cert-manager CRD) and a Secret in the `cert-manager` namespace; both
+	// fail if cert-manager isn't installed yet. Disable only if you're sure
+	// cert-manager is already up and want to skip the ~10s probe.
+	// +optional
+	// +default=true
+	waitForCertManager bool,
+	// Maximum time to wait for cert-manager-webhook Deployment to be
+	// Available. Forwarded to `kubectl wait --timeout=`.
+	// +optional
+	// +default="5m"
+	certManagerWaitTimeout string,
 ) (*dagger.Directory, error) {
 	if clusterName == "" {
 		return nil, fmt.Errorf("cluster-name is required")
@@ -153,6 +166,16 @@ func (m *Argocd) CreateVaultIssuer(
 	}
 	kubeconfigSecret := dag.SetSecret("vault-issuer-kubeconfig", kubeconfigYaml)
 	const kubeconfigPath = "/root/.kube/config"
+
+	// Wait for cert-manager to be ready before running Terraform — the TF
+	// creates a ClusterIssuer (cert-manager CRD) and a Secret in the
+	// cert-manager namespace, both of which fail without cert-manager
+	// installed and its admission webhook Available.
+	if waitForCertManager {
+		if err := m.waitForCertManager(ctx, kubeconfigYaml, certManagerWaitTimeout); err != nil {
+			return nil, fmt.Errorf("wait for cert-manager: %w", err)
+		}
+	}
 
 	// Live-fetch the Vault PKI CA bundle (base64-encoded) so the issuer
 	// always carries the current CA. We do this in a transient curl
@@ -211,6 +234,39 @@ func (m *Argocd) CreateVaultIssuer(
 		return nil, fmt.Errorf("terraform apply: %w", err)
 	}
 	return out, nil
+}
+
+// waitForCertManager blocks until the cert-manager admission webhook is
+// Available and the ClusterIssuer CRD is registered on the target cluster.
+// Without this, Terraform's kubernetes provider fails fast on a missing
+// CRD or, worse, succeeds the plan and times out at apply when the webhook
+// isn't yet serving.
+func (m *Argocd) waitForCertManager(
+	ctx context.Context,
+	kubeconfigYaml, timeout string,
+) error {
+	if timeout == "" {
+		timeout = "5m"
+	}
+	kubeconfigSecret := dag.SetSecret("vault-issuer-cm-wait-kubeconfig", kubeconfigYaml)
+	script := strings.Join([]string{
+		// CRD must exist (silent if not — kubectl get crd exits 1).
+		"kubectl get crd clusterissuers.cert-manager.io >/dev/null",
+		// Webhook Deployment must be Available; covers the validating webhook
+		// that gates ClusterIssuer admission.
+		"kubectl -n cert-manager wait deployment/cert-manager-webhook " +
+			"--for=condition=Available --timeout=" + timeout,
+	}, " && ")
+	_, err := dag.Container().
+		From("bitnami/kubectl:1.31").
+		WithMountedSecret("/.kube/config", kubeconfigSecret).
+		WithEnvVariable("KUBECONFIG", "/.kube/config").
+		WithExec([]string{"sh", "-c", script}).
+		Sync(ctx)
+	if err != nil {
+		return fmt.Errorf("cert-manager not ready (CRD missing or webhook not Available within %s): %w", timeout, err)
+	}
+	return nil
 }
 
 // fetchVaultCABundleB64 returns the Vault PKI root CA in base64-encoded PEM

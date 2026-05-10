@@ -1,34 +1,34 @@
 {
   "name": "kubernetes-microservice",
-  "engineVersion": "v0.20.6",
+  "engineVersion": "v0.20.8",
   "sdk": {
     "source": "go"
   },
   "dependencies": [
     {
       "name": "crane",
-      "source": "github.com/stuttgart-things/dagger/crane@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
+      "source": "github.com/stuttgart-things/dagger/crane@v0.112.0",
+      "pin": "261615cf3eaa18a1acea7293132d7315d8cc886a"
     },
     {
       "name": "docker",
-      "source": "github.com/stuttgart-things/dagger/docker@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
+      "source": "github.com/stuttgart-things/dagger/docker@v0.112.0",
+      "pin": "261615cf3eaa18a1acea7293132d7315d8cc886a"
     },
     {
       "name": "helm",
-      "source": "github.com/stuttgart-things/dagger/helm@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
+      "source": "github.com/stuttgart-things/dagger/helm@v0.112.0",
+      "pin": "261615cf3eaa18a1acea7293132d7315d8cc886a"
     },
     {
       "name": "kubernetes",
-      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.112.0",
+      "pin": "261615cf3eaa18a1acea7293132d7315d8cc886a"
     },
     {
       "name": "trivy",
-      "source": "github.com/stuttgart-things/dagger/trivy@v0.110.0",
-      "pin": "dd5105f38192107b2e30f6304bab7c550e767a60"
+      "source": "github.com/stuttgart-things/dagger/trivy@v0.112.0",
+      "pin": "261615cf3eaa18a1acea7293132d7315d8cc886a"
     }
   ],
   "disableDefaultFunctionCaching": true

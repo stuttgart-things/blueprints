@@ -1,3 +1,10 @@
+## [2.2.1](https://github.com/stuttgart-things/blueprints/compare/v2.2.0...v2.2.1) (2026-05-10)
+
+
+### Bug Fixes
+
+* **argocd:** vault env file uses camelCase keys + optional vaultCaBundle ([#167](https://github.com/stuttgart-things/blueprints/issues/167)) ([3a7f09c](https://github.com/stuttgart-things/blueprints/commit/3a7f09cd59b33d519e78c83dc472092aa76a150a))
+
 # [2.2.0](https://github.com/stuttgart-things/blueprints/compare/v2.1.4...v2.2.0) (2026-05-10)
 
 

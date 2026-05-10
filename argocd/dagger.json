@@ -23,6 +23,16 @@
     {
       "name": "secrets",
       "source": "../secrets"
+    },
+    {
+      "name": "templating",
+      "source": "github.com/stuttgart-things/dagger/templating@v0.112.0",
+      "pin": "261615cf3eaa18a1acea7293132d7315d8cc886a"
+    },
+    {
+      "name": "terraform",
+      "source": "github.com/stuttgart-things/dagger/terraform@v0.112.0",
+      "pin": "261615cf3eaa18a1acea7293132d7315d8cc886a"
     }
   ]
 }

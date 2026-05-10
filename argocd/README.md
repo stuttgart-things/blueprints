@@ -256,13 +256,20 @@ commit.
 
 ### Prerequisites
 
-- cert-manager **must** be installed on the target cluster before this
-  function runs (the TF creates a `ClusterIssuer` CRD instance and a
-  Secret in the `cert-manager` namespace). The function defaults to
-  `--wait-for-cert-manager=true`, which waits up to
-  `--cert-manager-wait-timeout` (`5m`) for the `cert-manager-webhook`
-  Deployment to be `Available` and for the `clusterissuers.cert-manager.io`
-  CRD to be registered before invoking Terraform.
+- The TF creates a `ClusterIssuer` (cert-manager CRD) and a Secret in the
+  `cert-manager` namespace. By default `--install-cert-manager-crds=true`
+  pre-applies the upstream cert-manager CRDs and ensures the namespace
+  exists — both server-side, idempotent, safe to leave on even when the
+  `cert-manager-install` AppSet is also running. We pre-install **just
+  the CRDs**, not the controller / webhook config — that way the
+  validating webhook isn't yet registered when the TF applies the
+  ClusterIssuer, sidestepping the admission-webhook race that breaks
+  bare `kubectl wait`-style approaches. The full cert-manager install
+  (controller, webhook, validating webhook config) lands later via the
+  AppSet; the existing ClusterIssuer becomes Ready as soon as the
+  controller picks it up. Use `--cert-manager-version` (default
+  `v1.19.2`) to match the chart version installed by the AppSet — keeps
+  CRD schema in lockstep.
 - A Vault PKI mount + role + policy must already exist on the target
   Vault (typically set up out-of-band per lab via `infra-sthings/vault-ca`
   Terraform). `--pki-role` (default `sthings-vsphere`) and
@@ -303,13 +310,14 @@ dagger call -m argocd create-vault-issuer \
 ```
 
 ```bash
-# CREATE — skip the cert-manager wait (only if you're sure it's ready)
+# CREATE — skip the cert-manager CRD pre-install (only if you're sure
+# the CRDs and namespace already exist on the target cluster)
 dagger call -m argocd create-vault-issuer \
   --cluster-name homerun2-dev \
   --kubeconfig-source-file secrets/kubeconfigs/homerun2-dev.yaml \
   --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
   --sops-key env:SOPS_AGE_KEY \
-  --wait-for-cert-manager=false \
+  --install-cert-manager-crds=false \
   --progress plain
 ```
 

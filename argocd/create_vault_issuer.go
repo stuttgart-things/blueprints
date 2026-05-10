@@ -110,19 +110,26 @@ func (m *Argocd) CreateVaultIssuer(
 	// +optional
 	// +default="pki-issue"
 	policyName string,
-	// Wait for cert-manager (CRDs + webhook Deployment) to be Ready on the
-	// target cluster before running Terraform. The TF creates a ClusterIssuer
-	// (cert-manager CRD) and a Secret in the `cert-manager` namespace; both
-	// fail if cert-manager isn't installed yet. Disable only if you're sure
-	// cert-manager is already up and want to skip the ~10s probe.
+	// Install cert-manager CRDs + ensure the `cert-manager` namespace exists
+	// on the target cluster before running Terraform. The TF creates a
+	// ClusterIssuer (cert-manager CRD) and a Secret in the `cert-manager`
+	// namespace; both fail if cert-manager hasn't been installed yet, and
+	// even with cert-manager being installed concurrently by AppSets there
+	// is a race window before the validating webhook is registered.
+	// Pre-applying just the CRDs (not the webhook config) makes the
+	// resource type known without engaging the admission webhook, so
+	// terraform succeeds regardless of whether cert-manager pods are Ready.
+	// Idempotent (server-side apply); safe to leave enabled even when the
+	// cert-manager-install AppSet is also active.
 	// +optional
 	// +default=true
-	waitForCertManager bool,
-	// Maximum time to wait for cert-manager-webhook Deployment to be
-	// Available. Forwarded to `kubectl wait --timeout=`.
+	installCertManagerCrds bool,
+	// cert-manager version whose upstream CRDs YAML to apply when
+	// `install-cert-manager-crds=true`. Match the version installed by the
+	// `cert-manager-install` AppSet to avoid schema drift.
 	// +optional
-	// +default="5m"
-	certManagerWaitTimeout string,
+	// +default="v1.19.2"
+	certManagerVersion string,
 ) (*dagger.Directory, error) {
 	if clusterName == "" {
 		return nil, fmt.Errorf("cluster-name is required")
@@ -167,13 +174,13 @@ func (m *Argocd) CreateVaultIssuer(
 	kubeconfigSecret := dag.SetSecret("vault-issuer-kubeconfig", kubeconfigYaml)
 	const kubeconfigPath = "/root/.kube/config"
 
-	// Wait for cert-manager to be ready before running Terraform — the TF
-	// creates a ClusterIssuer (cert-manager CRD) and a Secret in the
-	// cert-manager namespace, both of which fail without cert-manager
-	// installed and its admission webhook Available.
-	if waitForCertManager {
-		if err := m.waitForCertManager(ctx, kubeconfigYaml, certManagerWaitTimeout); err != nil {
-			return nil, fmt.Errorf("wait for cert-manager: %w", err)
+	// Pre-install the bare-minimum cert-manager prerequisites so the TF
+	// resources (ClusterIssuer, Secret in cert-manager namespace) are
+	// guaranteed to apply cleanly — independent of any concurrent
+	// AppSet-driven cert-manager install.
+	if installCertManagerCrds {
+		if err := m.installCertManagerPrereqs(ctx, kubeconfigSecret, certManagerVersion); err != nil {
+			return nil, fmt.Errorf("install cert-manager prerequisites: %w", err)
 		}
 	}
 
@@ -236,36 +243,57 @@ func (m *Argocd) CreateVaultIssuer(
 	return out, nil
 }
 
-// waitForCertManager blocks until the cert-manager admission webhook is
-// Available and the ClusterIssuer CRD is registered on the target cluster.
-// Without this, Terraform's kubernetes provider fails fast on a missing
-// CRD or, worse, succeeds the plan and times out at apply when the webhook
-// isn't yet serving.
-func (m *Argocd) waitForCertManager(
+// installCertManagerPrereqs ensures the `cert-manager` namespace exists and
+// the cert-manager CRDs are registered on the target cluster, so the
+// Terraform-managed ClusterIssuer + Secret can apply without racing the
+// validating webhook. Both ops are server-side-applied and therefore
+// idempotent — re-running, or running concurrently with the
+// `cert-manager-install` AppSet, is safe.
+//
+// We deliberately do NOT install the cert-manager controller / webhook /
+// `ValidatingWebhookConfiguration` here: only the CRDs. With CRDs present
+// but no webhook registered, the API server admits the ClusterIssuer
+// without invoking a (potentially-not-yet-serving) webhook pod. Once the
+// AppSet's full install lands, the webhook takes over for subsequent
+// changes and the ClusterIssuer becomes Ready.
+func (m *Argocd) installCertManagerPrereqs(
 	ctx context.Context,
-	kubeconfigYaml, timeout string,
+	kubeconfigSecret *dagger.Secret,
+	certManagerVersion string,
 ) error {
-	if timeout == "" {
-		timeout = "5m"
+	if certManagerVersion == "" {
+		certManagerVersion = "v1.19.2"
 	}
-	kubeconfigSecret := dag.SetSecret("vault-issuer-cm-wait-kubeconfig", kubeconfigYaml)
-	script := strings.Join([]string{
-		// CRD must exist (silent if not — kubectl get crd exits 1).
-		"kubectl get crd clusterissuers.cert-manager.io >/dev/null",
-		// Webhook Deployment must be Available; covers the validating webhook
-		// that gates ClusterIssuer admission.
-		"kubectl -n cert-manager wait deployment/cert-manager-webhook " +
-			"--for=condition=Available --timeout=" + timeout,
-	}, " && ")
-	_, err := dag.Container().
-		From("bitnami/kubectl:1.31").
-		WithMountedSecret("/.kube/config", kubeconfigSecret).
-		WithEnvVariable("KUBECONFIG", "/.kube/config").
-		WithExec([]string{"sh", "-c", script}).
-		Sync(ctx)
-	if err != nil {
-		return fmt.Errorf("cert-manager not ready (CRD missing or webhook not Available within %s): %w", timeout, err)
+
+	// 1. Ensure the cert-manager namespace exists. Tiny inline manifest;
+	//    server-side apply means no conflict with the AppSet's later
+	//    `CreateNamespace=true` install.
+	nsManifest := "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: cert-manager\n"
+	nsFile := dag.Directory().WithNewFile("ns.yaml", nsManifest).File("ns.yaml")
+	if _, err := dag.Kubernetes().Kubectl(ctx, dagger.KubernetesKubectlOpts{
+		Operation:  "apply",
+		SourceFile: nsFile,
+		KubeConfig: kubeconfigSecret,
+		ServerSide: true,
+	}); err != nil {
+		return fmt.Errorf("apply cert-manager namespace: %w", err)
 	}
+
+	// 2. Apply just the CRDs from the upstream cert-manager release. URL
+	//    pattern is stable across versions; using the chart's pinned
+	//    version avoids schema drift between the AppSet's helm install
+	//    and our pre-install.
+	crdsURL := "https://github.com/cert-manager/cert-manager/releases/download/" +
+		certManagerVersion + "/cert-manager.crds.yaml"
+	if _, err := dag.Kubernetes().Kubectl(ctx, dagger.KubernetesKubectlOpts{
+		Operation:  "apply",
+		URLSource:  crdsURL,
+		KubeConfig: kubeconfigSecret,
+		ServerSide: true,
+	}); err != nil {
+		return fmt.Errorf("apply cert-manager CRDs (%s): %w", crdsURL, err)
+	}
+
 	return nil
 }
 

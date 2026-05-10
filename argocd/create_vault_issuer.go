@@ -279,18 +279,22 @@ func (m *Argocd) installCertManagerPrereqs(
 		return fmt.Errorf("apply cert-manager namespace: %w", err)
 	}
 
-	// 2. Apply just the CRDs from the upstream cert-manager release. URL
+	// 2. Apply just the CRDs from the upstream cert-manager release via
+	//    the existing kubernetes-deployment.InstallCustomResourceDefinitions
+	//    function — same kubectl-apply primitive, but reused so consumers
+	//    have one canonical entry point for "apply CRDs from a URL". URL
 	//    pattern is stable across versions; using the chart's pinned
 	//    version avoids schema drift between the AppSet's helm install
 	//    and our pre-install.
 	crdsURL := "https://github.com/cert-manager/cert-manager/releases/download/" +
 		certManagerVersion + "/cert-manager.crds.yaml"
-	if _, err := dag.Kubernetes().Kubectl(ctx, dagger.KubernetesKubectlOpts{
-		Operation:  "apply",
-		URLSource:  crdsURL,
-		KubeConfig: kubeconfigSecret,
-		ServerSide: true,
-	}); err != nil {
+	if _, err := dag.KubernetesDeployment().InstallCustomResourceDefinitions(ctx,
+		dagger.KubernetesDeploymentInstallCustomResourceDefinitionsOpts{
+			SourceUrls: crdsURL,
+			Operation:  "apply",
+			ServerSide: true,
+			KubeConfig: kubeconfigSecret,
+		}); err != nil {
 		return fmt.Errorf("apply cert-manager CRDs (%s): %w", crdsURL, err)
 	}
 

@@ -14,12 +14,16 @@ import (
 )
 
 // vaultEnv is the decoded shape of the SOPS-encrypted vault env yaml the
-// caller provides via --vault-env-file. Only `vault_addr` + `vault_token`
-// are mandatory; `vault_skip_verify` defaults to true.
+// caller provides via --vault-env-file. Only `vaultAddr` + `vaultToken`
+// are mandatory; `vaultSkipVerify` defaults to true. `vaultCaBundle`,
+// when set, is the base64-encoded PKI root CA PEM and short-circuits the
+// live fetch from `${vaultAddr}/v1/pki/ca/pem` (useful when the CA is
+// known and stable).
 type vaultEnv struct {
-	VaultAddr       string `yaml:"vault_addr"`
-	VaultToken      string `yaml:"vault_token"`
-	VaultSkipVerify *bool  `yaml:"vault_skip_verify,omitempty"`
+	VaultAddr       string `yaml:"vaultAddr"`
+	VaultToken      string `yaml:"vaultToken"`
+	VaultSkipVerify *bool  `yaml:"vaultSkipVerify,omitempty"`
+	VaultCaBundle   string `yaml:"vaultCaBundle,omitempty"`
 }
 
 // vaultPolicyHCL is the ACL policy applied to the Vault server before
@@ -62,8 +66,11 @@ func (m *Argocd) CreateVaultIssuer(
 	clusterName string,
 	// SOPS-encrypted kubeconfig of the target cluster.
 	kubeconfigSourceFile *dagger.File,
-	// SOPS-encrypted KV-YAML with `vault_addr`, `vault_token`,
-	// `vault_skip_verify`.
+	// SOPS-encrypted KV-YAML with `vaultAddr`, `vaultToken`,
+	// optional `vaultSkipVerify` (defaults to true), and optional
+	// `vaultCaBundle` (base64-encoded PKI root CA PEM; when set, the
+	// function uses it directly instead of live-fetching from
+	// `${vaultAddr}/v1/pki/ca/pem`).
 	vaultEnvFile *dagger.File,
 	// AGE private key for decrypting both files.
 	sopsKey *dagger.Secret,
@@ -116,10 +123,10 @@ func (m *Argocd) CreateVaultIssuer(
 		return "", fmt.Errorf("parse vault-env-file as yaml: %w", err)
 	}
 	if env.VaultAddr == "" {
-		return "", fmt.Errorf("vault-env-file is missing vault_addr")
+		return "", fmt.Errorf("vault-env-file is missing vaultAddr")
 	}
 	if env.VaultToken == "" {
-		return "", fmt.Errorf("vault-env-file is missing vault_token")
+		return "", fmt.Errorf("vault-env-file is missing vaultToken")
 	}
 	skipVerify := true
 	if env.VaultSkipVerify != nil {
@@ -134,11 +141,16 @@ func (m *Argocd) CreateVaultIssuer(
 	}
 	kubeconfigSecret := dag.SetSecret("vault-issuer-kubeconfig", kubeconfigYaml)
 
-	// Vault-side: upsert policy, mint token, read CA. Single transient
-	// container.
-	tokenStr, caPEM, err := m.vaultProvision(ctx, env.VaultAddr, env.VaultToken, skipVerify, policyName, clusterName, tokenTtl)
+	// Vault-side: upsert policy, mint token. CA bundle: prefer
+	// `vaultCaBundle` from the env file when present (already
+	// base64-encoded PEM), else live-fetch via GET /v1/pki/ca/pem.
+	tokenStr, livePEM, err := m.vaultProvision(ctx, env.VaultAddr, env.VaultToken, skipVerify, policyName, clusterName, tokenTtl, env.VaultCaBundle == "")
 	if err != nil {
 		return "", fmt.Errorf("vault provision: %w", err)
+	}
+	caB64 := env.VaultCaBundle
+	if caB64 == "" {
+		caB64 = base64.StdEncoding.EncodeToString([]byte(livePEM))
 	}
 
 	// Render the 3-document YAML via dag.Templating().RenderInline so the
@@ -149,7 +161,7 @@ func (m *Argocd) CreateVaultIssuer(
 		"tokenSecretName": tokenSecretName,
 		"caSecretName":    caSecretName,
 		"tokenB64":        base64.StdEncoding.EncodeToString([]byte(tokenStr)),
-		"caB64":           base64.StdEncoding.EncodeToString([]byte(caPEM)),
+		"caB64":           caB64,
 	})
 	if err != nil {
 		return "", fmt.Errorf("marshal manifest vars: %w", err)
@@ -180,13 +192,17 @@ func (m *Argocd) CreateVaultIssuer(
 	return output, nil
 }
 
-// vaultProvision runs three sequential Vault HTTP calls in a single
-// alpine+curl+jq container and returns (cert-manager token, PKI CA PEM).
+// vaultProvision runs the Vault HTTP calls in a single alpine+curl+jq
+// container and returns (cert-manager token, PKI CA PEM). When
+// `fetchCA=false` the CA fetch is skipped and the second return value is
+// empty — the caller is expected to source the CA from the env file's
+// `vaultCaBundle`.
 func (m *Argocd) vaultProvision(
 	ctx context.Context,
 	vaultAddr, vaultToken string,
 	skipVerify bool,
 	policyName, clusterName, tokenTtl string,
+	fetchCA bool,
 ) (token string, caPEM string, err error) {
 	addr := strings.TrimRight(vaultAddr, "/")
 	curlBase := []string{"curl", "-fsS"}
@@ -209,18 +225,23 @@ func (m *Argocd) vaultProvision(
 		return "", "", fmt.Errorf("marshal token payload: %w", err)
 	}
 
-	script := strings.Join([]string{
+	steps := []string{
 		"set -euo pipefail",
 		"mkdir -p /out",
 		fmt.Sprintf(`%s -X PUT -H "X-Vault-Token: ${VAULT_TOKEN}" -H "Content-Type: application/json" --data %q "%s/v1/sys/policies/acl/%s"`,
 			curlBaseStr, string(policyPayload), addr, policyName),
 		fmt.Sprintf(`%s -X POST -H "X-Vault-Token: ${VAULT_TOKEN}" -H "Content-Type: application/json" --data %q "%s/v1/auth/token/create" | jq -r .auth.client_token > /out/token`,
 			curlBaseStr, string(tokenPayload), addr),
-		fmt.Sprintf(`%s -H "X-Vault-Token: ${VAULT_TOKEN}" "%s/v1/pki/ca/pem" > /out/ca.pem`,
-			curlBaseStr, addr),
 		`test -s /out/token`,
-		`test -s /out/ca.pem`,
-	}, "\n")
+	}
+	if fetchCA {
+		steps = append(steps,
+			fmt.Sprintf(`%s -H "X-Vault-Token: ${VAULT_TOKEN}" "%s/v1/pki/ca/pem" > /out/ca.pem`,
+				curlBaseStr, addr),
+			`test -s /out/ca.pem`,
+		)
+	}
+	script := strings.Join(steps, "\n")
 
 	vaultTokenSecret := dag.SetSecret("vault-issuer-admin-token", vaultToken)
 	cacheBuster := time.Now().UTC().Format(time.RFC3339Nano)
@@ -234,6 +255,9 @@ func (m *Argocd) vaultProvision(
 	tokenOut, err := ctr.File("/out/token").Contents(ctx)
 	if err != nil {
 		return "", "", fmt.Errorf("read minted token: %w", err)
+	}
+	if !fetchCA {
+		return strings.TrimSpace(tokenOut), "", nil
 	}
 	caOut, err := ctr.File("/out/ca.pem").Contents(ctx)
 	if err != nil {

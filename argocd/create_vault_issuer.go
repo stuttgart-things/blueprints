@@ -141,8 +141,24 @@ func (m *Argocd) CreateVaultIssuer(
 		return "", fmt.Errorf("vault provision: %w", err)
 	}
 
-	// Render the 3-document YAML the target cluster needs.
-	manifest := renderVaultIssuerManifests(targetNamespace, tokenSecretName, caSecretName, tokenStr, caPEM)
+	// Render the 3-document YAML via dag.Templating().RenderInline so the
+	// inline template stays inspectable + extendable (additional fields,
+	// optional documents) without touching format-string plumbing.
+	manifestVars, err := json.Marshal(map[string]string{
+		"namespace":       targetNamespace,
+		"tokenSecretName": tokenSecretName,
+		"caSecretName":    caSecretName,
+		"tokenB64":        base64.StdEncoding.EncodeToString([]byte(tokenStr)),
+		"caB64":           base64.StdEncoding.EncodeToString([]byte(caPEM)),
+	})
+	if err != nil {
+		return "", fmt.Errorf("marshal manifest vars: %w", err)
+	}
+	manifest, err := dag.Templating().RenderInline(ctx, vaultIssuerManifestTemplate,
+		dagger.TemplatingRenderInlineOpts{Variables: string(manifestVars)})
+	if err != nil {
+		return "", fmt.Errorf("render manifest template: %w", err)
+	}
 	manifestFile := dag.Directory().
 		WithNewFile("vault-issuer.yaml", manifest).
 		File("vault-issuer.yaml")
@@ -224,33 +240,32 @@ func (m *Argocd) vaultProvision(
 	return strings.TrimSpace(tokenOut), strings.TrimSuffix(caOut, "\n"), nil
 }
 
-// renderVaultIssuerManifests returns a multi-document YAML containing the
-// target Namespace + the two cert-manager Secrets cert-manager will read
-// when reconciling the (separately-managed) `vault-pki` ClusterIssuer.
-func renderVaultIssuerManifests(namespace, tokenSecretName, caSecretName, tokenValue, caPEM string) string {
-	tokenB64 := base64.StdEncoding.EncodeToString([]byte(tokenValue))
-	caB64 := base64.StdEncoding.EncodeToString([]byte(caPEM))
-	return fmt.Sprintf(`apiVersion: v1
+// vaultIssuerManifestTemplate is the multi-document YAML rendered into
+// the cluster: target Namespace + two cert-manager Secrets cert-manager
+// will read when reconciling the (separately-managed) `vault-pki`
+// ClusterIssuer. Rendered via dag.Templating().RenderInline so future
+// additions (e.g. ServiceAccount, RBAC) plug in without touching
+// format-string plumbing.
+const vaultIssuerManifestTemplate = `apiVersion: v1
 kind: Namespace
 metadata:
-  name: %[1]s
+  name: {{ .namespace }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: %[2]s
-  namespace: %[1]s
+  name: {{ .tokenSecretName }}
+  namespace: {{ .namespace }}
 type: Opaque
 data:
-  token: %[3]s
+  token: {{ .tokenB64 }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: %[4]s
-  namespace: %[1]s
+  name: {{ .caSecretName }}
+  namespace: {{ .namespace }}
 type: Opaque
 data:
-  ca.crt: %[5]s
-`, namespace, tokenSecretName, tokenB64, caSecretName, caB64)
-}
+  ca.crt: {{ .caB64 }}
+`

@@ -13,6 +13,7 @@ helpers live in the [`secrets`](../secrets/README.md) module.
 | `detect-network-key` | Run `kubectl get nodes -o json` against the target cluster and return the dominant /24 prefix of the nodes' `InternalIP` addresses (e.g. `10.31.102`) — the format expected by `--network-key`. |
 | `apply-config` | Apply a rendered config file to a cluster (creates the target namespace first). |
 | `commit-config` | Commit a rendered file to a Git repo at `<destinationPath>/<fileName>` on a branch; optionally open a PR against a base branch and optionally merge it. |
+| `create-vault-issuer` | Prepare the cluster-side artefacts cert-manager needs to authenticate against a remote Vault PKI: applies the policy + mints a token in Vault directly (HTTP API), reads the CA, renders + SOPS-encrypts two `v1/Secret` manifests (`cert-manager-vault-token`, `vault-pki-ca`). Returns a `Directory` with both encrypted files for the caller to commit to git. ArgoCD reconciles them onto the target cluster + creates the `ClusterIssuer`. Closes #162. |
 | `bootstrap-clusterbook-cluster` | Orchestrator: render → optional `--deploy` → optional `--commit-to-git`. Returns the rendered file. |
 
 The functions are designed to compose: `render-clusterbook-cluster-config`
@@ -233,6 +234,84 @@ dagger call -m argocd commit-config \
   --merge-pr=true \
   --merge-method squash \
   --progress plain
+```
+
+## Create Vault-issuer Secrets (cert-manager + remote Vault PKI)
+
+`create-vault-issuer` provisions everything cert-manager needs to use a
+remote Vault PKI as a `ClusterIssuer` — but **without touching the target
+cluster**. The function:
+
+1. Calls Vault's HTTP API directly (no Terraform, no kubernetes provider):
+   - `PUT /v1/sys/policies/acl/<policyName>` — upserts an ACL policy
+     granting `create/update` on `pki/issue/*` + `pki/sign/*`.
+   - `POST /v1/auth/token/create` — mints a renewable token bound to that
+     policy, with `display_name=cert-manager-<clusterName>`.
+   - `GET /v1/pki/ca/pem` — reads the current PKI root CA bundle.
+2. Renders two `v1/Secret` manifests (under `data:`, base64-encoded):
+   - `<tokenSecretName>` (default `cert-manager-vault-token`) with `token: <vault-token>`.
+   - `<caSecretName>` (default `vault-pki-ca`) with `ca.crt: <CA PEM>`.
+3. SOPS-encrypts both with the caller's `--age-public-key` (same shape as
+   `render-kubeconfig-secret`).
+4. Returns them as a `*dagger.Directory` for the caller to commit via
+   `commit-config` / `commit-files`. ArgoCD AppSets then reconcile the two
+   Secrets onto the target cluster and stand up the `ClusterIssuer`
+   alongside.
+
+### Vault env file
+
+`--vault-env-file` is a SOPS-encrypted YAML keyed as:
+
+```yaml
+vault_addr: https://vault.infra.sthings-vsphere.labul.sva.de
+vault_token: hvs.xxxx
+vault_skip_verify: true   # optional, defaults to true
+```
+
+The `vault_token` here is the **admin token** used to apply the policy
+and mint cert-manager's token; it never lands in any rendered manifest.
+
+### Usage
+
+```bash
+# CREATE — minimal call against Vault, export both encrypted Secrets
+dagger call -m argocd create-vault-issuer \
+  --cluster-name homerun2-dev \
+  --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
+  --sops-key env:SOPS_AGE_KEY \
+  --age-public-key env:AGE_PUBLIC_KEY \
+  export --path=/tmp/argocd/vault-issuer/
+```
+
+```bash
+# CREATE — override Secret names + namespace (rare; defaults track
+# cert-manager conventions)
+dagger call -m argocd create-vault-issuer \
+  --cluster-name homerun2-dev \
+  --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
+  --sops-key env:SOPS_AGE_KEY \
+  --age-public-key env:AGE_PUBLIC_KEY \
+  --target-namespace cert-manager \
+  --token-secret-name cert-manager-vault-token \
+  --ca-secret-name vault-pki-ca \
+  --token-ttl 8760h \
+  export --path=/tmp/argocd/vault-issuer/
+```
+
+### Idempotency / token rotation
+
+Each invocation mints a **fresh** Vault token; the previous token is left
+to expire on its TTL (default `8760h`, renewable). Re-running the
+function and re-committing the two files rotates the token; cert-manager
+picks up the new value on the next `Issue` / `CertificateRequest` since
+it re-reads the Secret each time. The PKI CA is stable, so the
+`<caSecretName>.yaml` should typically diff cleanly between runs.
+
+### Verify (after AppSets reconcile)
+
+```bash
+kubectl -n cert-manager get secret cert-manager-vault-token vault-pki-ca
+kubectl get clusterissuer vault-pki
 ```
 
 ## Bootstrap (orchestrator)

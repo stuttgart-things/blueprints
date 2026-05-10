@@ -11,6 +11,8 @@ require (
 	go.opentelemetry.io/otel/trace v1.43.0
 )
 
+require gopkg.in/yaml.v3 v3.0.1
+
 require (
 	github.com/99designs/gqlgen v0.17.90 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect

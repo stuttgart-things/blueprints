@@ -275,13 +275,22 @@ doesn't matter.
 `--vault-env-file` is a SOPS-encrypted YAML:
 
 ```yaml
-vault_addr: https://vault.infra.sthings-vsphere.labul.sva.de
-vault_token: hvs.xxxx
-vault_skip_verify: true   # optional, defaults to true
+vaultAddr: https://vault.infra.sthings-vsphere.labul.sva.de
+vaultToken: hvs.xxxx
+vaultSkipVerify: true     # optional, defaults to true
+vaultCaBundle: LS0tLS1C…  # optional, base64-encoded PKI root CA PEM;
+                          # when set, used directly instead of
+                          # live-fetching GET /v1/pki/ca/pem
 ```
 
-The `vault_token` here is the **admin token** used to apply the policy
+The `vaultToken` here is the **admin token** used to apply the policy
 and mint cert-manager's token; it never lands in any applied manifest.
+
+`vaultCaBundle` is optional: when present, it short-circuits the live
+fetch and is used directly as `data["ca.crt"]` on the rendered
+`vault-pki-ca` Secret. Convenient when the same env file is reused for
+other Vault flows that already carry the CA. Re-fetching from
+`${vaultAddr}/v1/pki/ca/pem` is the fallback when omitted.
 
 ### Usage
 

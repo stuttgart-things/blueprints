@@ -28,9 +28,9 @@ These blueprints are designed for platform engineers, SREs, and developers who w
 
 ## Getting Started
 
-1. Clone this repository.
-2. Install [Dagger](https://dagger.io/) and required dependencies.
-3. Explore each module's README for usage instructions and examples.
+1. Clone this repository
+2. Install [Dagger](https://dagger.io/) and required dependencies
+3. Explore each module's README for usage instructions and examples
 
 Example: Run AI-powered linting analysis
 

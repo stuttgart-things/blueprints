@@ -99,7 +99,18 @@ func (m *Argocd) CreateVaultIssuer(
 	// +optional
 	// +default="8760h"
 	tokenTtl string,
+
+	// Arbitrary string mixed into the function-level cache key. Pass a
+	// timestamp (e.g. `date +%s%N`) from CI to force a fresh execution
+	// when the function's other args are deterministic but the side
+	// effects (Vault token mint, kubectl apply) must replay. Inner
+	// CACHE_BUSTER env vars on individual containers don't help here —
+	// Dagger short-circuits the whole function on input-hash match
+	// before any container in the body is instantiated.
+	// +optional
+	cacheBuster string,
 ) (string, error) {
+	_ = cacheBuster
 	if clusterName == "" {
 		return "", fmt.Errorf("cluster-name is required")
 	}

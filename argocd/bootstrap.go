@@ -156,7 +156,20 @@ func (m *Argocd) BootstrapClusterbookCluster(
 	// +optional
 	// +default="squash"
 	mergeMethod string,
+
+	// --- Cache control ---
+
+	// Arbitrary string mixed into the function-level cache key. Pass a
+	// timestamp (e.g. `date +%s%N`) from CI to force a fresh execution
+	// when the function's other args are deterministic but the side
+	// effects (git push, kubectl apply) must replay. Inner CACHE_BUSTER
+	// env vars on individual containers don't help here — Dagger short-
+	// circuits the whole function on input-hash match before any
+	// container in the body is instantiated.
+	// +optional
+	cacheBuster string,
 ) (*dagger.File, error) {
+	_ = cacheBuster
 	if detectNetworkKey && networkKey == "" {
 		if kubeConfig == nil {
 			return nil, fmt.Errorf("detect-network-key=true requires --kube-config")

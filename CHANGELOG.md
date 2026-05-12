@@ -1,3 +1,15 @@
+# [2.3.0](https://github.com/stuttgart-things/blueprints/compare/v2.2.1...v2.3.0) (2026-05-12)
+
+
+### Bug Fixes
+
+* fix/update-argocd-vault ([c242aa5](https://github.com/stuttgart-things/blueprints/commit/c242aa5fab4ba10fded2e17ce3e9b8be6ea0ba53))
+
+
+### Features
+
+* **argocd:** cacheBuster arg on bootstrap + create-vault-issuer ([#169](https://github.com/stuttgart-things/blueprints/issues/169)) ([cfc6345](https://github.com/stuttgart-things/blueprints/commit/cfc6345fba95945fcd0810fbcff672e98a116d38)), closes [#158](https://github.com/stuttgart-things/blueprints/issues/158) [dagger#267](https://github.com/dagger/issues/267) [#2170](https://github.com/stuttgart-things/blueprints/issues/2170) [#168](https://github.com/stuttgart-things/blueprints/issues/168) [stuttgart-things/stuttgart-things#2169](https://github.com/stuttgart-things/stuttgart-things/issues/2169) [#2170](https://github.com/stuttgart-things/blueprints/issues/2170)
+
 ## [2.2.1](https://github.com/stuttgart-things/blueprints/compare/v2.2.0...v2.2.1) (2026-05-10)
 
 

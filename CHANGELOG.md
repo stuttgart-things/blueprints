@@ -1,3 +1,10 @@
+## [2.3.1](https://github.com/stuttgart-things/blueprints/compare/v2.3.0...v2.3.1) (2026-05-13)
+
+
+### Bug Fixes
+
+* **argocd:** bump default KCL module to clusterbook-cluster-gen:0.3.0 ([7490199](https://github.com/stuttgart-things/blueprints/commit/74901995c40f14c56de5e01596f1c08bd2b2e6fb)), closes [#155](https://github.com/stuttgart-things/blueprints/issues/155) [#155](https://github.com/stuttgart-things/blueprints/issues/155)
+
 # [2.3.0](https://github.com/stuttgart-things/blueprints/compare/v2.2.1...v2.3.0) (2026-05-12)
 
 

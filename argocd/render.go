@@ -31,7 +31,7 @@ func (m *Argocd) RenderClusterbookClusterConfig(
 	valuesFile *dagger.File,
 	// OCI KCL module source
 	// +optional
-	// +default="ghcr.io/stuttgart-things/clusterbook-cluster-gen:0.1.0"
+	// +default="ghcr.io/stuttgart-things/clusterbook-cluster-gen:0.3.0"
 	ociSource string,
 	// Argo CD-side cluster name; defaults to name when neither is set via file
 	// +optional

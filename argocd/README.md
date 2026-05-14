@@ -14,6 +14,7 @@ helpers live in the [`secrets`](../secrets/README.md) module.
 | `apply-config` | Apply a rendered config file to a cluster (creates the target namespace first). |
 | `commit-config` | Commit a rendered file to a Git repo at `<destinationPath>/<fileName>` on a branch; optionally open a PR against a base branch and optionally merge it. |
 | `create-vault-issuer` | Prepare the cluster-side prerequisites cert-manager needs to authenticate against a remote Vault PKI: applies the policy + mints a token in Vault directly (HTTP API), reads the CA, then `kubectl apply`s a 3-document YAML (Namespace + 2 Secrets) directly to the target cluster using the supplied kubeconfig. Does NOT create the `ClusterIssuer` itself — that's the `cert-manager-vault-pki` AppSet's job. Closes #162. |
+| `create-vault-k8s-auth` | Provision a Vault Kubernetes auth backend for an in-cluster ServiceAccount (typically ESO): `kubectl apply`s a 4-document YAML (Namespace + ServiceAccount + non-expiring SA-token Secret + ClusterRoleBinding→`system:auth-delegator`) to the target cluster, then drives Vault HTTP directly to mount `auth/<cluster-name>-<auth-name>`, write its config (`kubernetes_host` + reviewer JWT + CA + `disable_iss_validation=true` + `disable_local_ca_jwt=true`), and upsert a role binding the SA to one or more pre-existing policies. Replaces the Terraform path in `argocd/clusters/<cluster>/vault-k8s-auth/`. |
 | `bootstrap-clusterbook-cluster` | Orchestrator: render → optional `--deploy` → optional `--commit-to-git`. Returns the rendered file. |
 
 The functions are designed to compose: `render-clusterbook-cluster-config`
@@ -332,6 +333,160 @@ on the next `Issue`/`CertificateRequest`.
 kubectl -n cert-manager get secret cert-manager-vault-token vault-pki-ca
 kubectl get clusterissuer vault-pki
 ```
+
+## Create Vault Kubernetes auth backend (for ESO)
+
+`create-vault-k8s-auth` provisions everything an in-cluster
+ServiceAccount needs to authenticate to a remote Vault and consume one
+or more pre-existing policies. It's the Dagger-native replacement for
+the `argocd/clusters/<cluster>/vault-k8s-auth/` Terraform module
+(`module "vault-base-setup"` → `k8s_auths`).
+
+### What it does (in one Dagger session)
+
+1. Decrypts `--vault-env-file` and `--kubeconfig-source-file` (both
+   SOPS-encrypted; same `--sops-key`) and parses
+   `clusters[0].cluster.server` out of the kubeconfig host-side — it's
+   the `kubernetes_host` value Vault stores in the backend config.
+2. `kubectl apply`s a 4-document YAML to the target cluster (server-side):
+   - `Namespace/<namespace>` (default `external-secrets`)
+   - `ServiceAccount/<auth-name>` (default `eso`,
+     `automountServiceAccountToken: true`)
+   - `Secret/<auth-name>` of type `kubernetes.io/service-account-token`
+     with the `kubernetes.io/service-account.name` annotation — kubelet
+     populates `data.token` + `data["ca.crt"]` once the SA exists
+   - `ClusterRoleBinding/<auth-name>` → `system:auth-delegator` so
+     Vault can call TokenReview using the SA's JWT
+3. In one `alpine/k8s` container (kubectl + curl + jq), waits up to 60s
+   for the SA-token Secret to be populated, then drives the Vault HTTP
+   API directly:
+   - `POST /v1/sys/auth/<cluster-name>-<auth-name>` — mounts the
+     Kubernetes auth backend. Idempotent: a 400 with
+     `path is already in use` is treated as success.
+   - `POST /v1/auth/<cluster-name>-<auth-name>/config` —
+     `kubernetes_host` + `kubernetes_ca_cert` (from the SA Secret) +
+     `token_reviewer_jwt` (from the SA Secret) +
+     `disable_iss_validation=true` + `disable_local_ca_jwt=true`.
+   - `POST /v1/auth/<cluster-name>-<auth-name>/role/<auth-name>` —
+     `bound_service_account_names`, `bound_service_account_namespaces`,
+     `token_ttl`, `token_policies`. Upsert.
+
+Re-runs upsert config + role and skip the auth-mount step.
+
+### Policies — where they're created
+
+This function only **binds** policies; it does not create them.
+Policies are owned by the per-Vault-mount pipeline:
+
+- For homerun2-dev's `read-homerun2-pr`:
+  `clusters/labul/vsphere/infra-sthings/vault-homerun2-secrets/`
+  (Terraform `module "vault-base-setup"` → `kv_policies`).
+- For a new cluster `foo-dev` you'd either:
+  - **Reuse** an existing policy — pass `--token-policies read-homerun2-pr`
+    if it should read the same KV mount.
+  - **Add a new policy** — extend the `kv_policies` list in the same
+    `vault-*-secrets` Terraform module (or add a sibling
+    `clusters/labul/vsphere/infra-sthings/vault-foo-secrets/`) so the
+    KV mount + read policy land together. Then pass
+    `--token-policies read-foo-pr` to this function.
+
+Multiple policies per role are supported — pass a comma-separated list
+(`--token-policies read-homerun2-pr,read-shared-config`). The function
+splits on `,` and forwards as `token_policies` in the role payload.
+
+### Vault env file
+
+Same shape as `create-vault-issuer`:
+
+```yaml
+vaultAddr: https://vault.infra.sthings-vsphere.labul.sva.de
+vaultToken: hvs.xxxx
+vaultSkipVerify: true     # optional, defaults to true
+```
+
+The `vaultToken` here must have permission to mount auth backends and
+write roles (typically the admin token, same one used for
+`create-vault-issuer`).
+
+### Usage
+
+```bash
+# CREATE — minimal call (defaults: auth-name=eso, namespace=external-secrets,
+# policy=read-homerun2-pr, token-ttl=3600)
+dagger call -m argocd create-vault-k8s-auth \
+  --cluster-name homerun2-dev \
+  --kubeconfig-source-file secrets/kubeconfigs/homerun2-dev.yaml \
+  --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
+  --sops-key env:SOPS_AGE_KEY \
+  --progress plain
+```
+
+```bash
+# CREATE — multiple policies, custom TTL
+dagger call -m argocd create-vault-k8s-auth \
+  --cluster-name homerun2-dev \
+  --kubeconfig-source-file secrets/kubeconfigs/homerun2-dev.yaml \
+  --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
+  --sops-key env:SOPS_AGE_KEY \
+  --token-policies "read-homerun2-pr,read-shared-config" \
+  --token-ttl 7200 \
+  --progress plain
+```
+
+```bash
+# CREATE — different cluster + per-cluster policy + non-default SA
+dagger call -m argocd create-vault-k8s-auth \
+  --cluster-name foo-dev \
+  --kubeconfig-source-file secrets/kubeconfigs/foo-dev.yaml \
+  --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
+  --sops-key env:SOPS_AGE_KEY \
+  --auth-name eso \
+  --namespace external-secrets \
+  --token-policies read-foo-pr \
+  --progress plain
+```
+
+### Resulting layout — what ESO references
+
+After the function returns, ESO's `ClusterSecretStore` on the target
+cluster wires up like this:
+
+```yaml
+spec:
+  provider:
+    vault:
+      server: https://vault.infra.sthings-vsphere.labul.sva.de
+      path: homerun2-pr               # the KV mount your policy reads
+      version: v2
+      auth:
+        kubernetes:
+          mountPath: homerun2-dev-eso # <cluster-name>-<auth-name>
+          role: eso                   # <auth-name>
+          serviceAccountRef:
+            name: eso                 # SA created by this function
+            namespace: external-secrets
+```
+
+### Verify
+
+```bash
+# Cluster side
+kubectl -n external-secrets get sa eso
+kubectl -n external-secrets get secret eso -o jsonpath='{.data.token}' \
+  | base64 -d | head -c 40; echo …
+kubectl get clusterrolebinding eso
+
+# Vault side
+VAULT_ADDR=https://vault.infra.sthings-vsphere.labul.sva.de \
+  vault read auth/homerun2-dev-eso/role/eso
+```
+
+### Idempotency / re-runs
+
+Safe to re-run. The auth-mount call short-circuits on "path is already
+in use"; the config + role calls are upsert-style. The SA-token Secret
+isn't rotated by this function — kubelet keeps the same value across
+runs unless you delete the Secret manually.
 
 ## Bootstrap (orchestrator)
 

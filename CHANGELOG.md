@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/stuttgart-things/blueprints/compare/v2.3.1...v2.4.0) (2026-05-14)
+
+
+### Features
+
+* feat/add-argocd-vault-eso-bootstrap ([8fb736d](https://github.com/stuttgart-things/blueprints/commit/8fb736d84966c585ba0cafc7f4dabda00a67dc17))
+
 ## [2.3.1](https://github.com/stuttgart-things/blueprints/compare/v2.3.0...v2.3.1) (2026-05-13)
 
 

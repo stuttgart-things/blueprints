@@ -25,7 +25,7 @@ type kubeconfigShape struct {
 	} `yaml:"clusters"`
 }
 
-// CreateVaultK8sAuth provisions the cluster-side prerequisites and the
+// CreateVaultKubernetesAuth provisions the cluster-side prerequisites and the
 // Vault-side Kubernetes auth backend an in-cluster ServiceAccount uses
 // to authenticate to Vault and consume one or more pre-existing
 // policies. Mirrors the layout in CreateVaultIssuer: decrypt SOPS
@@ -58,7 +58,7 @@ type kubeconfigShape struct {
 //
 // Idempotent: re-runs upsert the config + role and skip the auth-mount
 // step when the path is already in use.
-func (m *Argocd) CreateVaultK8sAuth(
+func (m *Argocd) CreateVaultKubernetesAuth(
 	ctx context.Context,
 	// Target cluster name; prefixes the Vault auth backend path
 	// (`<cluster-name>-<auth-name>`).

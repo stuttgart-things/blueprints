@@ -14,7 +14,7 @@ helpers live in the [`secrets`](../secrets/README.md) module.
 | `apply-config` | Apply a rendered config file to a cluster (creates the target namespace first). |
 | `commit-config` | Commit a rendered file to a Git repo at `<destinationPath>/<fileName>` on a branch; optionally open a PR against a base branch and optionally merge it. |
 | `create-vault-issuer` | Prepare the cluster-side prerequisites cert-manager needs to authenticate against a remote Vault PKI: applies the policy + mints a token in Vault directly (HTTP API), reads the CA, then `kubectl apply`s a 3-document YAML (Namespace + 2 Secrets) directly to the target cluster using the supplied kubeconfig. Does NOT create the `ClusterIssuer` itself — that's the `cert-manager-vault-pki` AppSet's job. Closes #162. |
-| `create-vault-k8s-auth` | Provision a Vault Kubernetes auth backend for an in-cluster ServiceAccount (typically ESO): `kubectl apply`s a 4-document YAML (Namespace + ServiceAccount + non-expiring SA-token Secret + ClusterRoleBinding→`system:auth-delegator`) to the target cluster, then drives Vault HTTP directly to mount `auth/<cluster-name>-<auth-name>`, write its config (`kubernetes_host` + reviewer JWT + CA + `disable_iss_validation=true` + `disable_local_ca_jwt=true`), and upsert a role binding the SA to one or more pre-existing policies. Replaces the Terraform path in `argocd/clusters/<cluster>/vault-k8s-auth/`. |
+| `create-vault-kubernetes-auth` | Provision a Vault Kubernetes auth backend for an in-cluster ServiceAccount (typically ESO): `kubectl apply`s a 4-document YAML (Namespace + ServiceAccount + non-expiring SA-token Secret + ClusterRoleBinding→`system:auth-delegator`) to the target cluster, then drives Vault HTTP directly to mount `auth/<cluster-name>-<auth-name>`, write its config (`kubernetes_host` + reviewer JWT + CA + `disable_iss_validation=true` + `disable_local_ca_jwt=true`), and upsert a role binding the SA to one or more pre-existing policies. Replaces the Terraform path in `argocd/clusters/<cluster>/vault-k8s-auth/`. |
 | `bootstrap-clusterbook-cluster` | Orchestrator: render → optional `--deploy` → optional `--commit-to-git`. Returns the rendered file. |
 
 The functions are designed to compose: `render-clusterbook-cluster-config`
@@ -336,7 +336,7 @@ kubectl get clusterissuer vault-pki
 
 ## Create Vault Kubernetes auth backend (for ESO)
 
-`create-vault-k8s-auth` provisions everything an in-cluster
+`create-vault-kubernetes-auth` provisions everything an in-cluster
 ServiceAccount needs to authenticate to a remote Vault and consume one
 or more pre-existing policies. It's the Dagger-native replacement for
 the `argocd/clusters/<cluster>/vault-k8s-auth/` Terraform module
@@ -413,7 +413,7 @@ write roles (typically the admin token, same one used for
 ```bash
 # CREATE — minimal call (defaults: auth-name=eso, namespace=external-secrets,
 # policy=read-homerun2-pr, token-ttl=3600)
-dagger call -m argocd create-vault-k8s-auth \
+dagger call -m argocd create-vault-kubernetes-auth \
   --cluster-name homerun2-dev \
   --kubeconfig-source-file secrets/kubeconfigs/homerun2-dev.yaml \
   --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
@@ -423,7 +423,7 @@ dagger call -m argocd create-vault-k8s-auth \
 
 ```bash
 # CREATE — multiple policies, custom TTL
-dagger call -m argocd create-vault-k8s-auth \
+dagger call -m argocd create-vault-kubernetes-auth \
   --cluster-name homerun2-dev \
   --kubeconfig-source-file secrets/kubeconfigs/homerun2-dev.yaml \
   --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \
@@ -435,7 +435,7 @@ dagger call -m argocd create-vault-k8s-auth \
 
 ```bash
 # CREATE — different cluster + per-cluster policy + non-default SA
-dagger call -m argocd create-vault-k8s-auth \
+dagger call -m argocd create-vault-kubernetes-auth \
   --cluster-name foo-dev \
   --kubeconfig-source-file secrets/kubeconfigs/foo-dev.yaml \
   --vault-env-file secrets/envs/vault-infra-labul.enc.yaml \

@@ -1,3 +1,10 @@
+## [2.4.1](https://github.com/stuttgart-things/blueprints/compare/v2.4.0...v2.4.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* **argocd:** rename CreateVaultK8sAuth → CreateVaultKubernetesAuth ([233f2df](https://github.com/stuttgart-things/blueprints/commit/233f2dfc6a0532ac7edaab7daec8914eddee9c36)), closes [#2247](https://github.com/stuttgart-things/blueprints/issues/2247)
+
 # [2.4.0](https://github.com/stuttgart-things/blueprints/compare/v2.3.1...v2.4.0) (2026-05-14)
 
 

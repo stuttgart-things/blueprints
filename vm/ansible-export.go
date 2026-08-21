@@ -40,6 +40,11 @@ func (m *Vm) ExecuteAnsibleWithExport(
 	sshUser *dagger.Secret,
 	// +optional
 	sshPassword *dagger.Secret,
+	// Extra environment for the Ansible container, as a secret in dotenv format
+	// (NAME=value per line). Needed by playbooks that resolve values with
+	// lookup('env', ...), which is evaluated on the controller, not the target.
+	// +optional
+	envSecrets *dagger.Secret,
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
 	requirementsTemplate string,
@@ -71,6 +76,7 @@ func (m *Vm) ExecuteAnsibleWithExport(
 			Requirements:   prep.requirements,
 			SSHUser:        sshUser,
 			SSHPassword:    sshPassword,
+			EnvSecrets:     envSecrets,
 		})
 
 	return exportDir, nil
@@ -106,6 +112,11 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 	sshUser *dagger.Secret,
 	// +optional
 	sshPassword *dagger.Secret,
+	// Extra environment for the Ansible container, as a secret in dotenv format
+	// (NAME=value per line). Needed by playbooks that resolve values with
+	// lookup('env', ...), which is evaluated on the controller, not the target.
+	// +optional
+	envSecrets *dagger.Secret,
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
 	requirementsTemplate string,
@@ -159,7 +170,7 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 	// PHASE 1: Execute Ansible and export files
 	exportDir, err := m.ExecuteAnsibleWithExport(
 		ctx, src, playbooks, exportPaths, requirements, inventory, hosts, parameters, parametersFile,
-		vaultAppRoleID, vaultSecretID, vaultURL, sshUser, sshPassword,
+		vaultAppRoleID, vaultSecretID, vaultURL, sshUser, sshPassword, envSecrets,
 		requirementsTemplate, requirementsData, inventoryType,
 	)
 	if err != nil {

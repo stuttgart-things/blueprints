@@ -51,6 +51,10 @@ func (m *Vm) BakeLocalByProfile(
 	ansibleUser *dagger.Secret,
 	// +optional
 	ansiblePassword *dagger.Secret,
+	// Extra environment for the Ansible container, as a secret in dotenv format
+	// (NAME=value per line), for playbooks using lookup('env', ...).
+	// +optional
+	envSecrets *dagger.Secret,
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
 	requirementsTemplate string,
@@ -136,6 +140,7 @@ func (m *Vm) BakeLocalByProfile(
 		ansibleRequirementsFile,
 		ansibleUser,
 		ansiblePassword,
+		envSecrets,
 		ansibleParameters,
 		config.AnsibleInventoryType,
 		config.AnsibleWaitTimeout,

@@ -44,6 +44,10 @@ func (m *Vm) BakeLocal(
 	ansibleUser *dagger.Secret,
 	// +optional
 	ansiblePassword *dagger.Secret,
+	// Extra environment for the Ansible container, as a secret in dotenv format
+	// (NAME=value per line), for playbooks using lookup('env', ...).
+	// +optional
+	envSecrets *dagger.Secret,
 	// +optional
 	ansibleParameters string,
 	// +optional
@@ -162,15 +166,15 @@ func (m *Vm) BakeLocal(
 				vaultRoleID,
 				vaultSecretID,
 				vaultToken,
-				nil, // sopsAgeKey
-				"",  // encryptedFiles
-				nil, // kubeConfig
-				"",  // kubeConfigPath
-				nil, // encryptedKubeConfig
-				"",  // kubeSecretName
-				"",  // kubeSecretNamespace
-				"",  // kubeSecretJsonpath
-				"",  // kubeSecretTfVar
+				nil,   // sopsAgeKey
+				"",    // encryptedFiles
+				nil,   // kubeConfig
+				"",    // kubeConfigPath
+				nil,   // encryptedKubeConfig
+				"",    // kubeSecretName
+				"",    // kubeSecretNamespace
+				"",    // kubeSecretJsonpath
+				"",    // kubeSecretTfVar
 				false, // exportTfOutput
 			)
 
@@ -260,6 +264,7 @@ func (m *Vm) BakeLocal(
 				vaultURL,
 				ansibleUser,
 				ansiblePassword,
+				envSecrets,
 				requirementsTemplate,
 				requirementsData,
 				inventoryType,
@@ -330,6 +335,7 @@ func (m *Vm) BakeLocal(
 				vaultURL,
 				ansibleUser,
 				ansiblePassword,
+				envSecrets,
 				requirementsTemplate,
 				requirementsData,
 				inventoryType,

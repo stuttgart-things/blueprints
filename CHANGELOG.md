@@ -1,3 +1,10 @@
+# [2.6.0](https://github.com/stuttgart-things/blueprints/compare/v2.5.1...v2.6.0) (2026-08-21)
+
+
+### Features
+
+* **vm:** plumb env secrets through to the ansible module ([#180](https://github.com/stuttgart-things/blueprints/issues/180)) ([6797cb4](https://github.com/stuttgart-things/blueprints/commit/6797cb49ec9acb92a66e7de1b20b639872eaa167))
+
 ## [2.5.1](https://github.com/stuttgart-things/blueprints/compare/v2.5.0...v2.5.1) (2026-08-21)
 
 

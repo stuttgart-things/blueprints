@@ -1,3 +1,10 @@
+# [2.5.0](https://github.com/stuttgart-things/blueprints/compare/v2.4.1...v2.5.0) (2026-08-21)
+
+
+### Features
+
+* **vm:** bump dagger deps to v0.123.0 (ansible 14.3.1, terraform 1.15.9) ([e1c35d8](https://github.com/stuttgart-things/blueprints/commit/e1c35d8efd0941e8b978df6581d27a75c0474c74)), closes [#176](https://github.com/stuttgart-things/blueprints/issues/176)
+
 ## [2.4.1](https://github.com/stuttgart-things/blueprints/compare/v2.4.0...v2.4.1) (2026-05-27)
 
 

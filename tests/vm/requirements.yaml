@@ -1,24 +1,28 @@
 ---
+# Kept in sync with stuttgart-things/ansible requirements.yaml, which is the
+# canonical consumer-facing pin list. This copy is live config, not just a
+# fixture: configuration/vsphere-vm.go defaults to tests/vm/execution-vars.yaml
+# on main, and that file points ansibleRequirementsFile here.
 collections:
-  - name: community.crypto
-    version: 2.26.2
-  - name: community.general
-    version: 10.6.0
+  - name: ansible.netcommon
+    version: 8.6.2
   - name: ansible.posix
-    version: 2.0.0
-  - name: kubernetes.core
-    version: 5.2.0
-  - name: community.docker
-    version: 4.6.0
-  - name: community.vmware
-    version: 5.6.0
+    version: 2.2.2
   - name: awx.awx
     version: 24.6.1
+  - name: community.crypto
+    version: 3.3.0
+  - name: community.docker
+    version: 5.2.2
+  - name: community.general
+    version: 13.3.0
   - name: community.hashi_vault
-    version: 6.2.0
-  - name: ansible.netcommon
-    version: 8.0.0
-  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-container-25.4.425.tar.gz/sthings-container-25.4.425.tar.gz
-  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-baseos-25.3.570.tar.gz/sthings-baseos-25.3.570.tar.gz
-  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-awx-25.4.837.tar.gz/sthings-awx-25.4.837.tar.gz
-  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-rke-25.1.568.tar.gz/sthings-rke-25.1.568.tar.gz
+    version: 7.1.0
+  - name: community.vmware
+    version: 6.2.1
+  - name: kubernetes.core
+    version: 6.5.0
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-awx-26.812.1209/sthings-awx-26.812.1209.tar.gz
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-container-26.821.1257/sthings-container-26.821.1257.tar.gz
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-rke-26.730.1176/sthings-rke-26.730.1176.tar.gz
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-baseos-26.821.1259/sthings-baseos-26.821.1259.tar.gz

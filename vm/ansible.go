@@ -34,6 +34,12 @@ func (m *Vm) ExecuteAnsible(
 	sshUser *dagger.Secret,
 	// +optional
 	sshPassword *dagger.Secret,
+	// Extra environment for the Ansible container, as a secret in dotenv format
+	// (NAME=value per line). Needed by playbooks that resolve values with
+	// lookup('env', ...), which is evaluated on the controller, not the target --
+	// e.g. sthings.container.kind_machinery reads SOPS_AGE_KEY that way.
+	// +optional
+	envSecrets *dagger.Secret,
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements.yaml.tmpl"
 	requirementsTemplate string,
@@ -65,6 +71,7 @@ func (m *Vm) ExecuteAnsible(
 			Requirements:   prep.requirements,
 			SSHUser:        sshUser,
 			SSHPassword:    sshPassword,
+			EnvSecrets:     envSecrets,
 		})
 }
 

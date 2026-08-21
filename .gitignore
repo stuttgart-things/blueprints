@@ -33,3 +33,6 @@ go.work.sum
 
 # Task folder
 .task/
+
+# Release tooling (semantic-release)
+node_modules/

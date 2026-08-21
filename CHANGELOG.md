@@ -1,3 +1,10 @@
+## [2.5.1](https://github.com/stuttgart-things/blueprints/compare/v2.5.0...v2.5.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **vm:** sync collection pins to canonical list, drop dead release asset globs ([ce326ca](https://github.com/stuttgart-things/blueprints/commit/ce326ca94fa6b77df3ac93c796d071252c261069)), closes [#179](https://github.com/stuttgart-things/blueprints/issues/179)
+
 # [2.5.0](https://github.com/stuttgart-things/blueprints/compare/v2.4.1...v2.5.0) (2026-08-21)
 
 

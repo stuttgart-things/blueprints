@@ -1,0 +1,10 @@
+{
+  "name": "stuttgart-things-blueprints",
+  "private": true,
+  "description": "Release tooling for the blueprints module repo. Not published.",
+  "devDependencies": {
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/git": "^10.0.1",
+    "semantic-release": "^24.2.9"
+  }
+}

@@ -23,6 +23,6 @@ collections:
   - name: kubernetes.core
     version: 6.5.0
   - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-awx-26.812.1209/sthings-awx-26.812.1209.tar.gz
-  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-container-26.820.1251/sthings-container-26.820.1251.tar.gz
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-container-26.821.1257/sthings-container-26.821.1257.tar.gz
   - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-rke-26.730.1176/sthings-rke-26.730.1176.tar.gz
-  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-baseos-26.821.1252/sthings-baseos-26.821.1252.tar.gz
+  - name: https://github.com/stuttgart-things/ansible/releases/download/sthings-baseos-26.821.1259/sthings-baseos-26.821.1259.tar.gz

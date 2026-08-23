@@ -118,10 +118,13 @@ func (m *Vm) BakeLocal(
 		if err != nil {
 			return nil, fmt.Errorf("decrypting sops file failed: %w", err)
 		}
-		ctr = ctr.
-			WithNewFile(
-				fmt.Sprintf("%s/terraform.tfvars.json", workDir),
-				decryptedContent)
+		// Mounted-and-copied rather than WithNewFile: the plaintext must not
+		// become an operation argument, or it lands in the build log.
+		ctr = withSecretFile(
+			ctr,
+			fmt.Sprintf("%s/terraform.tfvars.json", workDir),
+			decryptedContent,
+			"tfvars-json")
 
 		// Extract Ansible SSH creds from SOPS-decrypted content (CLI flags take precedence)
 		if ansibleUser == nil || ansiblePassword == nil { // pragma: allowlist secret

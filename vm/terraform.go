@@ -120,14 +120,22 @@ func (m *Vm) ExecuteTerraform(
 						if err != nil {
 							return nil, fmt.Errorf("failed to marshal remaining vars from %s: %w", filePath, err)
 						}
-						tfDir = tfDir.WithNewFile(outputName, string(remainingJSON))
+						tfDir, err = m.directoryWithSecretFile(
+							ctx, tfDir, outputName, string(remainingJSON), "tfvars-remaining")
+						if err != nil {
+							return nil, fmt.Errorf("writing decrypted vars from %s: %w", filePath, err)
+						}
 					}
 					continue
 				}
 			}
 
 			outputName := strings.Replace(filePath, ".sops", "", 1)
-			tfDir = tfDir.WithNewFile(outputName, decryptedContent)
+			tfDir, err = m.directoryWithSecretFile(
+				ctx, tfDir, outputName, decryptedContent, "tfvars-decrypted")
+			if err != nil {
+				return nil, fmt.Errorf("writing decrypted %s: %w", filePath, err)
+			}
 		}
 	}
 

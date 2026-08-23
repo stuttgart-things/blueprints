@@ -1,3 +1,10 @@
+## [2.6.1](https://github.com/stuttgart-things/blueprints/compare/v2.6.0...v2.6.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* **vm:** decrypted secrets no longer land in the build log ([#181](https://github.com/stuttgart-things/blueprints/issues/181)) ([7a29842](https://github.com/stuttgart-things/blueprints/commit/7a29842c35e03c008087c3bb10ac49e1403eded2)), closes [hi#entropy](https://github.com/hi/issues/entropy)
+
 # [2.6.0](https://github.com/stuttgart-things/blueprints/compare/v2.5.1...v2.6.0) (2026-08-21)
 
 

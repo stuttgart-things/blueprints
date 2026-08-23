@@ -1,0 +1,34 @@
+---
+# Beispiel fuer bootstrap-infra. Jede Komponente hat einen eigenen Schalter;
+# fehlt "enabled", gilt sie als aus -- eine Komponente muss also bewusst
+# eingeschaltet werden, nicht bloss nicht ausgeschaltet.
+source:
+  enabled: true
+  name: flux-infra
+  url: https://github.com/stuttgart-things/flux.git
+  tag: v1.24.1
+  interval: 1m0s
+
+components:
+  openebs:
+    enabled: true
+    templateName: openebs
+    params:
+      path: ./infra/openebs
+      sourceRefName: flux-infra
+      openebsVersion: '4.5.1'
+
+  cert-manager-install:
+    enabled: true
+    templateName: cert-manager
+    params:
+      path: ./infra/cert-manager/components/install
+      sourceRefName: flux-infra
+
+  cilium-lb:
+    enabled: false
+    templateName: infrastructure
+    params:
+      path: ./infra/cilium/components/lb
+      sourceRefName: flux-infra
+      substitute: CILIUM_LB_IP_START=10.100.136.210,CILIUM_LB_IP_STOP=10.100.136.210

@@ -1,3 +1,10 @@
+## [2.8.1](https://github.com/stuttgart-things/blueprints/compare/v2.8.0...v2.8.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **argocd:** stop CreateVaultKubernetesAuth creating an unused namespace ([7aee73b](https://github.com/stuttgart-things/blueprints/commit/7aee73b450d6b8b46efb85021cd7581c8f546c72))
+
 # [2.8.0](https://github.com/stuttgart-things/blueprints/compare/v2.7.1...v2.8.0) (2026-08-24)
 
 

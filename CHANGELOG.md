@@ -1,3 +1,10 @@
+# [2.9.0](https://github.com/stuttgart-things/blueprints/compare/v2.8.1...v2.9.0) (2026-08-24)
+
+
+### Features
+
+* **flux:** bootstrap-infra rendert Infra-Kustomizations aus values.yaml ([e4c2582](https://github.com/stuttgart-things/blueprints/commit/e4c258261588f5cec20a0f4ae4b3f854dab1bda0)), closes [#182](https://github.com/stuttgart-things/blueprints/issues/182) [dagger#334](https://github.com/dagger/issues/334) [218/#220](https://github.com/stuttgart-things/blueprints/issues/220)
+
 ## [2.8.1](https://github.com/stuttgart-things/blueprints/compare/v2.8.0...v2.8.1) (2026-08-24)
 
 

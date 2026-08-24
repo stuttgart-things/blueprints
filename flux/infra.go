@@ -70,7 +70,7 @@ func (m *Flux) RenderInfra(
 	valuesFile *dagger.File,
 	// OCI KCL module rendering the Kustomizations
 	// +optional
-	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations:0.3.33"
+	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations:0.3.34"
 	ociSource string,
 	// KCL entrypoint file name
 	// +optional
@@ -111,7 +111,7 @@ func (m *Flux) BootstrapInfra(
 	valuesFile *dagger.File,
 	// OCI KCL module rendering the Kustomizations
 	// +optional
-	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations:0.3.33"
+	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations:0.3.34"
 	ociSource string,
 	// KCL entrypoint file name
 	// +optional
@@ -384,6 +384,24 @@ func waitForKustomizations(
 ) ([]string, error) {
 	if len(names) == 0 {
 		return nil, nil
+	}
+
+	// Preflight. Without it an unusable kubeconfig is indistinguishable from
+	// "nothing is ready yet": every per-name call fails, each failure is counted
+	// as not-ready, and after the timeout the function blames all the
+	// components. That happened on 2026-08-24 with a kubeconfig path that
+	// simply did not exist -- the report named eight healthy Kustomizations as
+	// pending, and the real message ("failed to read secret file ... no such
+	// file or directory") was never surfaced.
+	//
+	// One unfiltered list call separates the two: if the cluster cannot be
+	// reached at all, say so instead of waiting out the clock and then lying
+	// about which components are at fault.
+	if _, err := fluxCliContainer(fluxCliImage, kubeConfig).
+		WithEnvVariable("CACHEBUST", fmt.Sprintf("%d", time.Now().UnixNano())).
+		WithExec([]string{"flux", "get", "kustomization", "-n", namespace}).
+		Stdout(ctx); err != nil {
+		return nil, fmt.Errorf("cannot reach the cluster to verify (namespace %q): %w", namespace, err)
 	}
 
 	deadline := time.Now().Add(time.Duration(parseTimeout(timeout)) * time.Second)

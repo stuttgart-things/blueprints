@@ -124,6 +124,35 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 	// +optional
 	// +default="3600"
 	tokenTtl string,
+	// Name of a cert-manager ClusterIssuer to create against this mount. Empty
+	// creates none and the function stays what it always was: auth only.
+	//
+	// Set it and the cluster comes back ready to issue certificates -- the CA
+	// Secret, the ClusterIssuer and the TokenRequest RBAC all land here, so a
+	// caller does not have to reproduce them somewhere else.
+	// +optional
+	// +default=""
+	issuerName string,
+	// Vault sign path the issuer uses, e.g. pki/sign/4sthings.tiab.ssc.sva.de.
+	// Required when issuer-name is set.
+	//
+	// Deliberately the SIGN path, not issue: cert-manager only ever uses sign,
+	// while issue would additionally let the holder have Vault generate the
+	// private key.
+	// +optional
+	// +default=""
+	issuerPkiPath string,
+	// cert-manager's cluster resource namespace -- where it looks up a
+	// ClusterIssuer's secret references, and where the TokenRequest RBAC has to
+	// live.
+	// +optional
+	// +default="cert-manager"
+	issuerNamespace string,
+	// Secret holding the Vault CA the issuer verifies Vault with. Fetched live
+	// from ${vaultAddr}/v1/pki/ca/pem.
+	// +optional
+	// +default="vault-pki-ca"
+	caSecretName string,
 	// Cache buster — pass a timestamp/run-id from CI to force a fresh
 	// execution. Same reason as CreateVaultIssuer: Dagger short-circuits
 	// the whole function on input-hash match before any container in
@@ -165,6 +194,13 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 	boundNamespaces := splitCSV(boundServiceAccountNamespaces)
 	if len(boundNamespaces) == 0 {
 		boundNamespaces = []string{namespace}
+	}
+
+	// Without a sign path the issuer would be created pointing at nothing and
+	// would report Ready anyway -- cert-manager verifies only the login. Fail
+	// here instead, where the cause is still visible.
+	if issuerName != "" && issuerPkiPath == "" {
+		return "", fmt.Errorf("issuer-pki-path is required when issuer-name is set")
 	}
 
 	// Decrypt the vault env yaml (reuses the vaultEnv struct defined in
@@ -246,7 +282,97 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 	if err != nil {
 		return "", fmt.Errorf("configure vault k8s auth: %w", err)
 	}
-	return applyOut + "\n" + vaultOut, nil
+
+	// Phase 3: the cert-manager side, only when asked for.
+	if issuerName == "" {
+		return applyOut + "\n" + vaultOut, nil
+	}
+
+	issuerOut, err := m.vaultK8sAuthIssuer(
+		ctx,
+		env.VaultAddr, env.VaultToken, skipVerify,
+		clusterName, authName,
+		issuerName, issuerPkiPath, issuerNamespace, caSecretName,
+		boundNames[0], kubeconfigSecret,
+	)
+	if err != nil {
+		return "", fmt.Errorf("create vault clusterissuer: %w", err)
+	}
+	return applyOut + "\n" + vaultOut + "\n" + issuerOut, nil
+}
+
+// vaultK8sAuthIssuer lands everything cert-manager needs to actually issue
+// against the mount phase 2 created: the Vault CA in a Secret, the
+// ClusterIssuer, and the TokenRequest RBAC.
+//
+// The CA travels as a FILE inside the container rather than through host-side
+// templating -- a PEM is multi-line and every layer it crosses is another place
+// to mangle it. `kubectl create secret --dry-run=client | kubectl apply` keeps
+// it idempotent without needing to know whether the Secret already exists.
+func (m *Argocd) vaultK8sAuthIssuer(
+	ctx context.Context,
+	vaultAddr, vaultToken string,
+	skipVerify bool,
+	clusterName, authName string,
+	issuerName, issuerPkiPath, issuerNamespace, caSecretName string,
+	serviceAccountName string,
+	kubeconfigSecret *dagger.Secret,
+) (string, error) {
+	addr := strings.TrimRight(vaultAddr, "/")
+	mountPath := fmt.Sprintf("%s-%s", clusterName, authName)
+	curlBase := `curl -fsS`
+	if skipVerify {
+		curlBase += " -k"
+	}
+
+	manifestVars, err := json.Marshal(map[string]string{
+		"issuerName":     issuerName,
+		"issuerPkiPath":  issuerPkiPath,
+		"namespace":      issuerNamespace,
+		"caSecretName":   caSecretName,
+		"serviceAccount": serviceAccountName,
+		"vaultAddr":      addr,
+		"authMountPath":  "/v1/auth/" + mountPath,
+		"authRole":       authName,
+	})
+	if err != nil {
+		return "", fmt.Errorf("marshal issuer manifest vars: %w", err)
+	}
+	manifest, err := dag.Templating().RenderInline(ctx, vaultK8sAuthIssuerTemplate,
+		dagger.TemplatingRenderInlineOpts{Variables: string(manifestVars)})
+	if err != nil {
+		return "", fmt.Errorf("render issuer manifest: %w", err)
+	}
+
+	script := strings.Join([]string{
+		"set -euo pipefail",
+		"export KUBECONFIG=/work/kubeconfig",
+		fmt.Sprintf(`%s -H "X-Vault-Token: ${VAULT_TOKEN}" "%s/v1/pki/ca/pem" > /tmp/ca.pem`, curlBase, addr),
+		`test -s /tmp/ca.pem`,
+		fmt.Sprintf(`kubectl create namespace %s --dry-run=client -o yaml | kubectl apply -f -`, issuerNamespace),
+		fmt.Sprintf(`kubectl -n %s create secret generic %s --from-file=ca.crt=/tmp/ca.pem --dry-run=client -o yaml | kubectl apply -f -`,
+			issuerNamespace, caSecretName),
+		`kubectl apply -f /work/issuer.yaml`,
+		fmt.Sprintf(`echo "clusterissuer %s -> %s/%s (sa: %s/%s)"`,
+			issuerName, addr, issuerPkiPath, issuerNamespace, serviceAccountName),
+	}, "\n")
+
+	vaultTokenSecret := dag.SetSecret("vault-k8s-auth-issuer-token", vaultToken)
+	cacheBuster := time.Now().UTC().Format(time.RFC3339Nano)
+
+	ctr := dag.Container().
+		From("alpine/k8s:1.31.0").
+		WithMountedSecret("/work/kubeconfig", kubeconfigSecret).
+		WithNewFile("/work/issuer.yaml", manifest).
+		WithSecretVariable("VAULT_TOKEN", vaultTokenSecret).
+		WithEnvVariable("CACHE_BUSTER", cacheBuster).
+		WithExec([]string{"sh", "-c", script})
+
+	out, err := ctr.Stdout(ctx)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(out), nil
 }
 
 // vaultK8sAuthConfigure waits for the SA-token Secret to be populated
@@ -426,4 +552,63 @@ subjects:
   - kind: ServiceAccount
     name: {{ .reviewerName }}
     namespace: {{ .reviewerNamespace }}
+`
+
+// vaultK8sAuthIssuerTemplate is the cert-manager side of the mount: the
+// ClusterIssuer plus the TokenRequest RBAC it cannot work without.
+//
+// The RBAC is NOT optional and NOT redundant. cert-manager reaches a
+// Kubernetes-auth mount by minting a token for the ServiceAccount through the
+// TokenRequest API, which needs `create` on `serviceaccounts/token`. The chart
+// rendered that Role up to v1.18.x and **v1.21.1 renders no such rule at all**,
+// with no values flag to bring it back (verified by rendering both charts). An
+// upgrade across that line silently disarms every issuer of this kind -- and
+// silently is the word: the ClusterIssuer keeps reporting Ready, because
+// cert-manager verifies only the LOGIN, never the ability to sign. The only
+// proof is an issued Certificate.
+//
+// The CA Secret is created separately, by kubectl inside the container, so the
+// multi-line PEM never crosses a template boundary.
+const vaultK8sAuthIssuerTemplate = `apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .issuerName }}
+spec:
+  vault:
+    server: {{ .vaultAddr }}
+    path: {{ .issuerPkiPath }}
+    caBundleSecretRef:
+      name: {{ .caSecretName }}
+      key: ca.crt
+    auth:
+      kubernetes:
+        mountPath: {{ .authMountPath }}
+        role: {{ .authRole }}
+        serviceAccountRef:
+          name: {{ .serviceAccount }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cert-manager-tokenrequest
+  namespace: {{ .namespace }}
+rules:
+  - apiGroups: [""]
+    resources: ["serviceaccounts/token"]
+    resourceNames: ["{{ .serviceAccount }}"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cert-manager-tokenrequest
+  namespace: {{ .namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cert-manager-tokenrequest
+subjects:
+  - kind: ServiceAccount
+    name: {{ .serviceAccount }}
+    namespace: {{ .namespace }}
 `

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -322,18 +323,29 @@ func renderKustomization(
 	}
 	sort.Strings(keys)
 
-	pairs := make([]string, 0, len(keys))
+	// Parameters travel as a FILE, not as the comma-separated --parameters
+	// string. That string cannot carry `substitute` at all: its value is itself
+	// a comma-separated list, so joining it with the other parameters destroys
+	// the boundary before the KCL module ever sees it, and the module's own
+	// split then keeps only the first pair.
+	//
+	// It failed silently, which is the worst part -- the render succeeded and
+	// produced a valid-looking Kustomization. Measured on test-infra1
+	// 2026-08-24: eight substitute variables went in, `CERT_MANAGER_NAMESPACE`
+	// came out, and the wildcard certificate would have been issued for the
+	// sentinel `set-INFRA_DOMAIN.invalid`.
+	//
+	// A YAML document has no such ambiguity, and `--parameters-file` is the
+	// channel the KCL module offers for exactly this.
+	var b strings.Builder
+	b.WriteString("---\n")
 	for _, k := range keys {
-		v := params[k]
-		// The KCL module takes parameters as one comma-separated string, so a
-		// value containing a comma would silently split into two parameters.
-		// The substitute parameter is the documented exception -- it is itself
-		// a comma-separated list and the module parses it that way.
-		if strings.Contains(v, ",") && k != "substitute" {
-			return "", fmt.Errorf("parameter %q contains a comma, which the KCL parameter string cannot express: %q", k, v)
-		}
-		pairs = append(pairs, k+"="+v)
+		b.WriteString(k + ": " + strconv.Quote(params[k]) + "\n")
 	}
+
+	paramsFile := dag.Directory().
+		WithNewFile("parameters.yaml", b.String()).
+		File("parameters.yaml")
 
 	// FormatOutput is left at its default. It used to corrupt this module's
 	// output -- the post-processor assumed an `items:` list and its guard only
@@ -344,9 +356,9 @@ func renderKustomization(
 	// anyway: the generated client drops optional arguments that equal the
 	// zero value, so `FormatOutput: false` is never transmitted.
 	return dag.Kcl().Run(dagger.KclRunOpts{
-		OciSource:  ociSource,
-		Parameters: strings.Join(pairs, ","),
-		Entrypoint: entrypoint,
+		OciSource:      ociSource,
+		ParametersFile: paramsFile,
+		Entrypoint:     entrypoint,
 	}).Contents(ctx)
 }
 

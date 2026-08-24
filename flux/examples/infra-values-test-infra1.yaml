@@ -1,0 +1,84 @@
+---
+# test-infra1 (LabDA) -- a full eight-component set, kept as the worked
+# example next to the minimal infra-values.yaml.
+#
+# It describes what that cluster actually runs, which is what made it useful:
+# rendering this and comparing against the live Kustomizations is how the
+# substitute bug and the stale cert-manager pin were both found. Every path
+# matches the running cluster, and the substitute maps match wherever this file
+# spells a value out.
+source:
+  enabled: true
+  name: flux-infra
+  url: https://github.com/stuttgart-things/flux.git
+  tag: v1.27.0
+  interval: 1m0s
+
+components:
+  cilium-lb:
+    enabled: true
+    templateName: infrastructure
+    params:
+      path: ./infra/cilium/components/lb
+      sourceRefName: flux-infra
+      substitute: CILIUM_LB_IP_START=10.100.136.224,CILIUM_LB_IP_STOP=10.100.136.224
+
+  cilium-gateway:
+    enabled: true
+    templateName: infrastructure
+    params:
+      path: ./infra/cilium/components/gateway
+      sourceRefName: flux-infra
+      substitute: CILIUM_GATEWAY_NAME=cilium-gateway,CILIUM_GATEWAY_NAMESPACE=default,CILIUM_GATEWAY_DOMAIN=test-infra1.4sthings.tiab.ssc.sva.de,CILIUM_GATEWAY_TLS_SECRET=wildcard-test-infra1-tls
+
+  cert-manager-install:
+    enabled: true
+    templateName: cert-manager
+    params:
+      path: ./infra/cert-manager/components/install
+      sourceRefName: flux-infra
+      # MUSS gesetzt werden. Das KCL-Modul (claim-flux-kustomizations:0.3.33)
+      # traegt v1.19.1 als eigenen Default und schreibt ihn als expliziten
+      # substitute -- der schlaegt den Base-Default v1.21.1. Ohne diese Zeile
+      # dreht ein Apply cert-manager zwei Minor-Versionen zurueck.
+      certManagerVersion: v1.21.1
+
+  cert-manager-selfsigned:
+    enabled: true
+    templateName: infrastructure
+    params:
+      path: ./infra/cert-manager/components/selfsigned
+      sourceRefName: flux-infra
+      substitute: CERT_MANAGER_NAMESPACE=cert-manager,CERT_MANAGER_CA_NAME=cluster-ca,CERT_MANAGER_CA_SECRET=cluster-ca-secret,CERT_MANAGER_SELFSIGNED_DOMAIN=test-infra1.4sthings.tiab.ssc.sva.de,CERT_MANAGER_SELFSIGNED_CERT_NAME=wildcard-test-infra1-tls,CERT_MANAGER_SELFSIGNED_SECRET_NAME=wildcard-test-infra1-tls,CERT_MANAGER_SELFSIGNED_CERT_NAMESPACE=default,CERT_MANAGER_SELFSIGNED_ISSUER=vault-pki-4sthings
+
+  trust-manager:
+    enabled: true
+    templateName: infrastructure
+    params:
+      path: ./infra/trust-manager
+      sourceRefName: flux-infra
+      substitute: TRUST_MANAGER_NAMESPACE=cert-manager,TRUST_BUNDLE_VAULT_CA_SECRET=vault-pki-ca,TRUST_BUNDLE_VAULT_CA_KEY=ca.crt
+
+  openebs:
+    enabled: true
+    templateName: openebs
+    params:
+      path: ./infra/openebs
+      sourceRefName: flux-infra
+      openebsVersion: '4.5.1'
+
+  flux-web:
+    enabled: true
+    templateName: infrastructure
+    params:
+      path: ./apps/flux-web
+      sourceRefName: flux-infra
+      substitute: FLUX_WEB_NAMESPACE=flux-system,FLUX_WEB_VERSION=0.58.1,GATEWAY_NAME=cilium-gateway,GATEWAY_NAMESPACE=default,HOSTNAME=flux,DOMAIN=test-infra1.4sthings.tiab.ssc.sva.de
+
+  headlamp:
+    enabled: true
+    templateName: infrastructure
+    params:
+      path: ./apps/headlamp
+      sourceRefName: flux-infra
+      substitute: HEADLAMP_NAMESPACE=headlamp,HEADLAMP_VERSION=0.44.0,GATEWAY_NAME=cilium-gateway,GATEWAY_NAMESPACE=default,HOSTNAME=headlamp,DOMAIN=test-infra1.4sthings.tiab.ssc.sva.de

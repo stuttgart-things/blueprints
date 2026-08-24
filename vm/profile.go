@@ -61,6 +61,16 @@ func (m *Vm) BakeLocalByProfile(
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
 	requirementsData string,
+	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
+	// down to CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
+	// remote requirements instead of a cached render.
+	//
+	// Deliberately NOT a field in execution.yaml: it is a property of THIS run,
+	// not of the VM being built, and committing one would make it stale by
+	// definition. pr-vm-deploy.yaml should pass the run id.
+	// +optional
+	// +default=""
+	cacheBuster string,
 	// Inventory type: "simple" (default [all] group) or "cluster" (master/worker groups)
 	// +optional
 	// +default="simple"
@@ -146,6 +156,7 @@ func (m *Vm) BakeLocalByProfile(
 		config.AnsibleWaitTimeout,
 		requirementsTemplate,
 		requirementsData,
+		cacheBuster,
 		maxRetries,
 		retryDelay,
 		inventoryType,

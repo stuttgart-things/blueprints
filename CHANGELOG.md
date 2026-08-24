@@ -1,3 +1,10 @@
+# [2.7.0](https://github.com/stuttgart-things/blueprints/compare/v2.6.1...v2.7.0) (2026-08-24)
+
+
+### Features
+
+* **argocd:** let CreateVaultKubernetesAuth split reviewer from workload SA ([1d9c3a2](https://github.com/stuttgart-things/blueprints/commit/1d9c3a2fcaf4ec7c2d9b4214b1f8d90cce1d287f))
+
 ## [2.6.1](https://github.com/stuttgart-things/blueprints/compare/v2.6.0...v2.6.1) (2026-08-23)
 
 

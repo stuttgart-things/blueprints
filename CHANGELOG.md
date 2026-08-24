@@ -1,3 +1,10 @@
+## [2.7.1](https://github.com/stuttgart-things/blueprints/compare/v2.7.0...v2.7.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **configuration:** let CreateAnsibleRequirementFiles bust its render cache ([479e9b2](https://github.com/stuttgart-things/blueprints/commit/479e9b2429e6ef724dc56a6daa7ac96373d24c57))
+
 # [2.7.0](https://github.com/stuttgart-things/blueprints/compare/v2.6.1...v2.7.0) (2026-08-24)
 
 

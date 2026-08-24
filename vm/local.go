@@ -62,6 +62,17 @@ func (m *Vm) BakeLocal(
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
 	requirementsData string,
+	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
+	// down to CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
+	// remote requirements instead of a cached render. Leave empty to keep the
+	// previous behaviour.
+	//
+	// Worth passing from CI: the dagger-labda runner keeps its engine between
+	// runs, so without it a merged collection bump can stay invisible to the
+	// pipeline indefinitely.
+	// +optional
+	// +default=""
+	cacheBuster string,
 	// +optional
 	// +default=3
 	terraformMaxRetries int,
@@ -271,6 +282,7 @@ func (m *Vm) BakeLocal(
 				requirementsTemplate,
 				requirementsData,
 				inventoryType,
+				cacheBuster,
 			)
 		if err != nil {
 			return nil, fmt.Errorf("ansible execution with export failed: %w", err)
@@ -342,6 +354,7 @@ func (m *Vm) BakeLocal(
 				requirementsTemplate,
 				requirementsData,
 				inventoryType,
+				cacheBuster,
 			)
 
 		if err != nil {

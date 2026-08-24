@@ -55,9 +55,16 @@ func (m *Vm) ExecuteAnsibleWithExport(
 	// +optional
 	// +default="simple"
 	inventoryType string,
+	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
+	// into CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
+	// remote requirements instead of a cached render. Leave empty to keep the
+	// previous behaviour.
+	// +optional
+	// +default=""
+	cacheBuster string,
 ) (*dagger.Directory, error) {
 
-	prep, err := m.prepareAnsibleExecution(ctx, src, requirements, inventory, hosts, parameters, parametersFile, requirementsTemplate, requirementsData, inventoryType)
+	prep, err := m.prepareAnsibleExecution(ctx, src, requirements, inventory, hosts, parameters, parametersFile, requirementsTemplate, requirementsData, inventoryType, cacheBuster)
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +134,13 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 	// +optional
 	// +default="simple"
 	inventoryType string,
+	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
+	// into CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
+	// remote requirements instead of a cached render. Leave empty to keep the
+	// previous behaviour.
+	// +optional
+	// +default=""
+	cacheBuster string,
 	// AGE public key for SOPS encryption
 	agePublicKey *dagger.Secret,
 	// File extension for SOPS encryption (e.g., "yaml", "json")
@@ -171,7 +185,7 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 	exportDir, err := m.ExecuteAnsibleWithExport(
 		ctx, src, playbooks, exportPaths, requirements, inventory, hosts, parameters, parametersFile,
 		vaultAppRoleID, vaultSecretID, vaultURL, sshUser, sshPassword, envSecrets,
-		requirementsTemplate, requirementsData, inventoryType,
+		requirementsTemplate, requirementsData, inventoryType, cacheBuster,
 	)
 	if err != nil {
 		return "", fmt.Errorf("ansible execution failed: %w", err)

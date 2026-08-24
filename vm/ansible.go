@@ -50,9 +50,16 @@ func (m *Vm) ExecuteAnsible(
 	// +optional
 	// +default="simple"
 	inventoryType string,
+	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
+	// into CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
+	// remote requirements instead of a cached render. Leave empty to keep the
+	// previous behaviour.
+	// +optional
+	// +default=""
+	cacheBuster string,
 ) (bool, error) {
 
-	prep, err := m.prepareAnsibleExecution(ctx, src, requirements, inventory, hosts, parameters, parametersFile, requirementsTemplate, requirementsData, inventoryType)
+	prep, err := m.prepareAnsibleExecution(ctx, src, requirements, inventory, hosts, parameters, parametersFile, requirementsTemplate, requirementsData, inventoryType, cacheBuster)
 	if err != nil {
 		return false, err
 	}
@@ -96,6 +103,7 @@ func (m *Vm) prepareAnsibleExecution(
 	requirementsTemplate string,
 	requirementsData string,
 	inventoryType string,
+	cacheBuster string,
 ) (*ansiblePrepResult, error) {
 
 	if src == nil {
@@ -132,6 +140,7 @@ func (m *Vm) prepareAnsibleExecution(
 				TemplatePaths: requirementsTemplate,
 				DataFile:      requirementsData,
 				StrictMode:    false,
+				CacheBuster:   cacheBuster,
 			},
 		)
 		requirements = generatedRequirements.File("requirements.yaml")

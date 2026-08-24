@@ -1,3 +1,10 @@
+# [2.8.0](https://github.com/stuttgart-things/blueprints/compare/v2.7.1...v2.8.0) (2026-08-24)
+
+
+### Features
+
+* **argocd:** let CreateVaultKubernetesAuth create the cert-manager issuer ([5af658d](https://github.com/stuttgart-things/blueprints/commit/5af658d20b66bf920e17f4b8e3f032498f76dac2))
+
 ## [2.7.1](https://github.com/stuttgart-things/blueprints/compare/v2.7.0...v2.7.1) (2026-08-24)
 
 

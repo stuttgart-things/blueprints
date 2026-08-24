@@ -1,3 +1,10 @@
+## [2.9.2](https://github.com/stuttgart-things/blueprints/compare/v2.9.1...v2.9.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* **flux:** tell "cannot reach cluster" apart from "not ready yet" ([116104b](https://github.com/stuttgart-things/blueprints/commit/116104bea960d0364e062008c8837d4dbbc9ce09)), closes [kcl#221](https://github.com/kcl/issues/221)
+
 ## [2.9.1](https://github.com/stuttgart-things/blueprints/compare/v2.9.0...v2.9.1) (2026-08-24)
 
 

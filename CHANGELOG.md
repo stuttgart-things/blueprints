@@ -1,3 +1,31 @@
+## [2.8.1](https://github.com/stuttgart-things/blueprints/compare/v2.8.0...v2.8.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **argocd:** stop CreateVaultKubernetesAuth creating an unused namespace ([7aee73b](https://github.com/stuttgart-things/blueprints/commit/7aee73b450d6b8b46efb85021cd7581c8f546c72))
+
+# [2.8.0](https://github.com/stuttgart-things/blueprints/compare/v2.7.1...v2.8.0) (2026-08-24)
+
+
+### Features
+
+* **argocd:** let CreateVaultKubernetesAuth create the cert-manager issuer ([5af658d](https://github.com/stuttgart-things/blueprints/commit/5af658d20b66bf920e17f4b8e3f032498f76dac2))
+
+## [2.7.1](https://github.com/stuttgart-things/blueprints/compare/v2.7.0...v2.7.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **configuration:** let CreateAnsibleRequirementFiles bust its render cache ([479e9b2](https://github.com/stuttgart-things/blueprints/commit/479e9b2429e6ef724dc56a6daa7ac96373d24c57))
+
+# [2.7.0](https://github.com/stuttgart-things/blueprints/compare/v2.6.1...v2.7.0) (2026-08-24)
+
+
+### Features
+
+* **argocd:** let CreateVaultKubernetesAuth split reviewer from workload SA ([1d9c3a2](https://github.com/stuttgart-things/blueprints/commit/1d9c3a2fcaf4ec7c2d9b4214b1f8d90cce1d287f))
+
 ## [2.6.1](https://github.com/stuttgart-things/blueprints/compare/v2.6.0...v2.6.1) (2026-08-23)
 
 

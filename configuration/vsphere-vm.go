@@ -42,6 +42,16 @@ func (m *Configuration) VsphereVm(
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
 	ansibleRequirementsData string,
+	// Any value that changes between runs. Forces a fresh fetch of the remote
+	// ansible requirements instead of a cached render.
+	//
+	// It matters more here than in a throwaway execution: the rendered file is
+	// COMMITTED to the generated branch, so a stale render does not just affect
+	// one run -- it lands in the repository and every consumer of that branch
+	// inherits it.
+	// +optional
+	// +default=""
+	ansibleRequirementsCacheBuster string,
 	// +optional
 	// +default="true"
 	renderExecutionfile bool,
@@ -158,6 +168,7 @@ func (m *Configuration) VsphereVm(
 			ansibleRequirementsTemplate,
 			ansibleRequirementsData,
 			true,
+			ansibleRequirementsCacheBuster,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create ansible requirements: %w", err)

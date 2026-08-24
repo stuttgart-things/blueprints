@@ -36,11 +36,29 @@ type kubeconfigShape struct {
 //
 //   - On the target cluster:
 //     `Namespace/<namespace>`,
-//     `ServiceAccount/<auth-name>`,
-//     non-expiring SA-token `Secret/<auth-name>` (type
+//     `ServiceAccount/<reviewer-name>`,
+//     non-expiring SA-token `Secret/<reviewer-name>` (type
 //     `kubernetes.io/service-account-token`),
-//     `ClusterRoleBinding/<auth-name>` → `system:auth-delegator`
+//     `ClusterRoleBinding/<reviewer-name>` → `system:auth-delegator`
 //     (so Vault can call TokenReview with the SA's JWT).
+//
+// REVIEWER vs BOUND ServiceAccount. By default they are the SAME account:
+// `<auth-name>` both reviews tokens and logs in. That is the ESO shape and stays
+// the default so existing callers are unaffected. It does not fit every
+// workload:
+//
+//   - cert-manager logs in as its OWN ServiceAccount `cert-manager`, which the
+//     chart owns. Creating a second SA and pointing the ClusterIssuer at it
+//     works but is a detour.
+//   - `system:auth-delegator` is the right to TokenReview ANY token in the
+//     cluster. Granting that to a certificate controller is more privilege than
+//     the job needs.
+//
+// Pass `--reviewer-name` / `--reviewer-namespace` to put the reviewer somewhere
+// harmless (`vault-auth-reviewer` in `kube-system`) and
+// `--bound-service-account-names` / `--bound-service-account-namespaces` to bind
+// the workload's real ServiceAccount. That combination is what the crossplane
+// `VaultK8sAuth` path emits, so both produce identical Vault state.
 //
 //   - On Vault:
 //     a Kubernetes auth backend mounted at `<cluster-name>-<auth-name>`,
@@ -80,6 +98,23 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 	// +optional
 	// +default="external-secrets"
 	namespace string,
+	// Name of the ServiceAccount Vault uses to call TokenReview. Empty reuses
+	// auth-name, i.e. the reviewer and the workload are one account.
+	// +optional
+	// +default=""
+	reviewerName string,
+	// Namespace of the reviewer ServiceAccount. Empty reuses namespace.
+	// +optional
+	// +default=""
+	reviewerNamespace string,
+	// Comma-separated ServiceAccounts allowed to LOG IN. Empty reuses auth-name.
+	// +optional
+	// +default=""
+	boundServiceAccountNames string,
+	// Comma-separated namespaces of those ServiceAccounts. Empty reuses namespace.
+	// +optional
+	// +default=""
+	boundServiceAccountNamespaces string,
 	// Comma-separated Vault policies to bind to the role. Must already
 	// exist in Vault. Per-cluster — each caller supplies its own list.
 	// +optional
@@ -110,14 +145,26 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 	if sopsKey == nil {
 		return "", fmt.Errorf("sops-key is required")
 	}
-	policies := []string{}
-	for _, p := range strings.Split(tokenPolicies, ",") {
-		if p = strings.TrimSpace(p); p != "" {
-			policies = append(policies, p)
-		}
-	}
+	policies := splitCSV(tokenPolicies)
 	if len(policies) == 0 {
 		return "", fmt.Errorf("token-policies must be a non-empty comma-separated list")
+	}
+
+	// Every knob below falls back to the single-account shape, so a caller that
+	// passes none of them gets byte-identical behaviour to before.
+	if reviewerName == "" {
+		reviewerName = authName
+	}
+	if reviewerNamespace == "" {
+		reviewerNamespace = namespace
+	}
+	boundNames := splitCSV(boundServiceAccountNames)
+	if len(boundNames) == 0 {
+		boundNames = []string{authName}
+	}
+	boundNamespaces := splitCSV(boundServiceAccountNamespaces)
+	if len(boundNamespaces) == 0 {
+		boundNamespaces = []string{namespace}
 	}
 
 	// Decrypt the vault env yaml (reuses the vaultEnv struct defined in
@@ -160,8 +207,10 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 
 	// Phase 1: render + kubectl apply Namespace + SA + SA-token Secret + CRB.
 	manifestVars, err := json.Marshal(map[string]string{
-		"namespace": namespace,
-		"name":      authName,
+		"namespace":         namespace,
+		"name":              authName,
+		"reviewerName":      reviewerName,
+		"reviewerNamespace": reviewerNamespace,
 	})
 	if err != nil {
 		return "", fmt.Errorf("marshal manifest vars: %w", err)
@@ -189,7 +238,9 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 	vaultOut, err := m.vaultK8sAuthConfigure(
 		ctx,
 		env.VaultAddr, env.VaultToken, skipVerify,
-		apiServer, clusterName, authName, namespace,
+		apiServer, clusterName, authName,
+		reviewerName, reviewerNamespace,
+		boundNames, boundNamespaces,
 		policies, tokenTtl, kubeconfigSecret,
 	)
 	if err != nil {
@@ -207,7 +258,9 @@ func (m *Argocd) vaultK8sAuthConfigure(
 	ctx context.Context,
 	vaultAddr, vaultToken string,
 	skipVerify bool,
-	apiServer, clusterName, authName, namespace string,
+	apiServer, clusterName, authName string,
+	reviewerName, reviewerNamespace string,
+	boundNames, boundNamespaces []string,
 	policies []string, tokenTtl string,
 	kubeconfigSecret *dagger.Secret,
 ) (string, error) {
@@ -223,8 +276,8 @@ func (m *Argocd) vaultK8sAuthConfigure(
 		return "", fmt.Errorf("marshal mount payload: %w", err)
 	}
 	rolePayload, err := json.Marshal(map[string]any{
-		"bound_service_account_names":      []string{authName},
-		"bound_service_account_namespaces": []string{namespace},
+		"bound_service_account_names":      boundNames,
+		"bound_service_account_namespaces": boundNamespaces,
 		"token_ttl":                        tokenTtl,
 		"token_policies":                   policies,
 	})
@@ -245,7 +298,7 @@ if [ -z "$TOKEN" ] || [ -z "$CA" ]; then
   exit 1
 fi
 TOKEN_JWT=$(printf %%s "$TOKEN" | base64 -d)
-CA_PEM=$(printf %%s "$CA" | base64 -d)`, namespace, authName)
+CA_PEM=$(printf %%s "$CA" | base64 -d)`, reviewerNamespace, reviewerName)
 
 	// Ensure auth mount exists. Vault returns HTTP 400 with body
 	// `path is already in use` when the mount is present — treat that
@@ -270,9 +323,10 @@ esac`, curlBase, string(mountPayload), addr, mountPath)
 	// Upsert role.
 	configRole := fmt.Sprintf(`%s -X POST -H "X-Vault-Token: ${VAULT_TOKEN}" -H "Content-Type: application/json" \
   --data %q "%s/v1/auth/%s/role/%s"
-echo "vault k8s auth %s/%s ready (policies: %s)"`,
+echo "vault k8s auth %s/%s ready (reviewer: %s/%s, bound: %s, policies: %s)"`,
 		curlBase, string(rolePayload), addr, mountPath, authName,
-		mountPath, authName, strings.Join(policies, ","))
+		mountPath, authName, reviewerNamespace, reviewerName,
+		strings.Join(boundNames, ","), strings.Join(policies, ","))
 
 	script := strings.Join([]string{
 		"set -euo pipefail",
@@ -303,46 +357,73 @@ echo "vault k8s auth %s/%s ready (policies: %s)"`,
 	return strings.TrimSpace(out), nil
 }
 
-// vaultK8sAuthManifestTemplate renders the 4-document YAML
-// `kubectl apply`'d to the target cluster. Mirrors what
-// `vault-base-setup/k8s.tf` creates via the kubernetes_* providers:
-// Namespace, ServiceAccount (with automountServiceAccountToken so the
-// SA's JWT is available to pods that use it), non-expiring SA-token
-// Secret (the controller populates `data.token` + `data["ca.crt"]`
-// once the SA exists), ClusterRoleBinding to system:auth-delegator
-// (Vault needs this to call TokenReview).
+// splitCSV turns a comma-separated argument into a trimmed, empty-free slice.
+// Dagger has no []string argument type reachable from the CLI, so every list
+// crosses the boundary as one string.
+func splitCSV(in string) []string {
+	out := []string{}
+	for _, v := range strings.Split(in, ",") {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// vaultK8sAuthManifestTemplate renders the YAML `kubectl apply`'d to the target
+// cluster. Mirrors what `vault-base-setup/k8s.tf` creates via the kubernetes_*
+// providers: ServiceAccount (with automountServiceAccountToken so the SA's JWT
+// is available to pods that use it), non-expiring SA-token Secret (the
+// controller populates `data.token` + `data["ca.crt"]` once the SA exists),
+// ClusterRoleBinding to system:auth-delegator (Vault needs this to call
+// TokenReview).
+//
+// Only the REVIEWER is created here. The bound (workload) ServiceAccount is
+// deliberately left alone: when it differs from the reviewer it belongs to
+// something else — cert-manager's SA is owned by its Helm chart, and applying
+// our own copy would fight the chart for it.
+//
+// The reviewer namespace is created only when it differs from .namespace, so
+// the default single-account case renders exactly the documents it always did.
 const vaultK8sAuthManifestTemplate = `apiVersion: v1
 kind: Namespace
 metadata:
   name: {{ .namespace }}
+{{- if ne .reviewerNamespace .namespace }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .reviewerNamespace }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ .name }}
-  namespace: {{ .namespace }}
+  name: {{ .reviewerName }}
+  namespace: {{ .reviewerNamespace }}
 automountServiceAccountToken: true
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .name }}
-  namespace: {{ .namespace }}
+  name: {{ .reviewerName }}
+  namespace: {{ .reviewerNamespace }}
   annotations:
-    kubernetes.io/service-account.name: {{ .name }}
-    kubernetes.io/service-account.namespace: {{ .namespace }}
+    kubernetes.io/service-account.name: {{ .reviewerName }}
+    kubernetes.io/service-account.namespace: {{ .reviewerNamespace }}
 type: kubernetes.io/service-account-token
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ .name }}
+  name: {{ .reviewerName }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: system:auth-delegator
 subjects:
   - kind: ServiceAccount
-    name: {{ .name }}
-    namespace: {{ .namespace }}
+    name: {{ .reviewerName }}
+    namespace: {{ .reviewerNamespace }}
 `

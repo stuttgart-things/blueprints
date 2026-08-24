@@ -247,6 +247,7 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 		"name":              authName,
 		"reviewerName":      reviewerName,
 		"reviewerNamespace": reviewerNamespace,
+		"namespaceDocs":     namespaceDocs(reviewerNamespace, boundNamespaces),
 	})
 	if err != nil {
 		return "", fmt.Errorf("marshal manifest vars: %w", err)
@@ -483,6 +484,32 @@ echo "vault k8s auth %s/%s ready (reviewer: %s/%s, bound: %s, policies: %s)"`,
 	return strings.TrimSpace(out), nil
 }
 
+// namespaceDocs renders one Namespace document per namespace this call actually
+// puts something into: the reviewer's, and the bound ServiceAccounts'.
+//
+// It used to render `--namespace` instead, which is wrong as soon as the
+// reviewer and the bound account are moved elsewhere: --namespace then names
+// nothing this call touches, yet the Namespace was created anyway. Measured on
+// test-infra1 2026-08-24 -- a cert-manager-only run left behind an empty
+// `external-secrets` namespace, purely because that is the ESO default.
+//
+// In the single-account (ESO) shape reviewer and bound namespace are both
+// --namespace, so this renders exactly the one document it always did.
+func namespaceDocs(reviewerNamespace string, boundNamespaces []string) string {
+	seen := map[string]bool{}
+	var b strings.Builder
+
+	for _, ns := range append([]string{reviewerNamespace}, boundNamespaces...) {
+		if ns == "" || seen[ns] {
+			continue
+		}
+		seen[ns] = true
+		b.WriteString("apiVersion: v1\nkind: Namespace\nmetadata:\n  name: " + ns + "\n---\n")
+	}
+
+	return b.String()
+}
+
 // splitCSV turns a comma-separated argument into a trimmed, empty-free slice.
 // Dagger has no []string argument type reachable from the CLI, so every list
 // crosses the boundary as one string.
@@ -511,19 +538,7 @@ func splitCSV(in string) []string {
 //
 // The reviewer namespace is created only when it differs from .namespace, so
 // the default single-account case renders exactly the documents it always did.
-const vaultK8sAuthManifestTemplate = `apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ .namespace }}
-{{- if ne .reviewerNamespace .namespace }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ .reviewerNamespace }}
-{{- end }}
----
-apiVersion: v1
+const vaultK8sAuthManifestTemplate = `{{ .namespaceDocs }}apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ .reviewerName }}

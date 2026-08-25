@@ -1,3 +1,22 @@
+# [3.0.0](https://github.com/stuttgart-things/blueprints/compare/v2.9.3...v3.0.0) (2026-08-25)
+
+
+### Features
+
+* release the ClusterIssuer split out of CreateVaultKubernetesAuth ([2129fed](https://github.com/stuttgart-things/blueprints/commit/2129fed156c20099a72325efbba5f25b869b082b))
+
+
+### BREAKING CHANGES
+
+* --issuer-name, --issuer-pki-path and --issuer-namespace are
+removed from create-vault-kubernetes-auth. --ca-secret-name now gates the
+cert-manager phase on its own and defaults to empty; --ca-secret-namespace
+replaces --issuer-namespace for the Secret's location. The ClusterIssuer and its
+TokenRequest RBAC move to the flux bundle component
+infra/cert-manager/components/vault-issuer, because applying them from the
+pipeline required cert-manager's CRDs to already exist and cert-manager arrives
+with Flux, after this step runs.
+
 ## [2.9.3](https://github.com/stuttgart-things/blueprints/compare/v2.9.2...v2.9.3) (2026-08-25)
 
 

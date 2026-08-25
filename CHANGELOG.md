@@ -1,3 +1,10 @@
+## [2.9.3](https://github.com/stuttgart-things/blueprints/compare/v2.9.2...v2.9.3) (2026-08-25)
+
+
+### Bug Fixes
+
+* the auth-mount "already exists" branch could never run ([#190](https://github.com/stuttgart-things/blueprints/issues/190)) ([9eca46a](https://github.com/stuttgart-things/blueprints/commit/9eca46acbbdad844e3efe1686502198dd42e6f3e))
+
 ## [2.9.2](https://github.com/stuttgart-things/blueprints/compare/v2.9.1...v2.9.2) (2026-08-24)
 
 

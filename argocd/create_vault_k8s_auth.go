@@ -394,8 +394,15 @@ func (m *Argocd) vaultK8sAuthConfigure(
 	addr := strings.TrimRight(vaultAddr, "/")
 	mountPath := fmt.Sprintf("%s-%s", clusterName, authName)
 	curlBase := `curl -fsS`
+	// Same, WITHOUT -f. The mount check below has to read the response body to
+	// tell "already exists" apart from a real 400 -- and -f makes curl discard
+	// the body entirely, so -o writes no file at all. With -f the idempotent
+	// branch could never run: the grep hit a missing file and the whole step
+	// failed on the second attempt against any cluster whose mount existed.
+	curlSoft := `curl -sS`
 	if skipVerify {
 		curlBase += " -k"
+		curlSoft += " -k"
 	}
 
 	mountPayload, err := json.Marshal(map[string]string{"type": "kubernetes"})
@@ -437,7 +444,7 @@ case "$HTTP" in
   2*) ;;
   400) grep -q "path is already in use" /tmp/mount.out || { cat /tmp/mount.out >&2; exit 1; } ;;
   *)   cat /tmp/mount.out >&2; exit 1 ;;
-esac`, curlBase, string(mountPayload), addr, mountPath)
+esac`, curlSoft, string(mountPayload), addr, mountPath)
 
 	// Upsert backend config. Build the JSON via jq so the multi-line
 	// CA PEM survives shell quoting intact.

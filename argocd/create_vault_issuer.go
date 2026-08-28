@@ -24,6 +24,21 @@ type vaultEnv struct {
 	VaultToken      string `yaml:"vaultToken"`
 	VaultSkipVerify *bool  `yaml:"vaultSkipVerify,omitempty"`
 	VaultCaBundle   string `yaml:"vaultCaBundle,omitempty"`
+	// Pin this Vault's hostname to an address, `host:ip` or curl's full
+	// `host:port:ip`. Empty means ordinary DNS.
+	//
+	// It belongs to the env file rather than to a caller flag because it is a
+	// property of THIS Vault's address, not of who is calling: a lab zone that
+	// only a resolver inside the lab can follow stays unfollowable no matter
+	// which pipeline reaches for it.
+	//
+	// Why it exists: these functions curl from inside a Dagger container, and
+	// that container resolves through the ENGINE's resolver -- the runner VM's
+	// /etc/resolv.conf, not the cluster CoreDNS the job's pod uses. A name the
+	// runner shell resolves can be unresolvable one layer down, and the lab
+	// recursor here answers for such a zone only intermittently: measured
+	// 10/10 one minute and 0/10 the next, with SOA queries timing out.
+	VaultResolve string `yaml:"vaultResolve,omitempty"`
 }
 
 // vaultPolicyHCL is the ACL policy applied to the Vault server before
@@ -51,9 +66,9 @@ path "pki/sign/*" {
 //  4. Applies a 3-document YAML directly to the target cluster:
 //     - `Namespace/<target-namespace>` (default `cert-manager`)
 //     - `Secret/<token-secret-name>` (default `cert-manager-vault-token`,
-//       `data.token` = freshly-minted vault token)
+//     `data.token` = freshly-minted vault token)
 //     - `Secret/<ca-secret-name>` (default `vault-pki-ca`,
-//       `data["ca.crt"]` = live-fetched PKI root CA PEM)
+//     `data["ca.crt"]` = live-fetched PKI root CA PEM)
 //
 // Only plain core/v1 resources are created; no cert-manager CRDs, no
 // admission-webhook coupling. The AppSet that creates the ClusterIssuer

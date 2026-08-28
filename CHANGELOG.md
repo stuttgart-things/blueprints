@@ -1,3 +1,10 @@
+## [3.0.1](https://github.com/stuttgart-things/blueprints/compare/v3.0.0...v3.0.1) (2026-08-28)
+
+
+### Bug Fixes
+
+* **argocd:** let a vault env file pin its host to an address ([#192](https://github.com/stuttgart-things/blueprints/issues/192)) ([a468058](https://github.com/stuttgart-things/blueprints/commit/a468058e2d2e869364347c81b7328d601c76696b)), closes [#dagger-runner-2](https://github.com/stuttgart-things/blueprints/issues/dagger-runner-2)
+
 # [3.0.0](https://github.com/stuttgart-things/blueprints/compare/v2.9.3...v3.0.0) (2026-08-25)
 
 

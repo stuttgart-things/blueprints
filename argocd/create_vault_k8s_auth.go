@@ -271,7 +271,7 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 	// populate the SA-token Secret, then drive the Vault HTTP API.
 	vaultOut, err := m.vaultK8sAuthConfigure(
 		ctx,
-		env.VaultAddr, env.VaultToken, skipVerify,
+		env.VaultAddr, env.VaultToken, env.VaultResolve, skipVerify,
 		apiServer, clusterName, authName,
 		reviewerName, reviewerNamespace,
 		boundNames, boundNamespaces,
@@ -288,7 +288,7 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 
 	caOut, err := m.vaultK8sAuthCaSecret(
 		ctx,
-		env.VaultAddr, env.VaultToken, skipVerify,
+		env.VaultAddr, env.VaultToken, env.VaultResolve, skipVerify,
 		caSecretNamespace, caSecretName,
 		kubeconfigSecret,
 	)
@@ -296,6 +296,39 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 		return "", fmt.Errorf("place vault ca secret: %w", err)
 	}
 	return applyOut + "\n" + vaultOut + "\n" + caOut, nil
+}
+
+// curlResolveFlag turns an env file's vaultResolve into curl's --resolve flag.
+//
+// curl wants host:port:ip. A two-field `host:ip` is the friendlier form to
+// write, so the port is filled in from the Vault address -- 443 for https,
+// 80 for http, or whatever the URL names explicitly. An empty pin returns an
+// empty string and every caller stays on ordinary DNS.
+//
+// The pin is passed to curl, NOT written to /etc/hosts: Dagger manages that
+// file for its containers and an appended line does not survive into the next
+// withExec layer.
+func curlResolveFlag(vaultAddr, resolve string) string {
+	if resolve == "" {
+		return ""
+	}
+	if strings.Count(resolve, ":") >= 2 {
+		return " --resolve " + resolve
+	}
+	host, ip, ok := strings.Cut(resolve, ":")
+	if !ok || host == "" || ip == "" {
+		return ""
+	}
+	port := "443"
+	if strings.HasPrefix(vaultAddr, "http://") {
+		port = "80"
+	}
+	rest := strings.TrimPrefix(strings.TrimPrefix(vaultAddr, "https://"), "http://")
+	rest, _, _ = strings.Cut(rest, "/")
+	if _, p, found := strings.Cut(rest, ":"); found && p != "" {
+		port = p
+	}
+	return fmt.Sprintf(" --resolve %s:%s:%s", host, port, ip)
 }
 
 // vaultK8sAuthCaSecret places Vault's PKI CA into a Secret on the cluster.
@@ -311,7 +344,7 @@ func (m *Argocd) CreateVaultKubernetesAuth(
 // it idempotent without needing to know whether the Secret already exists.
 func (m *Argocd) vaultK8sAuthCaSecret(
 	ctx context.Context,
-	vaultAddr, vaultToken string,
+	vaultAddr, vaultToken, vaultResolve string,
 	skipVerify bool,
 	namespace, secretName string,
 	kubeconfigSecret *dagger.Secret,
@@ -321,6 +354,7 @@ func (m *Argocd) vaultK8sAuthCaSecret(
 	if skipVerify {
 		curlBase += " -k"
 	}
+	curlBase += curlResolveFlag(vaultAddr, vaultResolve)
 
 	script := strings.Join([]string{
 		"set -euo pipefail",
@@ -359,7 +393,7 @@ func (m *Argocd) vaultK8sAuthCaSecret(
 // + jq).
 func (m *Argocd) vaultK8sAuthConfigure(
 	ctx context.Context,
-	vaultAddr, vaultToken string,
+	vaultAddr, vaultToken, vaultResolve string,
 	skipVerify bool,
 	apiServer, clusterName, authName string,
 	reviewerName, reviewerNamespace string,
@@ -379,6 +413,10 @@ func (m *Argocd) vaultK8sAuthConfigure(
 	if skipVerify {
 		curlBase += " -k"
 		curlSoft += " -k"
+	}
+	if flag := curlResolveFlag(vaultAddr, vaultResolve); flag != "" {
+		curlBase += flag
+		curlSoft += flag
 	}
 
 	mountPayload, err := json.Marshal(map[string]string{"type": "kubernetes"})

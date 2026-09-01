@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/stuttgart-things/blueprints/compare/v3.1.1...v3.2.0) (2026-09-01)
+
+
+### Features
+
+* **vm:** add BakeHarvester for control-plane-free VM bootstrap ([#193](https://github.com/stuttgart-things/blueprints/issues/193)) ([a2c2d1c](https://github.com/stuttgart-things/blueprints/commit/a2c2d1ce627f4ae8873d8da447a456095f4661a7))
+
 ## [3.1.1](https://github.com/stuttgart-things/blueprints/compare/v3.1.0...v3.1.1) (2026-09-01)
 
 

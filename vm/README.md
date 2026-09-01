@@ -13,6 +13,11 @@ After a successful `apply` operation, `BakeLocal` / `BakeLocalByProfile` write t
 
   `vm_ips` is always a list (single-VM apply yields a one-element list). The file is omitted for non-`apply` operations.
 
+`BakeHarvester` writes the same `outputs.json` (so downstream stages do not care which provisioner ran), plus:
+
+- `harvester-vm.yaml` — the rendered PVC + cloud-init Secret + VirtualMachine, kept so a failed run can be inspected or re-applied by hand
+- `inventory.ini` — the `[all]` inventory Ansible ran with
+
 ## FUNCTIONS
 
 <details><summary>RUN ANSIBLE</summary>
@@ -219,6 +224,125 @@ dagger call -m vm execute-ansible-encrypt-and-commit \
 </details>
 
 ## WORKFLOWS
+
+<details><summary>BAKE HARVESTER (VM bootstrap without a control plane)</summary>
+
+The Crossplane-free counterpart to `BakeLocal`, and the reason it exists: the first VM on a
+Harvester cluster has to be created before there is any control plane to create it with —
+typically the VM that then runs the Crossplane management cluster provisioning everything after it.
+
+Same shape as `BakeLocal` (provision, read the machine's address back, hand it to Ansible), but the
+provisioning step is the Kubernetes API instead of OpenTofu:
+
+1. render PVC + cloud-init Secret + KubeVirt VirtualMachine from the
+   [`harvester-vm`](https://github.com/stuttgart-things/kcl/tree/main/kubernetes/harvester-vm) KCL module
+2. `kubectl apply` them against Harvester
+3. poll the VirtualMachineInstance until it is Running **and** the in-guest QEMU guest agent has reported an IP
+4. run Ansible against that IP
+
+```yaml
+# params.yaml — KCL parameters for the harvester-vm module.
+# vmName and namespace are NOT set here: BakeHarvester forces them from its own
+# flags so the manifests and the VMI it polls for cannot drift apart.
+enablePvc: true
+enableCloudConfig: true
+enableVm: true
+
+# Root disk. pvcName is optional — it defaults to "<vm-name>-disk-0".
+# NOTE: the module assembles the storage class as
+# "<storageClass>-<imageId>", so pass "longhorn" — not "harvester-longhorn".
+pvcName: bootstrap-disk-0
+imageNamespace: default
+imageId: image-t9w92
+storage: 60Gi
+storageClass: longhorn
+volumeMode: Block
+# ReadWriteOnce for a single-VM boot disk: RWX on a Block boot volume invites a
+# second instance attaching the same disk.
+accessModes: '["ReadWriteOnce"]'
+
+# cloud-init. The module builds the cloud-config from these and always installs
+# and starts qemu-guest-agent — which is what makes step 3 above terminate.
+secretName: bootstrap-cloud-init # pragma: allowlist secret
+cloudInitUsername: sthings
+cloudInitPassword: <REPLACEME> # pragma: allowlist secret
+cloudInitSshKey: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC...
+
+# VM
+cpuCores: 8
+cpuSockets: 1
+cpuThreads: 1
+memory: 16Gi
+networkNamespace: default
+networkName: vms
+runStrategy: RerunOnFailure
+```
+
+```bash
+# FULL BOOTSTRAP: render -> apply -> wait for IP -> ansible
+dagger call -m vm bake-harvester \
+--kube-config file://~/.kube/harvester \
+--vm-name bootstrap-xplane \
+--namespace vms \
+--kcl-parameters-file ./params.yaml \
+--ansible-playbooks "sthings.baseos.setup,sthings.container.kind_xplane" \
+--ansible-user env:ANSIBLE_USER \
+--ansible-password env:ANSIBLE_PASSWORD \
+--progress plain -vv \
+export --path /tmp/bootstrap
+```
+
+```bash
+# NO ANSIBLE: leave --ansible-playbooks off to stop once the VM has an IP
+dagger call -m vm bake-harvester \
+--kube-config file://~/.kube/harvester \
+--vm-name bootstrap-xplane \
+--namespace vms \
+--kcl-parameters-file ./params.yaml \
+--progress plain -vv \
+export --path /tmp/bootstrap
+```
+
+```bash
+# SOPS-ENCRYPTED PARAMETERS (decrypted in-memory; the plaintext never becomes
+# an operation argument)
+dagger call -m vm bake-harvester \
+--kube-config file://~/.kube/harvester \
+--vm-name bootstrap-xplane \
+--namespace vms \
+--encrypted-file ./params.enc.yaml \
+--sops-key env:SOPS_AGE_KEY \
+--ansible-playbooks "sthings.baseos.setup" \
+--ansible-user env:ANSIBLE_USER \
+--ansible-password env:ANSIBLE_PASSWORD \
+--progress plain -vv
+```
+
+```bash
+# DRY RUN: render the three manifests without touching a cluster
+dagger call -m vm render-harvester-vm \
+--kcl-parameters-file ./params.yaml \
+--kcl-parameters "vmName=bootstrap-xplane,namespace=vms" \
+--progress plain
+
+# WAIT ONLY: for a VM created some other way
+dagger call -m vm wait-for-vm-ip \
+--kube-config file://~/.kube/harvester \
+--vm-name bootstrap-xplane \
+--namespace vms \
+--progress plain
+```
+
+Worth knowing:
+
+- **The IP comes from the guest agent.** `qemu-guest-agent` must be installed and running in the VM, or the wait runs its full `--wait-timeout` (default 900s) against a VM that is perfectly healthy. The module's generated cloud-config installs it; a hand-supplied `userdata` must do the same.
+- **Ansible login.** The `sthings-*` golden images carry the user and password auth that `ANSIBLE_USER` / `ANSIBLE_PASSWORD` expect. A vanilla cloud image disables password auth and trusts only the cloud-init key, so Ansible cannot log in (`Permission denied (publickey)`).
+- **Resource names default to the VM.** `pvcName` and `secretName` are derived as `<vm-name>-disk-0` and `<vm-name>-cloud-init` when they are set in neither `--kcl-parameters-file` nor `--kcl-parameters`. The KCL module's own fallbacks are the fixed strings `dev2-disk-0` and `dev4`, which two bootstrap runs in the same namespace would silently share — including the block boot disk. Set them explicitly to attach a restored disk.
+- **Keep credentials in the parameters file.** `--kcl-parameters-file` is mounted into the render container; `--kcl-parameters` values become operation arguments and are echoed verbatim by `dagger --progress plain`.
+- **One-shot, not managed.** There is no reconcile loop and no drift correction — updating or deleting the VM afterwards is `kubectl`'s job (or Crossplane's, once the cluster this VM bootstraps is up). Note also that the KCL module omits KubeVirt's LiveUpdate hotplug fields (`cpu.maxSockets`, `cpu.model`, `memory.guest`, `memory.maxGuest`), which is harmless for a single apply but will show up as `RestartRequired` drift if the VM is later handed to the `harvester-vm` Crossplane Configuration.
+- **The target namespace is created** (idempotently) unless `--skip-namespace` is passed, because `kubectl apply` does not create it and a missing namespace is the most common way a bootstrap run dies on line one.
+
+</details>
 
 <details><summary>BAKE LOCAL</summary>
 

@@ -14,6 +14,12 @@
 // then parses Terraform outputs to generate inventory files for Ansible. It supports
 // multiple inventory types and allows you to specify Ansible playbooks and credentials.
 //
+// BakeHarvester is the same workflow for the bootstrap case, where no control
+// plane exists yet to provision against: it renders a Harvester VM's manifests
+// from the harvester-vm KCL module, applies them straight through the
+// Kubernetes API, waits for the guest agent to report an IP, and runs Ansible
+// against it — no OpenTofu and no Crossplane involved.
+//
 // This module can be invoked from the Dagger CLI or programmatically via the SDK,
 // making it suitable for integrating into CI/CD pipelines, GitOps workflows, or
 // custom operator/controller logic.

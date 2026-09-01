@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestParseVmiAddress(t *testing.T) {
@@ -191,6 +192,147 @@ func TestResolveVmName(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("resolveVmName() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVmiPollFatal(t *testing.T) {
+	// The outputs below are what kubectl actually printed in each situation,
+	// klog noise included — the kubernetes module merges stderr into stdout,
+	// so this is verbatim what a poll sees.
+	tests := []struct {
+		name      string
+		out       string
+		wantFatal bool
+	}{
+		{
+			// The one error worth waiting through.
+			name: "vmi not created yet",
+			out:  `Error from server (NotFound): virtualmachineinstances.kubevirt.io "dev5" not found`,
+		},
+		{
+			name: "a healthy poll is not an error at all",
+			out:  `{"status":{"phase":"Scheduling"}}`,
+		},
+		{
+			name: "cluster unreachable",
+			out: `E0901 13:29:02.747866 3848519 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \"https://127.0.0.1:6443/api?timeout=32s\": dial tcp 127.0.0.1:6443: connect: connection refused"
+The connection to the server 127.0.0.1:6443 was refused - did you specify the right host or port?`,
+			wantFatal: true,
+		},
+		{
+			name:      "cluster has no kubevirt",
+			out:       `error: the server doesn't have a resource type "vmi"`,
+			wantFatal: true,
+		},
+		{
+			name:      "kubeconfig names no such context",
+			out:       `error: context "nope" does not exist`,
+			wantFatal: true,
+		},
+		{
+			name:      "credentials rejected",
+			out:       `error: You must be logged in to the server (Unauthorized)`,
+			wantFatal: true,
+		},
+		{
+			// Fail-open: an unfamiliar message costs a wait, not a false
+			// failure.
+			name: "an unrecognised message stays retryable",
+			out:  `error: some future kubectl phrasing nobody has seen yet`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reason := vmiPollFatal(tt.out)
+			if got := reason != ""; got != tt.wantFatal {
+				t.Errorf("vmiPollFatal() fatal = %v (reason %q), want %v", got, reason, tt.wantFatal)
+			}
+		})
+	}
+}
+
+func TestLastNonEmptyLine(t *testing.T) {
+	tests := []struct {
+		name string
+		out  string
+		want string
+	}{
+		{
+			name: "klog noise first, verdict last",
+			out:  "E0901 memcache.go:265] \"Unhandled Error\"\nThe connection to the server was refused\n\n",
+			want: "The connection to the server was refused",
+		},
+		{
+			name: "single line",
+			out:  `error: the server doesn't have a resource type "vmi"`,
+			want: `error: the server doesn't have a resource type "vmi"`,
+		},
+		{
+			name: "empty",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := lastNonEmptyLine(tt.out); got != tt.want {
+				t.Errorf("lastNonEmptyLine() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVmiAppearDeadline(t *testing.T) {
+	start := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name             string
+		waitTimeout      int
+		vmiAppearTimeout int
+		wantAfter        time.Duration
+	}{
+		{
+			name:             "the shortcut fires well before the overall wait",
+			waitTimeout:      900,
+			vmiAppearTimeout: 120,
+			wantAfter:        120 * time.Second,
+		},
+		{
+			// 0 folds the check back into --wait-timeout.
+			name:             "disabled",
+			waitTimeout:      900,
+			vmiAppearTimeout: 0,
+			wantAfter:        900 * time.Second,
+		},
+		{
+			name:             "negative is disabled too",
+			waitTimeout:      900,
+			vmiAppearTimeout: -1,
+			wantAfter:        900 * time.Second,
+		},
+		{
+			// A shortcut that outlived the wait would never fire, and the
+			// timeout it reports would be a lie.
+			name:             "clamped to the overall wait",
+			waitTimeout:      60,
+			vmiAppearTimeout: 120,
+			wantAfter:        60 * time.Second,
+		},
+		{
+			name:             "equal to the overall wait",
+			waitTimeout:      120,
+			vmiAppearTimeout: 120,
+			wantAfter:        120 * time.Second,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := vmiAppearDeadline(start, tt.waitTimeout, tt.vmiAppearTimeout)
+			if want := start.Add(tt.wantAfter); !got.Equal(want) {
+				t.Errorf("vmiAppearDeadline() = %v, want %v", got, want)
 			}
 		})
 	}

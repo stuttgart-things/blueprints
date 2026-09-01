@@ -144,6 +144,11 @@ func (m *Vm) BakeHarvester(
 	vaultSecretID *dagger.Secret,
 	// +optional
 	vaultURL *dagger.Secret,
+	// Seconds to wait for the VMI object to exist at all before giving up.
+	// See WaitForVmIp; 0 folds the check back into --wait-timeout.
+	// +optional
+	// +default=120
+	vmiAppearTimeout int,
 	// Seconds to wait after the IP appears before Ansible connects. The agent
 	// reports an address slightly before sshd is reliably up.
 	// +optional
@@ -236,7 +241,7 @@ func (m *Vm) BakeHarvester(
 	fmt.Printf("APPLIED HARVESTER MANIFESTS:\n%s\n", applyOut)
 
 	// WAIT FOR THE GUEST AGENT TO REPORT AN IP.
-	ip, err := m.WaitForVmIp(ctx, kubeConfig, vmName, namespace, waitTimeout, waitInterval)
+	ip, err := m.WaitForVmIp(ctx, kubeConfig, vmName, namespace, waitTimeout, waitInterval, vmiAppearTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -508,6 +513,14 @@ func (m *Vm) WaitForVmIp(
 	// +optional
 	// +default=15
 	waitInterval int,
+	// Seconds to wait for the VMI object to exist at all before giving up.
+	// The VMI appears seconds after the VirtualMachine is applied; it is the
+	// IP that takes minutes. Bounding the two separately turns "the VM was
+	// never created" into a fast failure instead of a full --wait-timeout.
+	// 0 disables it, folding the check back into --wait-timeout.
+	// +optional
+	// +default=120
+	vmiAppearTimeout int,
 ) (string, error) {
 
 	if strings.TrimSpace(vmName) == "" {
@@ -528,7 +541,11 @@ func (m *Vm) WaitForVmIp(
 	runMarker := time.Now().UTC().UnixNano()
 	deadline := time.Now().Add(time.Duration(waitTimeout) * time.Second)
 
-	lastPhase := "<no VMI yet>"
+	appearDeadline := vmiAppearDeadline(time.Now(), waitTimeout, vmiAppearTimeout)
+
+	const noVmiYet = "<no VMI yet>"
+	lastPhase := noVmiYet
+	seenVmi := false
 
 	for attempt := 1; ; attempt++ {
 		// `-o json` rather than `-o jsonpath=...`: the kubernetes module
@@ -547,16 +564,42 @@ func (m *Vm) WaitForVmIp(
 			return "", fmt.Errorf("polling VMI %s/%s failed: %w", namespace, vmName, err)
 		}
 
+		// Classify before parsing: a poll that never reached the API parses
+		// exactly like one that found no VMI, and waiting out the former is
+		// pointless.
+		if reason := vmiPollFatal(out); reason != "" {
+			return "", fmt.Errorf(
+				"cannot poll VMI %s/%s: %s — kubectl said: %s",
+				namespace, vmName, reason, lastNonEmptyLine(out))
+		}
+
 		phase, ip := parseVmiAddress(out)
 		if phase != "" {
 			lastPhase = phase
+			seenVmi = true
 		}
 		if ip != "" {
 			fmt.Printf("VM %s/%s IS %s WITH IP %s\n", namespace, vmName, phase, ip)
 			return ip, nil
 		}
 
+		if !seenVmi && time.Now().After(appearDeadline) {
+			return "", fmt.Errorf(
+				"VMI %s/%s did not appear within %ds — the VirtualMachine was applied but "+
+					"KubeVirt never produced an instance for it, so check the VM's own status "+
+					"(`kubectl describe vm -n %s %s`) for a pending PVC, a missing image or an "+
+					"unschedulable node; raise --vmi-appear-timeout if the cluster is just slow",
+				namespace, vmName, vmiAppearTimeout, namespace, vmName)
+		}
+
 		if time.Now().After(deadline) {
+			// Blaming the guest agent only makes sense once there was a guest.
+			if !seenVmi {
+				return "", fmt.Errorf(
+					"timed out after %ds and VMI %s/%s never appeared — the VirtualMachine "+
+						"was applied but KubeVirt never produced an instance for it",
+					waitTimeout, namespace, vmName)
+			}
 			return "", fmt.Errorf(
 				"timed out after %ds waiting for an IP on VMI %s/%s (last observed phase: %s) — "+
 					"the address is reported by the in-guest qemu-guest-agent, so check that "+
@@ -576,6 +619,73 @@ func (m *Vm) WaitForVmIp(
 // exist yet the output is a NotFound message rather than JSON. That is a normal
 // state of the poll, not an error: both return values stay empty and the caller
 // keeps waiting.
+// vmiAppearDeadline returns when to stop waiting for the VMI object to exist
+// at all, given the overall wait it is a shortcut for.
+//
+// A zero or negative vmiAppearTimeout disables the shortcut, and one longer
+// than the overall wait is clamped to it — the check must never outlive the
+// deadline it exists to reach sooner.
+func vmiAppearDeadline(start time.Time, waitTimeout, vmiAppearTimeout int) time.Time {
+	deadline := start.Add(time.Duration(waitTimeout) * time.Second)
+	if vmiAppearTimeout <= 0 || vmiAppearTimeout >= waitTimeout {
+		return deadline
+	}
+	return start.Add(time.Duration(vmiAppearTimeout) * time.Second)
+}
+
+// fatalVmiPollPatterns are the kubectl messages that no amount of waiting will
+// resolve. Everything absent from this list stays retryable — see
+// vmiPollFatal for why the list is deliberately short.
+var fatalVmiPollPatterns = []struct{ match, reason string }{
+	{"was refused - did you specify the right host or port", "the cluster is not reachable"},
+	{"Unable to connect to the server", "the cluster is not reachable"},
+	{"couldn't get current server API group list", "the cluster is not reachable"},
+	{`the server doesn't have a resource type "vmi"`, "the cluster serves no KubeVirt API — check the kubeconfig points at the Harvester cluster"},
+	{"error: context ", "the kubeconfig has no such context"},
+	{"You must be logged in to the server", "the kubeconfig credentials were rejected"},
+	{"Unauthorized", "the kubeconfig credentials were rejected"},
+}
+
+// vmiPollFatal reports whether a poll's output means waiting is hopeless,
+// returning the reason if so and "" if the poll is worth repeating.
+//
+// The kubernetes module wraps every command in `|| true` and merges stderr
+// into stdout, so there is no exit code to go on — the text is all we get.
+// Without this, an unreachable cluster and a not-yet-created VMI look
+// identical (both parse as "no JSON"), and a typo in the kubeconfig costs the
+// full --wait-timeout before it is reported as a guest-agent problem.
+//
+// Deliberately fail-open: anything not listed above stays retryable, so an
+// unfamiliar message costs a wait rather than a false failure.
+func vmiPollFatal(out string) string {
+	// A genuine NotFound is the one error worth waiting through: the
+	// VirtualMachine has been applied and its VMI does not exist yet.
+	if strings.Contains(out, "(NotFound)") {
+		return ""
+	}
+
+	for _, p := range fatalVmiPollPatterns {
+		if strings.Contains(out, p.match) {
+			return p.reason
+		}
+	}
+
+	return ""
+}
+
+// lastNonEmptyLine returns the last non-blank line of kubectl's output, which
+// is where it puts its verdict — the klog noise about retried API discovery
+// comes first and says the same thing less clearly.
+func lastNonEmptyLine(out string) string {
+	lines := strings.Split(out, "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		if line := strings.TrimSpace(lines[i]); line != "" {
+			return line
+		}
+	}
+	return ""
+}
+
 func parseVmiAddress(out string) (phase string, ip string) {
 	// kubectl prints the JSON document with `{` at the start of a line, so
 	// anchor on that rather than on the first brace anywhere — a warning line

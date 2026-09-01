@@ -173,12 +173,12 @@ func (m *Flux) BootstrapInfra(
 			ctx, repository, branchName, msg, gitToken, commitDir, destinationPath,
 		); err != nil {
 			if strings.Contains(err.Error(), "no changes to commit") {
-				report.WriteString(fmt.Sprintf("  commit   no changes (%s already up-to-date)\n", repository))
+				fmt.Fprintf(&report, "  commit   no changes (%s already up-to-date)\n", repository)
 			} else {
 				return "", fmt.Errorf("bootstrap-infra: commit: %w", err)
 			}
 		} else {
-			report.WriteString(fmt.Sprintf("  commit   %s@%s:%s\n", repository, branchName, destinationPath))
+			fmt.Fprintf(&report, "  commit   %s@%s:%s\n", repository, branchName, destinationPath)
 		}
 	}
 
@@ -196,7 +196,7 @@ func (m *Flux) BootstrapInfra(
 				"bootstrap-infra: not Ready within %s: %s", verifyTimeout, strings.Join(pending, ", "))
 		}
 		for _, name := range wanted {
-			report.WriteString(fmt.Sprintf("  ready    %-24s Ready=True\n", name))
+			fmt.Fprintf(&report, "  ready    %-24s Ready=True\n", name)
 		}
 	}
 
@@ -262,7 +262,7 @@ func renderInfraSet(
 		}
 		commitDir = commitDir.WithNewFile(fmt.Sprintf("sources/%s.yaml", src.Name), rendered)
 		renderCt++
-		report.WriteString(fmt.Sprintf("  source   %-24s rendered\n", src.Name))
+		fmt.Fprintf(&report, "  source   %-24s rendered\n", src.Name)
 	}
 
 	// --- components ---------------------------------------------------------
@@ -270,7 +270,7 @@ func renderInfraSet(
 		comp := values.Components[name]
 		if !enabled(comp.Enabled) {
 			skipped = append(skipped, name)
-			report.WriteString(fmt.Sprintf("  skipped  %-24s (enabled: false)\n", name))
+			fmt.Fprintf(&report, "  skipped  %-24s (enabled: false)\n", name)
 			continue
 		}
 
@@ -295,7 +295,7 @@ func renderInfraSet(
 		commitDir = commitDir.WithNewFile(fmt.Sprintf("infra/%s.yaml", name), rendered)
 		wanted = append(wanted, name)
 		renderCt++
-		report.WriteString(fmt.Sprintf("  rendered %-24s template=%s\n", name, template))
+		fmt.Fprintf(&report, "  rendered %-24s template=%s\n", name, template)
 	}
 
 	if renderCt == 0 {

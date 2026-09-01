@@ -116,7 +116,7 @@ func (m *Configuration) RenderFluxKustomization(
 
 	// APPLY TO CLUSTER
 	if applyToCluster {
-		dag.Kubernetes().Kubectl(ctx,
+		if _, err := dag.Kubernetes().Kubectl(ctx,
 			dagger.KubernetesKubectlOpts{
 				Operation:       "apply",
 				SourceFile:      outputDir.File(fileName + "." + fileExtension),
@@ -124,8 +124,9 @@ func (m *Configuration) RenderFluxKustomization(
 				Namespace:       namespace,
 				AdditionalFlags: "",
 			},
-		)
-
+		); err != nil {
+			return nil, fmt.Errorf("failed to apply to cluster: %w", err)
+		}
 	}
 
 	// RETURN OUTPUT DIRECTORY

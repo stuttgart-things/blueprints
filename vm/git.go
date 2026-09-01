@@ -38,6 +38,9 @@ func (m *Vm) BakeFromGit(
 	ctr = ctr.WithDirectory(workDir, workingDir).WithWorkdir(workDir)
 
 	result, err := ctr.WithExec([]string{"ls", "-lta", workDir}).Stdout(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("listing working directory failed: %w", err)
+	}
 	fmt.Println("Working directory contents:", result)
 
 	return workingDir, nil

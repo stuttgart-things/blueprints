@@ -236,14 +236,16 @@ func (m *Configuration) VsphereVm(
 
 	// CREATE PR FOR BRANCH WITH RENDERED TEMPLATES
 	if createPullRequest {
-		dag.Git().CreateGithubPullRequest(
+		if _, err := dag.Git().CreateGithubPullRequest(
 			ctx,
 			repository,
 			branchName,
 			pullRequestTitle,
 			pullRequestBody,
 			token,
-		)
+		); err != nil {
+			return nil, fmt.Errorf("failed to create pull request: %w", err)
+		}
 	}
 
 	return renderedTemplates, nil

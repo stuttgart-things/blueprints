@@ -131,17 +131,17 @@ func (m *GoMicroservice) RunBuildStage(
 	// Generate build report
 	report := strings.Builder{}
 	report.WriteString("=== Build Report ===\n")
-	report.WriteString(fmt.Sprintf("Total Duration: %s\n\n", totalDuration.Round(time.Millisecond)))
+	fmt.Fprintf(&report, "Total Duration: %s\n\n", totalDuration.Round(time.Millisecond))
 
 	if buildBinary {
-		report.WriteString(fmt.Sprintf("Binary Build Duration: %s\n", binaryBuildTime.Round(time.Millisecond)))
+		fmt.Fprintf(&report, "Binary Build Duration: %s\n", binaryBuildTime.Round(time.Millisecond))
 		// Add binary to result
 		result = result.WithDirectory("/", binDir)
 	}
 
 	if koBuild {
-		report.WriteString(fmt.Sprintf("Ko Build Duration: %s\n", koBuildTime.Round(time.Millisecond)))
-		report.WriteString(fmt.Sprintf("Image ID: %s\n", imageID))
+		fmt.Fprintf(&report, "Ko Build Duration: %s\n", koBuildTime.Round(time.Millisecond))
+		fmt.Fprintf(&report, "Image ID: %s\n", imageID)
 	}
 
 	result = result.WithNewFile(

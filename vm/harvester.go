@@ -180,26 +180,18 @@ func (m *Vm) BakeHarvester(
 		return nil, err
 	}
 
-	// The KCL module's own fallbacks for the per-VM resource names are fixed
-	// strings ("dev2-disk-0", "dev4"). Left alone, a second bootstrap run in
-	// the same namespace would silently attach the first VM's block boot disk.
-	// Derive them from vmName instead — but only where the caller has not set
-	// them, so pointing at a restored disk stays possible.
-	derived, err := m.harvesterNameDefaults(ctx, paramsFile, kclParameters, vmName)
-	if err != nil {
-		return nil, err
-	}
-
 	// RENDER THE THREE MANIFESTS.
 	// vmName and namespace are appended last so they win over both the
 	// parameters file (-Y) and any caller-supplied --kcl-parameters (-D is
 	// applied left to right): what we apply is what we then poll for.
+	//
+	// The per-VM resource names are not derived here — RenderHarvesterVm does
+	// it off the vmName forced in just below, so both entry points name
+	// resources identically.
 	renderParameters := appendKclParameters(
 		kclParameters,
-		append(derived,
-			fmt.Sprintf("vmName=%s", vmName),
-			fmt.Sprintf("namespace=%s", namespace),
-		)...,
+		fmt.Sprintf("vmName=%s", vmName),
+		fmt.Sprintf("namespace=%s", namespace),
 	)
 
 	manifests, err := m.RenderHarvesterVm(ctx, ociSource, paramsFile, renderParameters, nil, nil)
@@ -338,6 +330,22 @@ func (m *Vm) RenderHarvesterVm(
 		return nil, err
 	}
 
+	// The per-VM resource names are derived here rather than in the caller so
+	// that a dry run renders exactly what BakeHarvester would apply. Deriving
+	// needs a vmName, which for this entry point can only come out of the
+	// parameters themselves; without one the KCL module's own fallbacks stand.
+	vmName, err := m.resolveVmName(ctx, paramsFile, kclParameters)
+	if err != nil {
+		return nil, err
+	}
+	if vmName != "" {
+		derived, err := m.harvesterNameDefaults(ctx, paramsFile, kclParameters, vmName)
+		if err != nil {
+			return nil, err
+		}
+		kclParameters = appendKclParameters(kclParameters, derived...)
+	}
+
 	// FormatOutput is left unset on purpose: the module defaults it to true,
 	// and dagger treats a false bool in an opts struct as unset anyway.
 	return dag.Kcl().Run(dagger.KclRunOpts{
@@ -345,6 +353,42 @@ func (m *Vm) RenderHarvesterVm(
 		ParametersFile: paramsFile,
 		Parameters:     kclParameters,
 	}), nil
+}
+
+// resolveVmName returns the vmName the render will use: the inline parameter
+// wins over the parameters file, matching how KCL applies -D over -Y. An empty
+// string means neither input names the VM.
+func (m *Vm) resolveVmName(
+	ctx context.Context,
+	paramsFile *dagger.File,
+	inlineParameters string,
+) (string, error) {
+
+	if value, ok := parseStringParams(inlineParameters)["vmName"]; ok {
+		if name := strings.TrimSpace(fmt.Sprintf("%v", value)); name != "" {
+			return name, nil
+		}
+	}
+
+	if paramsFile == nil {
+		return "", nil
+	}
+
+	contents, err := paramsFile.Contents(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to read kcl parameters file: %w", err)
+	}
+
+	fileParams := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(contents), &fileParams); err != nil {
+		return "", fmt.Errorf("failed to parse kcl parameters file: %w", err)
+	}
+
+	if value, ok := fileParams["vmName"]; ok {
+		return strings.TrimSpace(fmt.Sprintf("%v", value)), nil
+	}
+
+	return "", nil
 }
 
 // resolveKclParametersFile returns the parameters file to render with,
@@ -383,6 +427,12 @@ func (m *Vm) resolveKclParametersFile(
 
 // harvesterNameDefaults returns the KCL parameters that name this VM's own
 // resources, for the ones the caller has not set in either input.
+//
+// The KCL module's own fallbacks for these are the fixed strings
+// "dev2-disk-0" and "dev4". Left alone, a second bootstrap run in the same
+// namespace would silently attach the first VM's block boot disk. Deriving
+// them from vmName avoids that — but only where the caller has not set them,
+// so pointing at a restored disk stays possible.
 //
 // The parameters are only inspected for which keys are present — no value from
 // the (possibly decrypted) file is copied into a returned parameter, so nothing

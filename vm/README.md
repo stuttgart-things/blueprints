@@ -319,7 +319,9 @@ dagger call -m vm bake-harvester \
 ```
 
 ```bash
-# DRY RUN: render the three manifests without touching a cluster
+# DRY RUN: render the three manifests without touching a cluster.
+# vmName is what the PVC and Secret names are derived from, so pass it here
+# too — it is the --vm-name that bake-harvester would force in.
 dagger call -m vm render-harvester-vm \
 --kcl-parameters-file ./params.yaml \
 --kcl-parameters "vmName=bootstrap-xplane,namespace=vms" \
@@ -337,7 +339,7 @@ Worth knowing:
 
 - **The IP comes from the guest agent.** `qemu-guest-agent` must be installed and running in the VM, or the wait runs its full `--wait-timeout` (default 900s) against a VM that is perfectly healthy. The module's generated cloud-config installs it; a hand-supplied `userdata` must do the same.
 - **Ansible login.** The `sthings-*` golden images carry the user and password auth that `ANSIBLE_USER` / `ANSIBLE_PASSWORD` expect. A vanilla cloud image disables password auth and trusts only the cloud-init key, so Ansible cannot log in (`Permission denied (publickey)`).
-- **Resource names default to the VM.** `pvcName` and `secretName` are derived as `<vm-name>-disk-0` and `<vm-name>-cloud-init` when they are set in neither `--kcl-parameters-file` nor `--kcl-parameters`. The KCL module's own fallbacks are the fixed strings `dev2-disk-0` and `dev4`, which two bootstrap runs in the same namespace would silently share — including the block boot disk. Set them explicitly to attach a restored disk.
+- **Resource names default to the VM.** `pvcName` and `secretName` are derived as `<vm-name>-disk-0` and `<vm-name>-cloud-init` when they are set in neither `--kcl-parameters-file` nor `--kcl-parameters`. The KCL module's own fallbacks are the fixed strings `dev2-disk-0` and `dev4`, which two bootstrap runs in the same namespace would silently share — including the block boot disk. Set them explicitly to attach a restored disk. `render-harvester-vm` derives them the same way, so a dry run shows the names `bake-harvester` would apply — but it can only do so if the parameters name the VM, since it has no `--vm-name` of its own.
 - **Keep credentials in the parameters file.** `--kcl-parameters-file` is mounted into the render container; `--kcl-parameters` values become operation arguments and are echoed verbatim by `dagger --progress plain`.
 - **One-shot, not managed.** There is no reconcile loop and no drift correction — updating or deleting the VM afterwards is `kubectl`'s job (or Crossplane's, once the cluster this VM bootstraps is up). Note also that the KCL module omits KubeVirt's LiveUpdate hotplug fields (`cpu.maxSockets`, `cpu.model`, `memory.guest`, `memory.maxGuest`), which is harmless for a single apply but will show up as `RestartRequired` drift if the VM is later handed to the `harvester-vm` Crossplane Configuration.
 - **The target namespace is created** (idempotently) unless `--skip-namespace` is passed, because `kubectl apply` does not create it and a missing namespace is the most common way a bootstrap run dies on line one.

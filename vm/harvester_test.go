@@ -148,3 +148,50 @@ func TestHarvesterNameDefaults(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveVmName(t *testing.T) {
+	tests := []struct {
+		name             string
+		inlineParameters string
+		want             string
+	}{
+		{
+			name: "no parameters at all",
+		},
+		{
+			name:             "named inline",
+			inlineParameters: "vmName=bootstrap,namespace=vms",
+			want:             "bootstrap",
+		},
+		{
+			// BakeHarvester forces its own vmName in last; -D is applied left
+			// to right, so the last one is the one KCL renders with.
+			name:             "the last inline vmName wins",
+			inlineParameters: "vmName=caller,namespace=vms,vmName=forced",
+			want:             "forced",
+		},
+		{
+			name:             "a blank vmName is not a name",
+			inlineParameters: "vmName= ,namespace=vms",
+		},
+		{
+			name:             "other parameters only",
+			inlineParameters: "namespace=vms,memory=16Gi",
+		},
+	}
+
+	m := &Vm{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// paramsFile is nil: reading one needs an engine session, and the
+			// file branch is covered by the render call in the module's docs.
+			got, err := m.resolveVmName(context.Background(), nil, tt.inlineParameters)
+			if err != nil {
+				t.Fatalf("resolveVmName() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("resolveVmName() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

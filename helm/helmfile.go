@@ -39,9 +39,9 @@ func (m *Helm) DeployHelmfile(
 	stateValues string,
 ) error {
 
-	return dag.Helm().HelmfileOperation(
+	return dag.HelmUpstream().HelmfileOperation(
 		ctx,
-		dagger.HelmHelmfileOperationOpts{
+		dagger.HelmUpstreamHelmfileOperationOpts{
 			Src:                  src,
 			HelmfileRef:          HelmfileRef,
 			Operation:            operation,

@@ -1,0 +1,145 @@
+---
+name: Test Changed Modules
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Run `dagger functions -m ./<module>` against every module touched in the
+# PR/push, so schema or flag regressions surface before release rather than
+# in whoever calls the published tag next.
+#
+# The regression this exists for: flag names are per-module, not per-function.
+# Two exported functions in one module cannot both declare a parameter of the
+# same name, and the CLI fails at flag registration -- before dispatch -- so a
+# collision breaks every call into the module, not just the colliding one.
+# `dagger functions` is the cheapest command that reaches that failure.
+#
+# Ported from stuttgart-things/dagger. Differences, all forced by this repo:
+#
+#   * `pull_request` filters on the BASE branch, so listing only `main` covers
+#     a PR from any head branch. The source repo also lists feature/* and fix/*
+#     there, which does nothing for a PR and silently skips pushes on branches
+#     named anything else (e.g. claude/*).
+#   * No golangci-lint step: this repo has no .golangci.yml. Add the step from
+#     the source repo once it does.
+#   * No smoke-test step: this repo has no tests/smoke/<module>.sh. tests/
+#     holds fixtures, and the Taskfile's test-<module> targets need secrets.
+#
+# Known to fail: `helm`. The local module declares a dependency on the remote
+# module of the same name (github.com/stuttgart-things/dagger/helm), which the
+# workspace loader rejects -- `dagger functions` on it has been broken since
+# before this workflow existed, on main and at the old engine version alike.
+# Left failing on purpose: excluding it would hide a real breakage.
+
+permissions:
+  contents: read
+
+jobs:
+  detect-modules:
+    name: Detect changed modules
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.detect.outputs.modules }}
+      count: ${{ steps.detect.outputs.count }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Compute changed modules
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            git fetch --no-tags origin "$BASE_REF"
+            base="origin/${BASE_REF}"
+            range="${base}...HEAD"
+          else
+            # Push event. If the "before" SHA is unknown (force push,
+            # first push, etc.) fall back to the last commit only.
+            if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" =~ ^0+$ ]] \
+              || ! git cat-file -e "$BEFORE_SHA^{commit}" 2>/dev/null; then
+              range="HEAD~1...HEAD"
+            else
+              range="${BEFORE_SHA}...${HEAD_SHA}"
+            fi
+          fi
+
+          echo "Diff range: $range"
+          changed_files=$(git diff --name-only "$range" || true)
+          echo "Changed files:"
+          echo "$changed_files"
+
+          modules=()
+          while IFS= read -r path; do
+            [[ -z "$path" ]] && continue
+            top="${path%%/*}"
+            [[ "$top" == "$path" ]] && continue  # top-level file, not a module dir
+            [[ -f "${top}/dagger.json" ]] || continue
+            modules+=("$top")
+          done < <(printf '%s\n' "$changed_files")
+
+          # Dedup, preserve sort order
+          if [[ ${#modules[@]} -gt 0 ]]; then
+            mapfile -t modules < <(printf '%s\n' "${modules[@]}" | sort -u)
+          fi
+
+          count=${#modules[@]}
+          if [[ $count -eq 0 ]]; then
+            json="[]"
+          else
+            json=$(printf '%s\n' "${modules[@]}" | jq -R . | jq -sc .)
+          fi
+
+          echo "Changed modules ($count): $json"
+          echo "modules=$json" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+  test-modules:
+    name: dagger functions (${{ matrix.module }})
+    needs: detect-modules
+    if: needs.detect-modules.outputs.count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+
+      # Must be >= the highest engineVersion in the repo (all modules are on
+      # v0.21.8). A module declaring a newer engine than the CLI hard-fails.
+      - name: Install Dagger CLI
+        env:
+          DAGGER_VERSION: 0.21.8
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL https://dl.dagger.io/dagger/install.sh \
+            | BIN_DIR="$HOME/.local/bin" sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/dagger" version
+
+      - name: dagger functions -m ./${{ matrix.module }}
+        run: dagger functions -m "./${{ matrix.module }}"
+
+      - name: dagger develop -m ./${{ matrix.module }}
+        run: dagger develop -m "./${{ matrix.module }}"

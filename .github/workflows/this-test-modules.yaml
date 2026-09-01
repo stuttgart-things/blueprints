@@ -24,8 +24,6 @@ on:
 #     a PR from any head branch. The source repo also lists feature/* and fix/*
 #     there, which does nothing for a PR and silently skips pushes on branches
 #     named anything else (e.g. claude/*).
-#   * No golangci-lint step: this repo has no .golangci.yml. Add the step from
-#     the source repo once it does.
 #   * No smoke-test step: this repo has no tests/smoke/<module>.sh. tests/
 #     holds fixtures, and the Taskfile's test-<module> targets need secrets.
 #
@@ -143,3 +141,17 @@ jobs:
 
       - name: dagger develop -m ./${{ matrix.module }}
         run: dagger develop -m "./${{ matrix.module }}"
+
+      # Runs after `dagger develop` on purpose: the generated client under
+      # internal/dagger is gitignored, so before it exists the module does not
+      # type-check and every linter drowns in import errors.
+      #
+      # only-new-issues is deliberately NOT set. The backlog was emptied when
+      # this step was added -- all 13 modules lint clean -- so there is nothing
+      # to grandfather in, and a clean gate is worth more than a lenient one.
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+          working-directory: ${{ matrix.module }}
+          args: --config=${{ github.workspace }}/.golangci.yml

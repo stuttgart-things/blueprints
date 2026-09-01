@@ -35,8 +35,8 @@ func (m *KubernetesDeployment) DeployKcl(
 	// Render KCL manifests
 	rendered := dag.Kcl().Run(dagger.KclRunOpts{
 		Source:         source,
-		OciSource:     ociSource,
-		Parameters:    parameters,
+		OciSource:      ociSource,
+		Parameters:     parameters,
 		ParametersFile: parametersFile,
 	})
 

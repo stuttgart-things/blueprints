@@ -1,3 +1,17 @@
+## [3.1.1](https://github.com/stuttgart-things/blueprints/compare/v3.1.0...v3.1.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* lint every changed module, and propagate three discarded errors ([#195](https://github.com/stuttgart-things/blueprints/issues/195)) ([94cef79](https://github.com/stuttgart-things/blueprints/commit/94cef795a1f8eb70832da9a317595cd85595d18d))
+
+# [3.1.0](https://github.com/stuttgart-things/blueprints/compare/v3.0.1...v3.1.0) (2026-09-01)
+
+
+### Features
+
+* unify the dagger engine version at v0.21.8 and test changed modules on every PR ([#194](https://github.com/stuttgart-things/blueprints/issues/194)) ([4be9355](https://github.com/stuttgart-things/blueprints/commit/4be9355ca5456087507840767ed631b027c60dd9))
+
 ## [3.0.1](https://github.com/stuttgart-things/blueprints/compare/v3.0.0...v3.0.1) (2026-08-28)
 
 

@@ -162,11 +162,12 @@ func parseVariables(variables string, data map[string]interface{}) {
 			start := i
 			i++ // skip opening bracket
 			for i < len(variables) && bracket > 0 {
-				if variables[i] == '[' {
+				switch variables[i] {
+				case '[':
 					bracket++
-				} else if variables[i] == ']' {
+				case ']':
 					bracket--
-				} else if variables[i] == '"' {
+				case '"':
 					// Skip quoted strings to avoid counting brackets inside strings
 					i++
 					for i < len(variables) && variables[i] != '"' {
@@ -187,11 +188,12 @@ func parseVariables(variables string, data map[string]interface{}) {
 			start := i
 			i++ // skip opening brace
 			for i < len(variables) && brace > 0 {
-				if variables[i] == '{' {
+				switch variables[i] {
+				case '{':
 					brace++
-				} else if variables[i] == '}' {
+				case '}':
 					brace--
-				} else if variables[i] == '"' {
+				case '"':
 					// Skip quoted strings
 					i++
 					for i < len(variables) && variables[i] != '"' {

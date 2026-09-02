@@ -249,13 +249,22 @@ enableCloudConfig: true
 enableVm: true
 
 # Root disk. pvcName is optional — it defaults to "<vm-name>-disk-0".
-# NOTE: the module assembles the storage class as
-# "<storageClass>-<imageId>", so pass "longhorn" — not "harvester-longhorn".
+#
+# Storage class: set storageClassName and the module uses it verbatim. Harvester
+# generates one StorageClass per VM image, named "lh-<uuid>" — look yours up:
+#
+#   kubectl get virtualmachineimages -n default \
+#     -o custom-columns='NAME:.metadata.name,SC:.status.storageClassName'
+#
+# Leave storageClassName unset and the module falls back to composing
+# "<storageClass>-<imageId>", which no current Harvester can satisfy. That fails
+# quietly: the PVC stays Pending, the VirtualMachine applies fine, KubeVirt never
+# instantiates it, and BakeHarvester just reports the VMI as never appearing.
 pvcName: bootstrap-disk-0
 imageNamespace: default
-imageId: image-t9w92
+imageId: sthings-u26
 storage: 60Gi
-storageClass: longhorn
+storageClassName: lh-68e4c918-0059-48bf-acaf-0de0ebe1eb65
 volumeMode: Block
 # ReadWriteOnce for a single-VM boot disk: RWX on a Block boot volume invites a
 # second instance attaching the same disk.

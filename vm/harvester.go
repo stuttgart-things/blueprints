@@ -18,7 +18,7 @@ const (
 	// the cloud-init Secret and the KubeVirt VirtualMachine. Rendering all
 	// three from one module is what makes the Crossplane detour unnecessary
 	// for bootstrap.
-	defaultHarvesterOciSource = "ghcr.io/stuttgart-things/harvester-vm:0.2.0"
+	defaultHarvesterOciSource = "ghcr.io/stuttgart-things/harvester-vm:0.3.0"
 
 	// harvesterManifestFile is the rendered manifest inside the returned
 	// directory. Kept as an artefact so a failed apply can be inspected and
@@ -86,7 +86,7 @@ func (m *Vm) BakeHarvester(
 	namespace string,
 	// OCI reference of the harvester-vm KCL module.
 	// +optional
-	// +default="ghcr.io/stuttgart-things/harvester-vm:0.2.0"
+	// +default="ghcr.io/stuttgart-things/harvester-vm:0.3.0"
 	ociSource string,
 	// KCL parameters as a YAML file (imageId, storageClass, storage, cpuCores,
 	// memory, networkName, cloudInitSshKey, cloudInitPassword, …).
@@ -314,7 +314,7 @@ func (m *Vm) BakeHarvester(
 func (m *Vm) RenderHarvesterVm(
 	ctx context.Context,
 	// +optional
-	// +default="ghcr.io/stuttgart-things/harvester-vm:0.2.0"
+	// +default="ghcr.io/stuttgart-things/harvester-vm:0.3.0"
 	ociSource string,
 	// +optional
 	kclParametersFile *dagger.File,

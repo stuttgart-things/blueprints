@@ -1,3 +1,10 @@
+## [3.2.1](https://github.com/stuttgart-things/blueprints/compare/v3.2.0...v3.2.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **vm:** default to harvester-vm 0.3.0 for a settable storage class ([#198](https://github.com/stuttgart-things/blueprints/issues/198)) ([748556f](https://github.com/stuttgart-things/blueprints/commit/748556fe60b064581f430355d23738b7ca923501)), closes [stuttgart-things/kcl#228](https://github.com/stuttgart-things/kcl/issues/228) [#197](https://github.com/stuttgart-things/blueprints/issues/197)
+
 # [3.2.0](https://github.com/stuttgart-things/blueprints/compare/v3.1.1...v3.2.0) (2026-09-01)
 
 

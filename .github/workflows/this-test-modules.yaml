@@ -128,9 +128,9 @@ jobs:
       # vX, but you have vY" -- and so does a module whose *dependency*
       # declares one, which is how this bit is usually discovered.
       #
-      # The repo is currently split: the six modules consuming dagger/kcl are
-      # on v0.21.9, because kcl v0.129.5 requires it; the other seven are
-      # still on v0.21.8. The CLI tracks the highest, not the majority.
+      # All 13 modules are on v0.21.9. Keep this in step when they move --
+      # the engineVersion agreement check does not run in this repo, so
+      # nothing else will tell you.
       - name: Install Dagger CLI
         env:
           DAGGER_VERSION: 0.21.9

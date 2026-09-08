@@ -1,6 +1,6 @@
 {
   "name": "argocd",
-  "engineVersion": "v0.21.8",
+  "engineVersion": "v0.21.9",
   "sdk": {
     "source": "go"
   },
@@ -12,8 +12,8 @@
     },
     {
       "name": "kcl",
-      "source": "github.com/stuttgart-things/dagger/kcl@v0.112.1",
-      "pin": "25d1dd4fc3c17d224462258b617ebcdee5ed1492"
+      "source": "github.com/stuttgart-things/dagger/kcl@v0.129.5",
+      "pin": "d9d7e212a9945017d970214534055352462cbe2b"
     },
     {
       "name": "kubernetes",

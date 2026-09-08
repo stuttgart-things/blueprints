@@ -139,7 +139,7 @@ func (m *Flux) Bootstrap(
 	ctx context.Context,
 	// OCI KCL module source for rendering Flux instance config
 	// +optional
-	// +default="ghcr.io/stuttgart-things/kcl-flux-instance:0.3.3"
+	// +default="ghcr.io/stuttgart-things/kcl-flux-instance?tag=0.3.3"
 	ociSource string,
 	// Additional comma-separated key=value pairs for KCL parameters
 	// +optional

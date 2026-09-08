@@ -70,7 +70,7 @@ func (m *Flux) RenderInfra(
 	valuesFile *dagger.File,
 	// OCI KCL module rendering the Kustomizations
 	// +optional
-	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations:0.3.34"
+	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations?tag=0.3.34"
 	ociSource string,
 	// KCL entrypoint file name
 	// +optional
@@ -111,7 +111,7 @@ func (m *Flux) BootstrapInfra(
 	valuesFile *dagger.File,
 	// OCI KCL module rendering the Kustomizations
 	// +optional
-	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations:0.3.34"
+	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations?tag=0.3.34"
 	ociSource string,
 	// KCL entrypoint file name
 	// +optional

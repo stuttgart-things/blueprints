@@ -14,7 +14,7 @@ import (
 func (m *CrossplaneConfiguration) AddCluster(
 	ctx context.Context,
 	// +optional
-	// +default="ghcr.io/stuttgart-things/xplane-cluster-resources:0.2.1"
+	// +default="ghcr.io/stuttgart-things/xplane-cluster-resources?tag=0.2.1"
 	module string,
 	// +optional
 	// +default="crossplane-system"

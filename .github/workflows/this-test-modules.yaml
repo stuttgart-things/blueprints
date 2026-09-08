@@ -123,11 +123,17 @@ jobs:
           go-version-file: ${{ matrix.module }}/go.mod
           cache-dependency-path: ${{ matrix.module }}/go.sum
 
-      # Must be >= the highest engineVersion in the repo (all modules are on
-      # v0.21.8). A module declaring a newer engine than the CLI hard-fails.
+      # Must be >= the highest engineVersion in the repo. A module declaring a
+      # newer engine than the CLI hard-fails with "module requires dagger
+      # vX, but you have vY" -- and so does a module whose *dependency*
+      # declares one, which is how this bit is usually discovered.
+      #
+      # The repo is currently split: the six modules consuming dagger/kcl are
+      # on v0.21.9, because kcl v0.129.5 requires it; the other seven are
+      # still on v0.21.8. The CLI tracks the highest, not the majority.
       - name: Install Dagger CLI
         env:
-          DAGGER_VERSION: 0.21.8
+          DAGGER_VERSION: 0.21.9
         run: |
           set -euo pipefail
           mkdir -p "$HOME/.local/bin"

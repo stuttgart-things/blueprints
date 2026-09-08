@@ -1,3 +1,10 @@
+## [3.2.2](https://github.com/stuttgart-things/blueprints/compare/v3.2.1...v3.2.2) (2026-09-08)
+
+
+### Bug Fixes
+
+* pin KCL module refs with ?tag= instead of an inline :version ([#200](https://github.com/stuttgart-things/blueprints/issues/200)) ([df7758a](https://github.com/stuttgart-things/blueprints/commit/df7758a6960851296e0010d536d7fd3f23e5e742)), closes [stuttgart-things/kcl#231](https://github.com/stuttgart-things/kcl/issues/231)
+
 ## [3.2.1](https://github.com/stuttgart-things/blueprints/compare/v3.2.0...v3.2.1) (2026-09-02)
 
 

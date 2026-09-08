@@ -14,7 +14,7 @@ func (m *Flux) RenderConfig(
 	ctx context.Context,
 	// OCI KCL module source
 	// +optional
-	// +default="ghcr.io/stuttgart-things/kcl-flux-instance:0.3.3"
+	// +default="ghcr.io/stuttgart-things/kcl-flux-instance?tag=0.3.3"
 	ociSource string,
 	// Comma-separated key=value pairs for KCL parameters
 	configParameters string,

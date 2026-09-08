@@ -37,7 +37,7 @@ dagger call -m argocd render-clusterbook-cluster-config \
   --name=philly \
   --network-key=10.31.101 \
   --cluster-labels='{"env":"lab","role":"mgmt","auto-project":"true"}' \
-  --oci-source=ghcr.io/stuttgart-things/clusterbook-cluster-gen:0.1.0 \
+  --oci-source='ghcr.io/stuttgart-things/clusterbook-cluster-gen?tag=0.1.0' \
   export --path=/tmp/argocd/philly.yaml
 ```
 
@@ -582,7 +582,7 @@ for that key.
 | `--name` | yes¹ | — | Cluster name (KCL `-D name`). |
 | `--network-key` | yes¹ | — | /24 network key, e.g. `10.31.101`. |
 | `--values-file` | no | _(none)_ | YAML/JSON file passed as KCL `--parametersFile`. CLI flags override matching keys. |
-| `--oci-source` | no | `ghcr.io/stuttgart-things/clusterbook-cluster-gen:0.1.0` | OCI ref of the KCL module. |
+| `--oci-source` | no | `ghcr.io/stuttgart-things/clusterbook-cluster-gen?tag=0.1.0` | OCI ref of the KCL module. |
 | `--cluster-name` | no | falls back to `--name` | Argo CD-side cluster name. |
 | `--create-dns` | no | `true` | Create a DNS record for the cluster. |
 | `--preserve-kubeconfig-server` | no | `true` | Keep existing `server` field from the kubeconfig Secret. |

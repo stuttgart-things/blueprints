@@ -25,6 +25,12 @@ type ProfileConfig struct {
 	ExportTargetNames       []string `yaml:"exportTargetNames"`
 	SopsFileExtension       string   `yaml:"sopsFileExtension"`
 	ExportDestinationPath   string   `yaml:"exportDestinationPath"`
+
+	// Names that must be set in --env-secrets (e.g. SOPS_AGE_KEY). Checked
+	// before Terraform runs, so a missing secret fails the run before a VM is
+	// created, not after. Also the list a pipeline reads to decide which
+	// secrets to hand to this profile.
+	AnsibleEnv []string `yaml:"ansibleEnv"`
 }
 
 func (m *Vm) BakeLocalByProfile(
@@ -105,6 +111,15 @@ func (m *Vm) BakeLocalByProfile(
 	exportPaths := strings.Join(config.ExportPaths, ",")
 	exportTargetNames := strings.Join(config.ExportTargetNames, ",")
 
+	// FAIL FAST ON ENV THE PLAYBOOKS NEED BUT WERE NOT GIVEN. Only on apply:
+	// every other operation returns before Ansible, and a destroy must not
+	// need the playbooks' secrets.
+	if config.Operation == "apply" {
+		if err := checkAnsibleEnv(ctx, config.AnsibleEnv, envSecrets); err != nil {
+			return nil, err
+		}
+	}
+
 	// GET FILE REFERENCES FROM CONFIG
 	var encryptedFile *dagger.File
 	if config.EncryptedFile != "" {
@@ -167,4 +182,66 @@ func (m *Vm) BakeLocalByProfile(
 		exportTargetNames,
 		config.ExportDestinationPath,
 	)
+}
+
+// checkAnsibleEnv verifies that every name in required has a non-empty value
+// in the dotenv-formatted envSecrets.
+func checkAnsibleEnv(ctx context.Context, required []string, envSecrets *dagger.Secret) error {
+	if len(required) == 0 {
+		return nil
+	}
+
+	present := map[string]bool{}
+	if envSecrets != nil {
+		content, err := envSecrets.Plaintext(ctx)
+		if err != nil {
+			return fmt.Errorf("reading env secrets failed: %w", err)
+		}
+		present, err = parseDotenvNames(content)
+		if err != nil {
+			return err
+		}
+	}
+
+	var missing []string
+	for _, name := range required {
+		name = strings.TrimSpace(name)
+		if name != "" && !present[name] {
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("profile requires ansibleEnv %s, not set in --env-secrets", strings.Join(missing, ", "))
+	}
+	return nil
+}
+
+// parseDotenvNames returns, for each NAME=value line, whether value is
+// non-empty. It parses exactly like the consumer (dagger/ansible execute.go):
+// the line is trimmed, blank and # lines are skipped, it is cut at the first
+// "=", and only the name is trimmed -- no "export " prefix, no quote removal.
+// Lines that dotenv tooling would accept but the consumer would take
+// literally are rejected, so they fail here and not after Terraform. Errors
+// name line numbers only, never values.
+func parseDotenvNames(content string) (map[string]bool, error) {
+	names := map[string]bool{}
+	for i, line := range strings.Split(content, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		name, value, found := strings.Cut(line, "=")
+		name = strings.TrimSpace(name)
+		if !found || name == "" {
+			return nil, fmt.Errorf("env secrets line %d is not NAME=value", i+1)
+		}
+		if strings.ContainsAny(name, " \t") {
+			return nil, fmt.Errorf("env secrets line %d: name contains whitespace (an \"export \" prefix is not supported)", i+1)
+		}
+		if len(value) >= 2 && (value[0] == '"' || value[0] == '\'') && value[len(value)-1] == value[0] {
+			return nil, fmt.Errorf("env secrets line %d (%s): quoted value, quotes would be passed literally", i+1, name)
+		}
+		names[name] = value != ""
+	}
+	return names, nil
 }

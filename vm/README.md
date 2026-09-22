@@ -597,6 +597,59 @@ export --path ./
 ```
 
 ```bash
+# PROFILE w/ VARS FILE + REQUIRED ENV (machinery VM)
+# ansibleParameters are flat key=value pairs: a list or dict given there
+# reaches Ansible as a string. For nested vars, put a YAML file next to the
+# terraform files (--src is mounted at /src) and point path_to_vars_file at
+# it, without the .yaml suffix -- every sthings.container play loads it with
+# include_vars in its pre_tasks, which wins over the play's own vars.
+#
+# Name the playbooks directly, not via a wrapper with `when:` gates on
+# import_playbook: those are evaluated before include_vars.
+#
+# ansibleEnv names what --env-secrets (dotenv) must contain, for plays using
+# lookup('env', ...) on the controller. Checked before Terraform runs, and
+# only on apply.
+#
+# ansibleRequirementsFile (like encryptedFile) is relative to --src. Pin it:
+# the default requirements data can lag behind the collection releases.
+
+cat <<EOF >> vm-machinery.yaml
+---
+operation: apply
+ansiblePlaybooks:
+  - "sthings.baseos.setup"
+  - "sthings.container.kind"
+  - "sthings.container.kind_xplane_cluster"
+  - "sthings.container.kind_machinery_profile"
+ansibleParameters:
+  - "path_to_vars_file=/src/machinery-vars"
+ansibleEnv: [SOPS_AGE_KEY, SOPS_GIT_TOKEN]
+ansibleInventoryType: default
+ansibleWaitTimeout: 60
+ansibleRequirementsFile: ./requirements.yaml
+encryptedFile: ./terraform.tfvars.enc.json
+EOF
+
+# requirements.yaml: the full pin list, with sthings-container at
+# 26.921.1352 or newer (older ones carry stale machinery pins)
+sed -E 's/sthings-container-[0-9.]+[0-9]/sthings-container-26.921.1352/g' \
+  <path-to-blueprints>/tests/vm/requirements.yaml > requirements.yaml
+```
+
+```bash
+export ANSIBLE_ENV="$(printf 'SOPS_AGE_KEY=%s\nSOPS_GIT_TOKEN=%s\n' "$SOPS_AGE_KEY" "$SOPS_GIT_TOKEN")"
+
+dagger call -m vm bake-local-by-profile \
+--src ./ \
+--profile vm-machinery.yaml \
+--sops-key env:SOPS_AGE_KEY \
+--env-secrets env:ANSIBLE_ENV \
+--progress plain -vv \
+export --path ./
+```
+
+```bash
 # PROFILE w/ MULTIPLE EXPORTS + SOPS CONFIG FILE
 
 cat <<EOF >> vm-multi-export.yaml

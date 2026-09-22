@@ -25,6 +25,12 @@ type ProfileConfig struct {
 	ExportTargetNames       []string `yaml:"exportTargetNames"`
 	SopsFileExtension       string   `yaml:"sopsFileExtension"`
 	ExportDestinationPath   string   `yaml:"exportDestinationPath"`
+
+	// Names that must be set in --env-secrets (e.g. SOPS_AGE_KEY). Checked
+	// before Terraform runs, so a missing secret fails the run before a VM is
+	// created, not after. Also the list a pipeline reads to decide which
+	// secrets to hand to this profile.
+	AnsibleEnv []string `yaml:"ansibleEnv"`
 }
 
 func (m *Vm) BakeLocalByProfile(
@@ -105,6 +111,15 @@ func (m *Vm) BakeLocalByProfile(
 	exportPaths := strings.Join(config.ExportPaths, ",")
 	exportTargetNames := strings.Join(config.ExportTargetNames, ",")
 
+	// FAIL FAST ON ENV THE PLAYBOOKS NEED BUT WERE NOT GIVEN. Only on apply:
+	// every other operation returns before Ansible, and a destroy must not
+	// need the playbooks' secrets.
+	if config.Operation == "apply" {
+		if err := checkAnsibleEnv(ctx, config.AnsibleEnv, envSecrets); err != nil {
+			return nil, err
+		}
+	}
+
 	// GET FILE REFERENCES FROM CONFIG
 	var encryptedFile *dagger.File
 	if config.EncryptedFile != "" {
@@ -167,4 +182,53 @@ func (m *Vm) BakeLocalByProfile(
 		exportTargetNames,
 		config.ExportDestinationPath,
 	)
+}
+
+// checkAnsibleEnv verifies that every name in required has a non-empty value
+// in the dotenv-formatted envSecrets.
+func checkAnsibleEnv(ctx context.Context, required []string, envSecrets *dagger.Secret) error {
+	if len(required) == 0 {
+		return nil
+	}
+
+	present := map[string]bool{}
+	if envSecrets != nil {
+		content, err := envSecrets.Plaintext(ctx)
+		if err != nil {
+			return fmt.Errorf("reading env secrets failed: %w", err)
+		}
+		present = parseDotenvNames(content)
+	}
+
+	var missing []string
+	for _, name := range required {
+		name = strings.TrimSpace(name)
+		if name != "" && !present[name] {
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("profile requires ansibleEnv %s, not set in --env-secrets", strings.Join(missing, ", "))
+	}
+	return nil
+}
+
+// parseDotenvNames returns, for each NAME=value line, whether value is
+// non-empty. Blank lines, comments and an "export " prefix are tolerated.
+func parseDotenvNames(content string) map[string]bool {
+	names := map[string]bool{}
+	for _, line := range strings.Split(content, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		line = strings.TrimPrefix(line, "export ")
+		name, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		value = strings.Trim(strings.TrimSpace(value), `"'`)
+		names[strings.TrimSpace(name)] = value != ""
+	}
+	return names
 }

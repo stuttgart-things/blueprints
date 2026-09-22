@@ -1,3 +1,10 @@
+# [3.3.0](https://github.com/stuttgart-things/blueprints/compare/v3.2.2...v3.3.0) (2026-09-22)
+
+
+### Features
+
+* **vm:** ansibleEnv in the profile, checked before Terraform runs ([#203](https://github.com/stuttgart-things/blueprints/issues/203)) ([1e30974](https://github.com/stuttgart-things/blueprints/commit/1e3097491e2e376277d2670146777fc885e517d2)), closes [stuttgart-things/stuttgart-things#3114](https://github.com/stuttgart-things/stuttgart-things/issues/3114)
+
 ## [3.2.2](https://github.com/stuttgart-things/blueprints/compare/v3.2.1...v3.2.2) (2026-09-08)
 
 

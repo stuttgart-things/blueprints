@@ -197,7 +197,10 @@ func checkAnsibleEnv(ctx context.Context, required []string, envSecrets *dagger.
 		if err != nil {
 			return fmt.Errorf("reading env secrets failed: %w", err)
 		}
-		present = parseDotenvNames(content)
+		present, err = parseDotenvNames(content)
+		if err != nil {
+			return err
+		}
 	}
 
 	var missing []string
@@ -214,21 +217,31 @@ func checkAnsibleEnv(ctx context.Context, required []string, envSecrets *dagger.
 }
 
 // parseDotenvNames returns, for each NAME=value line, whether value is
-// non-empty. Blank lines, comments and an "export " prefix are tolerated.
-func parseDotenvNames(content string) map[string]bool {
+// non-empty. It parses exactly like the consumer (dagger/ansible execute.go):
+// the line is trimmed, blank and # lines are skipped, it is cut at the first
+// "=", and only the name is trimmed -- no "export " prefix, no quote removal.
+// Lines that dotenv tooling would accept but the consumer would take
+// literally are rejected, so they fail here and not after Terraform. Errors
+// name line numbers only, never values.
+func parseDotenvNames(content string) (map[string]bool, error) {
 	names := map[string]bool{}
-	for _, line := range strings.Split(content, "\n") {
+	for i, line := range strings.Split(content, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		line = strings.TrimPrefix(line, "export ")
-		name, value, ok := strings.Cut(line, "=")
-		if !ok {
-			continue
+		name, value, found := strings.Cut(line, "=")
+		name = strings.TrimSpace(name)
+		if !found || name == "" {
+			return nil, fmt.Errorf("env secrets line %d is not NAME=value", i+1)
 		}
-		value = strings.Trim(strings.TrimSpace(value), `"'`)
-		names[strings.TrimSpace(name)] = value != ""
+		if strings.ContainsAny(name, " \t") {
+			return nil, fmt.Errorf("env secrets line %d: name contains whitespace (an \"export \" prefix is not supported)", i+1)
+		}
+		if len(value) >= 2 && (value[0] == '"' || value[0] == '\'') && value[len(value)-1] == value[0] {
+			return nil, fmt.Errorf("env secrets line %d (%s): quoted value, quotes would be passed literally", i+1, name)
+		}
+		names[name] = value != ""
 	}
-	return names
+	return names, nil
 }

@@ -1,24 +1,34 @@
 #!/bin/sh
-# Starts a Vault dev server and seeds the fixtures the cluster-secrets tests
-# read. Used by the Dagger test module (Vault as a service) and for running
-# the Go integration tests against a local container:
+# Seeds the fixtures the cluster-secrets tests read into a Vault dev server at
+# $VAULT_ADDR (root token in $VAULT_TOKEN). Needs the vault CLI, so run it in
+# the hashicorp/vault image. TEAMS_WEBHOOK overrides the KV v2 fixture, which
+# lets a test prove a value is read live rather than from a cache.
 #
-#   docker run -d --name vault-test -p 8200:8200 -e SKIP_SETCAP=1 \
-#     -v "$PWD/secrets/tests/vault-seed.sh:/seed.sh:ro" \
-#     --entrypoint sh hashicorp/vault:1.20 /seed.sh
+# Dagger: the test module starts `vault server -dev` as a service and runs
+# this script in a second container against it.
+#
+# Local, for the Go integration tests:
+#
+#   docker run -d --rm --name vault-test -p 8200:8200 \
+#     -e VAULT_DEV_ROOT_TOKEN_ID=root -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 \
+#     -e SKIP_SETCAP=1 hashicorp/vault:1.20 server -dev
+#   docker exec -i -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=root \
+#     vault-test sh < secrets/tests/vault-seed.sh
 #   CLUSTERSECRETS_VAULT_ADDR=http://127.0.0.1:8200 go test ./secrets/clustersecrets/
-#
-# The last write is secret/ready; poll for it before using the server.
 set -eu
+: "${VAULT_ADDR:?VAULT_ADDR is not set}"
+: "${VAULT_TOKEN:?VAULT_TOKEN is not set}"
+export VAULT_ADDR VAULT_TOKEN
 
-vault server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200 &
-server=$!
-
-export VAULT_ADDR=http://127.0.0.1:8200 VAULT_TOKEN=root
-until vault status >/dev/null 2>&1; do sleep 0.2; done
+i=0
+until vault status >/dev/null 2>&1; do
+  i=$((i + 1))
+  [ "$i" -lt 150 ] || { echo "vault at $VAULT_ADDR not reachable" >&2; exit 1; }
+  sleep 0.2
+done
 
 # KV v2 at secret/ (dev default)
-vault kv put secret/edge/teams webhook=https://example.invalid/hook >/dev/null
+vault kv put secret/edge/teams webhook="${TEAMS_WEBHOOK:-https://example.invalid/hook}" >/dev/null
 vault kv put secret/edge/minio secretKey=minio-from-vault >/dev/null
 
 # KV v1
@@ -34,6 +44,4 @@ vault write auth/approle/role/cluster-secrets token_policies=cluster-secrets-rea
 vault write auth/approle/role/cluster-secrets/role-id role_id=test-role >/dev/null
 vault write auth/approle/role/cluster-secrets/custom-secret-id secret_id=test-secret >/dev/null
 
-vault kv put secret/ready ok=true >/dev/null
 echo "vault seeded"
-wait "$server"

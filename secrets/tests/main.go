@@ -1,6 +1,8 @@
 // Tests for the secrets module's GenerateClusterSecrets, run end to end
-// against a real Vault started as a Dagger service (seeded by
-// vault-seed.sh). Needs nothing from the host: every key is generated here.
+// against a real Vault: a `vault server -dev` Dagger service, seeded by
+// vault-seed.sh from a second container (pattern from
+// github.com/puzzle/dagger-module-vault-kv/tests). Needs nothing from the
+// host: every key is generated here, every Vault value is unique per run.
 //
 //	dagger call -m secrets/tests all --progress plain
 package main
@@ -46,6 +48,10 @@ type fixture struct {
 	testdata             *dagger.Directory
 	refs                 *dagger.Directory
 	vault                *dagger.Service
+	// vaultURL is the service endpoint, used like a real --vault-addr
+	vaultURL string
+	// webhook is the per-run value seeded at secret/edge/teams
+	webhook string
 }
 
 // All runs every scenario and returns one PASS line per scenario.
@@ -56,9 +62,12 @@ func (t *Tests) All(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("setup: %w", err)
 	}
+	defer f.vault.Stop(ctx)
 
+	// First run: Vault by address + AppRole, the way CI talks to a real
+	// Vault. Later runs bind the service and use the root token.
 	first := f.generate("edge-01.yaml", dagger.SecretsGenerateClusterSecretsOpts{
-		VaultService:  f.vault,
+		VaultAddr:     f.vaultURL,
 		VaultRoleID:   dag.SetSecret("vault-role-id", "test-role"),
 		VaultSecretID: dag.SetSecret("vault-secret-id", "test-secret"),
 	})
@@ -71,6 +80,8 @@ func (t *Tests) All(ctx context.Context) (string, error) {
 		{"key file is for master+escrow only, secrets for cluster+escrow", func() error { return f.checkRecipients(ctx, first) }},
 		{"re-run with existing output changes no file", func() error { return f.checkRerun(ctx, first) }},
 		{"rotate regenerates exactly the named value", func() error { return f.checkRotate(ctx, first) }},
+		// changes Vault, so it runs after every scenario comparing against first
+		{"changed vault value is picked up on re-run", func() error { return f.checkVaultChange(ctx, first) }},
 		{"cluster-age-key returns the key recorded in age.pub", func() error { return f.checkClusterAgeKey(ctx, first) }},
 		{"edge cluster without vault works, with its own key", func() error { return f.checkNoVault(ctx, first) }},
 		{"vault ref without vault connection fails clearly", func() error { return f.checkVaultMissing(ctx) }},
@@ -87,16 +98,27 @@ func (t *Tests) All(ctx context.Context) (string, error) {
 	return strings.Join(report, "\n"), nil
 }
 
-// VaultService is the seeded Vault the tests use, exposed for poking at it:
-//
-//	dagger call -m secrets/tests vault-service up --ports 8200:8200
+// VaultService is the Vault dev server the tests use (root token "root"),
+// unseeded. To poke at it: `dagger call -m secrets/tests vault-service up
+// --ports 8200:8200`, then seed it with vault-seed.sh.
 func (t *Tests) VaultService() *dagger.Service {
 	return dag.Container().
 		From(vaultImage).
-		WithEnvVariable("SKIP_SETCAP", "1").
-		WithNewFile("/seed.sh", vaultSeed).
+		WithEnvVariable("VAULT_DEV_ROOT_TOKEN_ID", "root").
+		WithEnvVariable("VAULT_DEV_LISTEN_ADDRESS", "0.0.0.0:8200").
+		WithDefaultArgs([]string{"vault", "server", "-dev"}).
 		WithExposedPort(8200).
-		AsService(dagger.ContainerAsServiceOpts{Args: []string{"sh", "/seed.sh"}})
+		AsService()
+}
+
+// vaultCLI is a container with the vault CLI pointed at the test server.
+func (f *fixture) vaultCLI() *dagger.Container {
+	return dag.Container().
+		From(vaultImage).
+		WithServiceBinding("vault", f.vault).
+		WithEnvVariable("VAULT_ADDR", "http://vault:8200").
+		WithEnvVariable("VAULT_TOKEN", "root").
+		WithEnvVariable("CACHEBUST", nonce())
 }
 
 func setup(ctx context.Context) (*fixture, error) {
@@ -119,26 +141,22 @@ func setup(ctx context.Context) (*fixture, error) {
 	}
 	f.refs = dag.Directory().WithNewFile("secrets/minio.enc.yaml", central)
 
-	// Start Vault once and wait for the seed's last write; every later
-	// binding of the same service reuses this instance.
+	// Start Vault explicitly so the seeded instance stays up for every
+	// later binding, then seed it from a second container.
 	if f.vault, err = (&Tests{}).VaultService().Start(ctx); err != nil {
 		return nil, fmt.Errorf("start vault: %w", err)
 	}
-	_, err = dag.Container().
-		From(toolImage).
-		WithExec([]string{"apk", "add", "--no-cache", "curl"}).
-		WithServiceBinding("vault", f.vault).
-		WithEnvVariable("CACHEBUST", nonce()).
-		WithExec([]string{"sh", "-c", `
-for i in $(seq 1 60); do
-  curl -sf -H "X-Vault-Token: root" http://vault:8200/v1/secret/data/ready >/dev/null && exit 0
-  sleep 1
-done
-echo "vault was not seeded within 60s" >&2
-exit 1`}).
+	if f.vaultURL, err = f.vault.Endpoint(ctx, dagger.ServiceEndpointOpts{Scheme: "http"}); err != nil {
+		return nil, fmt.Errorf("vault endpoint: %w", err)
+	}
+	f.webhook = "https://example.invalid/hook/" + nonce()
+	_, err = f.vaultCLI().
+		WithEnvVariable("TEAMS_WEBHOOK", f.webhook).
+		WithNewFile("/seed.sh", vaultSeed).
+		WithExec([]string{"sh", "/seed.sh"}).
 		Sync(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("wait for vault seed: %w", err)
+		return nil, fmt.Errorf("seed vault: %w", err)
 	}
 	return f, nil
 }
@@ -176,7 +194,7 @@ func (f *fixture) checkFresh(ctx context.Context, out *dagger.Directory) error {
 			"BUCKET":                "velero",           // literal
 		},
 		"secrets/monitoring/alertmanager-secrets.enc.yaml": {
-			"MSTEAMS_WEBHOOK": "https://example.invalid/hook",
+			"MSTEAMS_WEBHOOK": f.webhook,   // unique per run: read live
 			"LEGACY_TOKEN":    "kv1-token", // KV v1
 		},
 		"secrets/monitoring/grafana-admin.enc.yaml": {"username": "admin"},
@@ -259,6 +277,34 @@ func (f *fixture) checkRotate(ctx context.Context, first *dagger.Directory) erro
 		return fmt.Errorf("HARBOR_SECRET_KEY rotated although not named")
 	}
 	return nil
+}
+
+func (f *fixture) checkVaultChange(ctx context.Context, first *dagger.Directory) error {
+	newHook := "https://example.invalid/hook/" + nonce()
+	if _, err := f.vaultCLI().
+		WithExec([]string{"vault", "kv", "put", "secret/edge/teams", "webhook=" + newHook}).
+		Sync(ctx); err != nil {
+		return fmt.Errorf("update vault: %w", err)
+	}
+	next := f.generate("edge-01.yaml", dagger.SecretsGenerateClusterSecretsOpts{
+		Existing:     first,
+		VaultService: f.vault,
+		VaultToken:   dag.SetSecret("vault-token", "root"),
+	})
+	changed, err := diff(ctx, first, next)
+	if err != nil {
+		return err
+	}
+	if len(changed) != 1 || changed[0] != "secrets/monitoring/alertmanager-secrets.enc.yaml" {
+		return fmt.Errorf("changed files = %v, want only alertmanager-secrets", changed)
+	}
+	key, err := f.clusterKey(ctx, first)
+	if err != nil {
+		return err
+	}
+	return expect(ctx, key, next, map[string]map[string]string{
+		"secrets/monitoring/alertmanager-secrets.enc.yaml": {"MSTEAMS_WEBHOOK": newHook},
+	})
 }
 
 func (f *fixture) checkClusterAgeKey(ctx context.Context, out *dagger.Directory) error {

@@ -3,9 +3,10 @@ package clustersecrets
 // Tests against the real tools. They skip unless the tools are there:
 //
 //	sops + age-keygen in PATH        -> TestSopsRoundTrip
-//	CLUSTERSECRETS_VAULT_ADDR set    -> TestVaultFetchScript (expects the
-//	                                    fixture seeded by tests/vault-seed.sh
-//	                                    and root token "root")
+//	CLUSTERSECRETS_VAULT_ADDR set    -> TestVaultFetchScript (a Vault dev
+//	                                    server with root token "root", seeded
+//	                                    by tests/vault-seed.sh; the commands
+//	                                    are in that script's header)
 //
 // The Dagger test module (secrets/tests) runs the same flow end to end
 // with Vault as a service; these are the fast, engine-free subset.

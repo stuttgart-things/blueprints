@@ -197,11 +197,16 @@ for encryption is mounted as a Dagger secret and never written to a layer.
 cd secrets && go test ./clustersecrets/
 
 # same, plus the Vault fetch script against a local Vault (KV v1/v2, AppRole)
-docker run -d --rm --name vault-test -p 8200:8200 -e SKIP_SETCAP=1 \
-  -v "$PWD/tests/vault-seed.sh:/seed.sh:ro" --entrypoint sh hashicorp/vault:1.20 /seed.sh
+docker run -d --rm --name vault-test -p 8200:8200 \
+  -e VAULT_DEV_ROOT_TOKEN_ID=root -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 \
+  -e SKIP_SETCAP=1 hashicorp/vault:1.20 server -dev
+docker exec -i -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=root \
+  vault-test sh < tests/vault-seed.sh
 CLUSTERSECRETS_VAULT_ADDR=http://127.0.0.1:8200 go test ./clustersecrets/
 
-# end to end through Dagger, Vault running as a service
+# end to end through Dagger: `vault server -dev` as a service, seeded from a
+# second container, reached both via its endpoint (--vault-addr + AppRole)
+# and as a bound service (--vault-service + token)
 dagger call -m secrets/tests all --progress plain
 ```
 

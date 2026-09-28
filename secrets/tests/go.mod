@@ -1,4 +1,4 @@
-module dagger/secrets
+module dagger/tests
 
 go 1.26.2
 
@@ -11,7 +11,6 @@ require (
 )
 
 require (
-	filippo.io/age v1.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 

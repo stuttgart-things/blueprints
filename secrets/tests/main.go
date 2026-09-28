@@ -62,7 +62,7 @@ func (t *Tests) All(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("setup: %w", err)
 	}
-	defer f.vault.Stop(ctx)
+	defer func() { _, _ = f.vault.Stop(ctx) }()
 
 	// First run: Vault by address + AppRole, the way CI talks to a real
 	// Vault. Later runs bind the service and use the root token.

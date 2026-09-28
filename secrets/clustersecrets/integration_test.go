@@ -19,6 +19,13 @@ import (
 	"testing"
 )
 
+func mustWrite(t *testing.T, path string, data []byte, perm os.FileMode) {
+	t.Helper()
+	if err := os.WriteFile(path, data, perm); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func need(t *testing.T, tools ...string) {
 	t.Helper()
 	for _, tool := range tools {
@@ -65,7 +72,7 @@ func TestSopsRoundTrip(t *testing.T) {
 	}
 	plain := filepath.Join(dir, "plain.yaml")
 	enc := filepath.Join(dir, "harbor-secrets.enc.yaml")
-	os.WriteFile(plain, doc, 0o600)
+	mustWrite(t, plain, doc, 0o600)
 
 	if out, err := run(t, nil, SopsEncryptArgs([]string{clusterPub, escrowPub}, plain, enc)...); err != nil {
 		t.Fatalf("encrypt: %v\n%s", err, out)
@@ -109,7 +116,7 @@ func TestVaultFetchScript(t *testing.T) {
 	need(t, "sh", "curl", "jq")
 	dir := t.TempDir()
 	script := filepath.Join(dir, "fetch.sh")
-	os.WriteFile(script, []byte(VaultFetchScript), 0o700)
+	mustWrite(t, script, []byte(VaultFetchScript), 0o700)
 
 	refs := []Ref{
 		mustRef(t, "ref+vault://secret/edge/teams#/webhook"),
@@ -117,7 +124,7 @@ func TestVaultFetchScript(t *testing.T) {
 		mustRef(t, "ref+vault://kv1/legacy?kv=1#/token"),
 	}
 	paths := filepath.Join(dir, "paths")
-	os.WriteFile(paths, []byte(strings.Join(VaultPaths(refs), "\n")), 0o600)
+	mustWrite(t, paths, []byte(strings.Join(VaultPaths(refs), "\n")), 0o600)
 
 	fetch := func(env ...string) (map[string]string, error) {
 		out, err := run(t, append([]string{"VAULT_ADDR=" + addr}, env...), "sh", script, paths)
@@ -153,7 +160,7 @@ func TestVaultFetchScript(t *testing.T) {
 	got, err = fetch("VAULT_ROLE_ID=test-role", "VAULT_SECRET_ID=test-secret")
 	check("approle", got, err)
 
-	os.WriteFile(paths, []byte("secret/data/does/not/exist\n"), 0o600)
+	mustWrite(t, paths, []byte("secret/data/does/not/exist\n"), 0o600)
 	if _, err := fetch("VAULT_TOKEN=root"); err == nil || !strings.Contains(err.Error(), "HTTP 404") {
 		t.Errorf("missing path: %v", err)
 	}

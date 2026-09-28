@@ -173,6 +173,11 @@ dagger call -m secrets generate-cluster-secrets \
 - Vault auth: `--vault-token`, or `--vault-role-id` + `--vault-secret-id`
   (AppRole). `--vault-ca-cert` for a private PKI.
 
+Try it without any real keys (throwaway master/escrow keys, the test
+profiles, no Vault): `task test-cluster-secrets-example`. It runs the call
+above twice, shows that the second run changes nothing, and decrypts a
+secret with the cluster key.
+
 Hand the cluster key to `flux bootstrap`:
 
 ```bash

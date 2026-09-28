@@ -182,6 +182,53 @@ tasks:
       - go test ./clustersecrets/
       - dagger call -m ./tests all --progress plain
 
+  test-cluster-secrets-example:
+    desc: Example CLI run of generate-cluster-secrets on the test profiles (edge cluster, no Vault; needs age-keygen + sops)
+    cmds:
+      - rm -rf {{ .WORK }} && mkdir -p {{ .WORK }}/refs/secrets
+      - age-keygen -o {{ .WORK }}/master.txt 2>/dev/null
+      - age-keygen -o {{ .WORK }}/escrow.txt 2>/dev/null
+      - |
+        # central store, encrypted for the master key only
+        printf 'accessKey: AKIA-example\nsecretKey: secret-from-central-sops\n' > {{ .WORK }}/minio.yaml
+        sops --encrypt --age "$(age-keygen -y {{ .WORK }}/master.txt)" \
+          --output {{ .WORK }}/refs/secrets/minio.enc.yaml {{ .WORK }}/minio.yaml
+        rm {{ .WORK }}/minio.yaml
+      - |
+        dagger call -m {{ .MODULE }} generate-cluster-secrets \
+          --cluster-profile {{ .TESTDATA }}/edge-02-novault.yaml \
+          --profile-dir {{ .TESTDATA }}/profiles \
+          --master-age-key file:{{ .WORK }}/master.txt \
+          --escrow-recipients "$(age-keygen -y {{ .WORK }}/escrow.txt)" \
+          --sops-ref-dir {{ .WORK }}/refs \
+          --progress plain \
+          export --path {{ .WORK }}/out --wipe
+      - cp -r {{ .WORK }}/out {{ .WORK }}/first
+      - |
+        # re-run on the previous output: nothing may change
+        dagger call -m {{ .MODULE }} generate-cluster-secrets \
+          --cluster-profile {{ .TESTDATA }}/edge-02-novault.yaml \
+          --profile-dir {{ .TESTDATA }}/profiles \
+          --master-age-key file:{{ .WORK }}/master.txt \
+          --escrow-recipients "$(age-keygen -y {{ .WORK }}/escrow.txt)" \
+          --sops-ref-dir {{ .WORK }}/refs \
+          --existing {{ .WORK }}/out \
+          --progress plain \
+          export --path {{ .WORK }}/out --wipe
+      - diff -r {{ .WORK }}/first {{ .WORK }}/out && echo "✓ re-run changed nothing"
+      - |
+        dagger call -m {{ .MODULE }} cluster-age-key \
+          --existing {{ .WORK }}/out \
+          --master-age-key file:{{ .WORK }}/master.txt \
+          plaintext > {{ .WORK }}/cluster.txt
+        echo "✓ cluster key: $(cat {{ .WORK }}/out/age.pub)"
+        SOPS_AGE_KEY_FILE={{ .WORK }}/cluster.txt sops --decrypt {{ .WORK }}/out/secrets/velero/velero-secrets.enc.yaml
+      - find {{ .WORK }}/out -type f | sort
+    vars:
+      MODULE: secrets
+      TESTDATA: secrets/tests/testdata
+      WORK: /tmp/cluster-secrets-example
+
   test-bootstrap-clusterbook-cluster:
     desc: Test argocd bootstrap-clusterbook-cluster (KCL render of Argo CD cluster registration)
     cmds:

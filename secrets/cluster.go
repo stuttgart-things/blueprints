@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"path"
 	"sort"
@@ -408,11 +409,23 @@ func decryptFiles(ctx context.Context, tools *dagger.Container, key *dagger.Secr
 	for _, p := range paths {
 		c, err := ctr.File(path.Join("/out", p)).Contents(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", p, err)
+			return nil, fmt.Errorf("%s: %w", p, plainExecErr(err))
 		}
 		out[p] = []byte(c)
 	}
 	return out, nil
+}
+
+// plainExecErr turns a failed exec into a plain error. Across the module
+// boundary the SDK keeps only the innermost exec error, which would drop
+// the context callers wrap around it ("decrypt cluster key with master
+// key"). sops writes plaintext to --output, so stderr is safe to keep.
+func plainExecErr(err error) error {
+	var ee *dagger.ExecError
+	if !errors.As(err, &ee) {
+		return err
+	}
+	return fmt.Errorf("%s: exit code %d: %s", strings.Join(ee.Cmd, " "), ee.ExitCode, strings.TrimSpace(ee.Stderr))
 }
 
 func fetchSopsRefs(ctx context.Context, tools *dagger.Container, files []string, master *dagger.Secret, dir *dagger.Directory) (map[string][]byte, error) {
@@ -473,10 +486,10 @@ func fetchVault(ctx context.Context, tools *dagger.Container, paths []string, v 
 			WithSecretVariable("VAULT_SECRET_ID", v.secretID)
 	}
 
+	// Redirect in the shell: the engine records exec stdout in the trace
+	// even with RedirectStdout, and stdout here is every Vault value.
 	body, err := ctr.
-		WithExec([]string{"sh", "/vault/fetch.sh", "/vault/paths"}, dagger.ContainerWithExecOpts{
-			RedirectStdout: "/vault/out.json",
-		}).
+		WithExec([]string{"sh", "-c", "sh /vault/fetch.sh /vault/paths > /vault/out.json"}).
 		File("/vault/out.json").
 		Contents(ctx)
 	if err != nil {

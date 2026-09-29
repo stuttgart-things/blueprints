@@ -1,3 +1,10 @@
+# [3.6.0](https://github.com/stuttgart-things/blueprints/compare/v3.5.0...v3.6.0) (2026-09-29)
+
+
+### Features
+
+* **flux:** render-cluster-apps reads AppProfiles from the catalog and renders bundles with KCL ([#208](https://github.com/stuttgart-things/blueprints/issues/208)) ([3e11cdc](https://github.com/stuttgart-things/blueprints/commit/3e11cdc47dec687f8b9bdb9b3198fff7894904a2)), closes [#206](https://github.com/stuttgart-things/blueprints/issues/206)
+
 # [3.5.0](https://github.com/stuttgart-things/blueprints/compare/v3.4.0...v3.5.0) (2026-09-29)
 
 

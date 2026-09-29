@@ -1,3 +1,10 @@
+# [3.5.0](https://github.com/stuttgart-things/blueprints/compare/v3.4.0...v3.5.0) (2026-09-29)
+
+
+### Features
+
+* **flux:** render-cluster-apps renders catalog apps and their secrets from one profile ([#207](https://github.com/stuttgart-things/blueprints/issues/207)) ([b334cd4](https://github.com/stuttgart-things/blueprints/commit/b334cd48da0f8d9d269943863889c87f5267970c)), closes [#206](https://github.com/stuttgart-things/blueprints/issues/206)
+
 # [3.4.0](https://github.com/stuttgart-things/blueprints/compare/v3.3.0...v3.4.0) (2026-09-29)
 
 

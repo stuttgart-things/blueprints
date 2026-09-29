@@ -132,10 +132,18 @@ func setup(ctx context.Context) (*fixture, error) {
 	}
 
 	// The central store: encrypted for the master key only.
-	central, err := dag.Secrets().EncryptString(ctx,
+	// The plaintext goes in as a secret: a string argument or WithNewFile
+	// would put it into the trace, which the -vv leak check greps.
+	centralPlain := dag.Container().
+		From(toolImage).
+		WithMountedSecret("/in/minio.yaml", dag.SetSecret("central-plain",
+			"accessKey: AKIA-central\nsecretKey: secret-from-central-sops\n")).
+		WithExec([]string{"cp", "/in/minio.yaml", "/minio.yaml"}).
+		File("/minio.yaml")
+	central, err := dag.Secrets().EncryptFile(ctx,
 		dag.SetSecret("master-pub", f.masterPub),
-		"accessKey: AKIA-central\nsecretKey: secret-from-central-sops\n",
-		dagger.SecretsEncryptStringOpts{FileExtension: "yaml"})
+		centralPlain,
+		dagger.SecretsEncryptFileOpts{FileExtension: "yaml"})
 	if err != nil {
 		return nil, fmt.Errorf("encrypt central file: %w", err)
 	}
@@ -152,7 +160,8 @@ func setup(ctx context.Context) (*fixture, error) {
 	f.webhook = "https://example.invalid/hook/" + nonce()
 	_, err = f.vaultCLI().
 		WithEnvVariable("TEAMS_WEBHOOK", f.webhook).
-		WithNewFile("/seed.sh", vaultSeed).
+		// As a secret, so the fixture values stay out of the trace.
+		WithMountedSecret("/seed.sh", dag.SetSecret("vault-seed", vaultSeed)).
 		WithExec([]string{"sh", "/seed.sh"}).
 		Sync(ctx)
 	if err != nil {
@@ -286,10 +295,13 @@ func (f *fixture) checkVaultChange(ctx context.Context, first *dagger.Directory)
 		Sync(ctx); err != nil {
 		return fmt.Errorf("update vault: %w", err)
 	}
+	// GenerateClusterSecrets is cached per session, and checkRerun already
+	// made this exact call. A fresh token secret makes it a new call, the
+	// way a later `dagger call` would be.
 	next := f.generate("edge-01.yaml", dagger.SecretsGenerateClusterSecretsOpts{
 		Existing:     first,
 		VaultService: f.vault,
-		VaultToken:   dag.SetSecret("vault-token", "root"),
+		VaultToken:   dag.SetSecret("vault-token-"+nonce(), "root"),
 	})
 	changed, err := diff(ctx, first, next)
 	if err != nil {

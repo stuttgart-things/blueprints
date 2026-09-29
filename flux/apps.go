@@ -4,10 +4,17 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"strings"
+	"time"
 
 	"dagger/flux/clusterapps"
 	"dagger/flux/internal/dagger"
+
+	"gopkg.in/yaml.v3"
 )
+
+// catalogProfiles is where the catalog keeps its AppProfiles.
+const catalogProfiles = "*/platform/components/*/profile.yaml"
 
 // RenderClusterApps renders the catalog apps a cluster runs, from one
 // ClusterApps file and the catalog's AppProfiles.
@@ -25,11 +32,16 @@ import (
 //	flux/cluster-secrets/             applied by the cluster's root Kustomization
 //	flux/cluster-secrets/.sourceignore  keeps sops-age.enc.yaml and .sops.yaml out
 //
+// The AppProfiles come from the catalog itself, at the tag (or branch) in
+// spec.source -- the same revision the cluster's bundles pull. --profile-dir
+// replaces that, e.g. to try a profile before it is in the catalog. Each
+// bundle Kustomization is rendered by claim-flux-kustomizations
+// (templateName=bundle).
+//
 // Usage:
 //
 //	dagger call -m flux render-cluster-apps \
 //	  --cluster-apps clusters/labda/vsphere/cicd-test4/apps.yaml \
-//	  --profile-dir <catalog checkout> \
 //	  --master-age-key env:SOPS_AGE_KEY \
 //	  --existing-secrets secrets/clusters/labda/vsphere/cicd-test4 \
 //	  export --path out
@@ -42,12 +54,16 @@ func (m *Flux) RenderClusterApps(
 	ctx context.Context,
 	// ClusterApps document (kind: ClusterApps)
 	clusterApps *dagger.File,
-	// Directory searched for AppProfile documents, e.g. the catalog
-	profileDir *dagger.Directory,
-	// Glob for the files to read in profileDir
+	// Directory searched for AppProfile documents instead of the catalog at spec.source
 	// +optional
-	// +default="**/*.yaml"
+	profileDir *dagger.Directory,
+	// Glob for the files to read in profileDir (default **/*.yaml; the catalog: */platform/components/*/profile.yaml)
+	// +optional
 	profileGlob string,
+	// OCI KCL module rendering the bundle Kustomizations
+	// +optional
+	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations?tag=0.4.0"
+	bundleModule string,
 	// AGE key of the CI / key custodian; needed when an enabled app has secrets
 	// +optional
 	masterAgeKey *dagger.Secret,
@@ -88,6 +104,16 @@ func (m *Flux) RenderClusterApps(
 		return nil, err
 	}
 
+	if profileDir == nil {
+		src := c.Spec.Source
+		profileDir = catalogCheckout(src.URL, src.Tag, src.Branch)
+		if profileGlob == "" {
+			profileGlob = catalogProfiles
+		}
+	}
+	if profileGlob == "" {
+		profileGlob = "**/*.yaml"
+	}
 	paths, err := profileDir.Glob(ctx, profileGlob)
 	if err != nil {
 		return nil, fmt.Errorf("list profiles: %w", err)
@@ -109,7 +135,15 @@ func (m *Flux) RenderClusterApps(
 	if err != nil {
 		return nil, err
 	}
-	out := dag.Directory().WithNewFile("flux/apps.yaml", string(res.Manifests))
+	manifests := string(res.Manifests)
+	for _, b := range res.Bundles {
+		ks, err := renderBundle(ctx, bundleModule, b)
+		if err != nil {
+			return nil, fmt.Errorf("render bundle %v: %w", b["name"], err)
+		}
+		manifests += "---\n" + strings.TrimPrefix(strings.TrimSpace(ks), "---\n") + "\n"
+	}
+	out := dag.Directory().WithNewFile("flux/apps.yaml", manifests)
 	if res.ClusterSecrets == nil { // pragma: allowlist secret
 		return out, nil
 	}
@@ -140,4 +174,37 @@ func (m *Flux) RenderClusterApps(
 		return out.WithDirectory("flux/cluster-secrets", secrets.WithNewFile(".sourceignore", clusterapps.SourceIgnore)), nil
 	}
 	return out.WithDirectory("cluster-secrets", secrets), nil
+}
+
+// renderBundle renders one bundle Kustomization with claim-flux-kustomizations.
+// The parameters go as a file: components and substitute are a list and a
+// map, which the comma-separated --parameters form cannot carry.
+func renderBundle(ctx context.Context, module string, params clusterapps.BundleParams) (string, error) {
+	b, err := yaml.Marshal(params)
+	if err != nil {
+		return "", err
+	}
+	file := dag.Directory().WithNewFile("parameters.yaml", string(b)).File("parameters.yaml")
+	return dag.Kcl().Run(dagger.KclRunOpts{
+		OciSource:      module,
+		ParametersFile: file,
+		Entrypoint:     "main.k",
+	}).Contents(ctx)
+}
+
+// catalogCheckout clones the catalog at a tag or branch. A plain git clone
+// rather than the engine's git API: in this module the git dependency shadows
+// dag.Git, and dag.Address(...).GitRepository() fails in the engine with
+// "assign ModuleObject to GitRepository".
+func catalogCheckout(url, tag, branch string) *dagger.Directory {
+	ref := tag
+	ctr := dag.Container().From("alpine/git:latest")
+	if ref == "" {
+		// A branch moves; a tag does not, so only the branch busts the cache.
+		ref = branch
+		ctr = ctr.WithEnvVariable("CACHEBUST", time.Now().String())
+	}
+	return ctr.
+		WithExec([]string{"git", "clone", "--depth", "1", "--branch", ref, url, "/catalog"}).
+		Directory("/catalog")
 }

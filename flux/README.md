@@ -136,6 +136,47 @@ dagger call -m flux commit-config \
   --progress plain
 ```
 
+## Catalog apps with their secrets (render-cluster-apps)
+
+One `AppProfile` per catalog app describes both halves: the bundle component
+plus the vars it reads, and the Secret its `postBuild.substituteFrom` needs.
+A `ClusterApps` file per cluster enables apps and sets values. Examples:
+`examples/apps/`. Design and plan: [#206](https://github.com/stuttgart-things/blueprints/issues/206).
+
+```bash
+dagger call -m flux render-cluster-apps \
+  --cluster-apps examples/apps/cicd-test4.yaml \
+  --profile-dir examples/apps/profiles \
+  --master-age-key env:SOPS_AGE_KEY \
+  --existing-secrets <repo>/secrets/clusters/labda/vsphere/cicd-test4 \
+  export --path out
+```
+
+- `out/flux/apps.yaml` goes into the cluster's path. It contains the catalog
+  GitRepository, the `cluster-secrets` Kustomization and one Kustomization per
+  bundle; each bundle `dependsOn` the secrets.
+- `out/cluster-secrets/` goes to `spec.secrets.path`. That path must lie
+  **outside** every path another Kustomization decrypts with a different key.
+  Otherwise that Kustomization fails on files it cannot decrypt.
+- Omit `--existing-secrets` only on the first run, otherwise every generated
+  value and the cluster key are replaced.
+- The run fails early on an unknown app, a missing required var, a var the
+  profile does not declare, or a secret key the profile does not declare.
+- The cluster key goes into the Secret named by `spec.secrets.decryptionSecret`:
+  `dagger call -m secrets cluster-age-key --existing out/cluster-secrets --master-age-key env:SOPS_AGE_KEY plaintext`.
+
+Two layouts, set with `spec.secrets.mode`:
+
+| Mode | Where the secrets go | Who applies them | For |
+|---|---|---|---|
+| `separate` (default, `examples/apps/cicd-test4.yaml`) | `spec.secrets.path`, outside the cluster's path | a `cluster-secrets` Kustomization with its own decryption Secret | clusters that already have a `sops-age` key of their own |
+| `inline` (`examples/apps/inline.yaml`) | `flux/cluster-secrets/`, next to `apps.yaml`: export `flux/` into the cluster's path | the cluster's root Kustomization, with `sops-age` | new clusters: bootstrap with the cluster key as `sops-age` |
+
+In `inline` mode, `cluster-secrets/.sourceignore` keeps two files out of the
+root Kustomization: `sops-age.enc.yaml` (master and escrow only) and
+`.sops.yaml` (not a Kubernetes object). Pass `--existing-secrets
+<cluster path>/cluster-secrets` on later runs.
+
 ## Moved out of this module
 
 | Old call | New call |

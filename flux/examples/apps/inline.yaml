@@ -1,0 +1,24 @@
+---
+# Target layout for a new cluster (blueprints#206): the cluster key generated
+# here is the cluster's sops-age (cluster-age-key -> flux bootstrap
+# --sops-age-key), so the cluster's root Kustomization applies the secrets
+# itself. Export flux/ into the cluster's path as a whole:
+#
+#   clusters/<env>/<cluster>/apps.yaml
+#   clusters/<env>/<cluster>/cluster-secrets/...   (.sourceignore keeps the
+#                                                  master-only key file out)
+kind: ClusterApps
+metadata:
+  name: edge-01
+spec:
+  source:
+    url: https://github.com/stuttgart-things/flux.git
+    tag: v1.99.2
+  secrets:
+    mode: inline
+  vars:
+    INFRA_DOMAIN: edge-01.example.com
+  apps:
+    keycloak:
+      vars:
+        KEYCLOAK_STORAGE_CLASS: openebs-hostpath

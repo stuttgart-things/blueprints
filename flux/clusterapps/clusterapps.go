@@ -171,9 +171,14 @@ type App struct {
 
 // Result is what Build renders.
 type Result struct {
-	// Flux manifests for the cluster's own path: GitRepository, the
-	// secrets Kustomization, one Kustomization per bundle.
+	// Flux manifests for the cluster's own path: the catalog GitRepository
+	// and, in mode separate, the secrets Kustomization.
 	Manifests []byte
+	// One parameters file per bundle for claim-flux-kustomizations
+	// templateName=bundle, which renders the bundle Kustomization. The
+	// structured values (components, substitute) survive only through a
+	// parameters file, not through the comma-separated --parameters form.
+	Bundles []BundleParams
 	// ClusterSecrets and SecretProfile documents for generate-cluster-secrets.
 	// Nil when no enabled app has secrets.
 	ClusterSecrets []byte
@@ -181,6 +186,9 @@ type Result struct {
 	// Inline: the secrets go next to Manifests, see SecretsSpec.
 	Inline bool
 }
+
+// BundleParams is a parameters file for claim-flux-kustomizations.
+type BundleParams map[string]any
 
 // SourceIgnore keeps the files the cluster must not apply out of its root
 // Kustomization in inline mode: the key file is encrypted for master and
@@ -376,6 +384,7 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 			decryption: or(spec.Secrets.DecryptionSecret, defaultDecryptionSecret),
 		}))
 	}
+	var bundleParams []BundleParams
 	for _, b := range sortedKeys(state) {
 		bs := state[b]
 		sub := map[string]string{bundles[b].sourceVar: sourceName}
@@ -386,23 +395,27 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 			sub[k] = v
 		}
 		sort.Strings(bs.components)
-		ks := ksSpec{
-			name:       or(spec.Bundles[b].Name, b),
-			source:     sourceName,
-			path:       bundles[b].root,
-			timeout:    "15m",
-			components: bs.components,
-			substitute: sub,
+		params := BundleParams{
+			"templateName":  "bundle",
+			"name":          or(spec.Bundles[b].Name, b),
+			"namespace":     "flux-system",
+			"interval":      "1h",
+			"retryInterval": "1m",
+			"timeout":       "15m",
+			"sourceRefName": sourceName,
+			"path":          bundles[b].root,
+			"components":    bs.components,
+			"substitute":    sub,
 		}
 		// inline: the root Kustomization applies the secrets together with
 		// this one; substituteFrom's optional: false covers the gap.
 		if bs.secrets && !inline {
-			ks.dependsOn = []string{secretsKs}
+			params["dependsOnNames"] = []string{secretsKs}
 		}
-		docs = append(docs, kustomization(ks))
+		bundleParams = append(bundleParams, params)
 	}
 
-	res := &Result{Inline: inline}
+	res := &Result{Inline: inline, Bundles: bundleParams}
 	var err error
 	if res.Manifests, err = marshalDocs(docs); err != nil {
 		return nil, err
@@ -488,10 +501,9 @@ func secretsInput(c *ClusterApps, apps []*AppProfile) ([]byte, map[string][]byte
 
 type ksSpec struct {
 	name, source, path, timeout, decryption string
-	components, dependsOn                   []string
-	substitute                              map[string]string
 }
 
+// The secrets Kustomization; bundles go through KCL (Result.Bundles).
 // The manifests are plain maps rather than Flux's Go types: the module stays
 // free of the Flux API dependency tree, and the tests pin the exact output.
 func kustomization(k ksSpec) map[string]any {
@@ -503,19 +515,6 @@ func kustomization(k ksSpec) map[string]any {
 		"wait":          true,
 		"sourceRef":     map[string]any{"kind": "GitRepository", "name": k.source},
 		"path":          k.path,
-	}
-	if len(k.components) > 0 {
-		spec["components"] = k.components
-	}
-	if len(k.dependsOn) > 0 {
-		deps := []map[string]string{}
-		for _, d := range k.dependsOn {
-			deps = append(deps, map[string]string{"name": d})
-		}
-		spec["dependsOn"] = deps
-	}
-	if len(k.substitute) > 0 {
-		spec["postBuild"] = map[string]any{"substitute": k.substitute}
 	}
 	if k.decryption != "" {
 		spec["decryption"] = map[string]any{"provider": "sops", "secretRef": map[string]string{"name": k.decryption}}

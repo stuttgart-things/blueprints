@@ -13,7 +13,7 @@ metadata:
 spec:
   source:
     url: https://github.com/stuttgart-things/flux.git
-    tag: v1.99.2
+    tag: v1.100.0
   secrets:
     path: ./secrets/clusters/labda/vsphere/cicd-test4
     decryptionSecret: sops-age-apps # pragma: allowlist secret

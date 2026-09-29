@@ -105,8 +105,8 @@ func TestBuildRendersSourceSecretsAndBundle(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := docs(t, res.Manifests)
-	if len(d) != 3 {
-		t.Fatalf("want GitRepository + 2 Kustomizations, got %d docs:\n%s", len(d), res.Manifests)
+	if len(d) != 2 {
+		t.Fatalf("want GitRepository + secrets Kustomization, got %d docs:\n%s", len(d), res.Manifests)
 	}
 
 	if d[0]["kind"] != "GitRepository" || dig(d[0], "metadata", "name") != "flux-apps" || dig(d[0], "spec", "ref", "tag") != "v1.99.2" {
@@ -121,30 +121,52 @@ func TestBuildRendersSourceSecretsAndBundle(t *testing.T) {
 		t.Errorf("secrets kustomization: %v", sec)
 	}
 
-	b := d[2]
-	if dig(b, "metadata", "name") != "apps-mvp" || dig(b, "spec", "path") != "./apps/platform/root" ||
-		dig(b, "spec", "sourceRef", "name") != "flux-apps" {
-		t.Errorf("bundle: %v", b)
+	if len(res.Bundles) != 1 {
+		t.Fatalf("want 1 bundle, got %v", res.Bundles)
 	}
-	if c := dig(b, "spec", "components").([]any); len(c) != 1 || c[0] != "../components/keycloak" {
+	b := res.Bundles[0]
+	for k, v := range map[string]any{
+		"templateName":  "bundle",
+		"name":          "apps-mvp",
+		"namespace":     "flux-system",
+		"path":          "./apps/platform/root",
+		"sourceRefName": "flux-apps",
+		"timeout":       "15m",
+	} {
+		if b[k] != v {
+			t.Errorf("bundle %s = %v, want %v", k, b[k], v)
+		}
+	}
+	if c := b["components"].([]string); len(c) != 1 || c[0] != "../components/keycloak" {
 		t.Errorf("components: %v", c)
 	}
-	if deps := dig(b, "spec", "dependsOn").([]any); len(deps) != 1 || dig(deps[0], "name") != "cluster-secrets" {
-		t.Errorf("dependsOn: %v", deps)
+	if deps := b["dependsOnNames"].([]string); len(deps) != 1 || deps[0] != "cluster-secrets" {
+		t.Errorf("dependsOnNames: %v", deps)
 	}
-	want := map[string]any{
+	want := map[string]string{
 		"APPS_SOURCE":            "flux-apps",
 		"INFRA_DOMAIN":           "cicd-test4.example.com",
 		"KEYCLOAK_STORAGE_CLASS": "openebs-hostpath",
 		"KEYCLOAK_HOSTNAME":      "keycloak", // profile default
 	}
-	sub := dig(b, "spec", "postBuild", "substitute").(map[string]any)
+	sub := b["substitute"].(map[string]string)
 	if len(sub) != len(want) {
 		t.Errorf("substitute = %v, want %v", sub, want)
 	}
 	for k, v := range want {
 		if sub[k] != v {
 			t.Errorf("substitute[%s] = %v, want %v", k, sub[k], v)
+		}
+	}
+
+	// The parameters file must keep the structure: that is why it is a file.
+	out, err := yaml.Marshal(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, w := range []string{"components:\n    - ../components/keycloak", "substitute:\n    APPS_SOURCE: flux-apps"} {
+		if !strings.Contains(string(out), w) {
+			t.Errorf("parameters file lacks %q:\n%s", w, out)
 		}
 	}
 }
@@ -195,11 +217,11 @@ spec:
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.ClusterSecrets != nil || len(docs(t, res.Manifests)) != 2 { // pragma: allowlist secret
-		t.Errorf("want source + bundle only:\n%s", res.Manifests)
+	if res.ClusterSecrets != nil || len(docs(t, res.Manifests)) != 1 || len(res.Bundles) != 1 { // pragma: allowlist secret
+		t.Fatalf("want source + one bundle only:\n%s\n%v", res.Manifests, res.Bundles)
 	}
-	if strings.Contains(string(res.Manifests), "dependsOn") {
-		t.Errorf("bundle without secrets must not depend on the secrets kustomization:\n%s", res.Manifests)
+	if _, ok := res.Bundles[0]["dependsOnNames"]; ok {
+		t.Errorf("bundle without secrets must not depend on the secrets kustomization: %v", res.Bundles[0])
 	}
 }
 
@@ -294,11 +316,11 @@ spec:
 		t.Fatal(err)
 	}
 	d := docs(t, res.Manifests)
-	if !res.Inline || len(d) != 2 || d[1]["kind"] != "Kustomization" || dig(d[1], "metadata", "name") != "apps-platform" {
-		t.Fatalf("want source + bundle:\n%s", res.Manifests)
+	if !res.Inline || len(d) != 1 || len(res.Bundles) != 1 || res.Bundles[0]["name"] != "apps-platform" {
+		t.Fatalf("want source only in Manifests and one bundle:\n%s\n%v", res.Manifests, res.Bundles)
 	}
-	if dig(d[1], "spec", "dependsOn") != nil {
-		t.Errorf("inline bundle must not depend on a secrets kustomization: %v", d[1])
+	if _, ok := res.Bundles[0]["dependsOnNames"]; ok {
+		t.Errorf("inline bundle must not depend on a secrets kustomization: %v", res.Bundles[0])
 	}
 	if res.ClusterSecrets == nil { // pragma: allowlist secret
 		t.Error("inline still needs the secrets input")

@@ -143,10 +143,17 @@ plus the vars it reads, and the Secret its `postBuild.substituteFrom` needs.
 A `ClusterApps` file per cluster enables apps and sets values. Examples:
 `examples/apps/`. Design and plan: [#206](https://github.com/stuttgart-things/blueprints/issues/206).
 
+- **Profiles:** they live in the catalog (`<bundle>/components/<app>/profile.yaml`,
+  from stuttgart-things/flux v1.100.0 on) and are read at the tag or branch in
+  `spec.source`, the same revision the cluster's bundles pull.
+  `--profile-dir` replaces that, e.g. to try a profile before it is in the catalog.
+- **Bundle Kustomizations:** rendered by `claim-flux-kustomizations`
+  (`templateName: bundle`, `--bundle-module`, default 0.4.0). Its parameters go
+  as a file, so `components` and `substitute` stay a list and a map.
+
 ```bash
 dagger call -m flux render-cluster-apps \
   --cluster-apps examples/apps/cicd-test4.yaml \
-  --profile-dir examples/apps/profiles \
   --master-age-key env:SOPS_AGE_KEY \
   --existing-secrets <repo>/secrets/clusters/labda/vsphere/cicd-test4 \
   export --path out

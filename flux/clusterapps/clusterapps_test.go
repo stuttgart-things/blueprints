@@ -280,3 +280,47 @@ func TestParseProfilesSkipsOtherKindsAndRejectsDuplicates(t *testing.T) {
 		t.Error("unknown bundle accepted")
 	}
 }
+
+func TestBuildInlineHasNoSecretsKustomization(t *testing.T) {
+	res, err := build(t, `
+kind: ClusterApps
+metadata: { name: edge-01 }
+spec:
+  source: { url: https://x, tag: v1 }
+  secrets: { mode: inline }
+  apps: { keycloak: { vars: { KEYCLOAK_STORAGE_CLASS: x } } }
+`, keycloakProfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := docs(t, res.Manifests)
+	if !res.Inline || len(d) != 2 || d[1]["kind"] != "Kustomization" || dig(d[1], "metadata", "name") != "apps-platform" {
+		t.Fatalf("want source + bundle:\n%s", res.Manifests)
+	}
+	if dig(d[1], "spec", "dependsOn") != nil {
+		t.Errorf("inline bundle must not depend on a secrets kustomization: %v", d[1])
+	}
+	if res.ClusterSecrets == nil {
+		t.Error("inline still needs the secrets input")
+	}
+	for _, f := range []string{"sops-age.enc.yaml", ".sops.yaml"} {
+		if !strings.Contains(SourceIgnore, f+"\n") {
+			t.Errorf(".sourceignore lacks %s", f)
+		}
+	}
+}
+
+func TestBuildSecretsModeErrors(t *testing.T) {
+	for name, secrets := range map[string]string{
+		"unknown mode":     "{ mode: sideways }",
+		"inline with path": "{ mode: inline, path: ./s }",
+		"inline with key":  "{ mode: inline, decryptionSecret: x }",
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := build(t, "kind: ClusterApps\nmetadata: { name: c }\nspec:\n  source: { url: https://x, tag: v1 }\n  secrets: "+secrets+"\n  apps: { keycloak: { vars: { KEYCLOAK_STORAGE_CLASS: x } } }", keycloakProfile)
+			if err == nil || !strings.Contains(err.Error(), "spec.secrets") {
+				t.Errorf("got %v", err)
+			}
+		})
+	}
+}

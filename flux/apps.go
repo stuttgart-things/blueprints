@@ -12,12 +12,18 @@ import (
 // RenderClusterApps renders the catalog apps a cluster runs, from one
 // ClusterApps file and the catalog's AppProfiles.
 //
-// Output:
+// Output, spec.secrets.mode separate (default):
 //
 //	flux/apps.yaml    catalog GitRepository, the secrets Kustomization and one
 //	                  Kustomization per bundle -> the cluster's own path
 //	cluster-secrets/  generate-cluster-secrets output -> spec.secrets.path,
 //	                  which must lie outside every path decrypted with another key
+//
+// Output, mode inline (the cluster's sops-age is the cluster key):
+//
+//	flux/apps.yaml                    -> the cluster's own path, as a whole
+//	flux/cluster-secrets/             applied by the cluster's root Kustomization
+//	flux/cluster-secrets/.sourceignore  keeps sops-age.enc.yaml and .sops.yaml out
 //
 // Usage:
 //
@@ -48,7 +54,7 @@ func (m *Flux) RenderClusterApps(
 	// Comma-separated break-glass AGE public keys
 	// +optional
 	escrowRecipients string,
-	// cluster-secrets/ of the previous run; omit only on the very first run
+	// cluster-secrets/ of the previous run (flux/cluster-secrets/ in mode inline); omit only on the very first run
 	// +optional
 	existingSecrets *dagger.Directory,
 	// Base directory for ref+sops:// paths
@@ -130,5 +136,8 @@ func (m *Flux) RenderClusterApps(
 			VaultCacert:      vaultCACert,
 			Rotate:           rotate,
 		})
+	if res.Inline {
+		return out.WithDirectory("flux/cluster-secrets", secrets.WithNewFile(".sourceignore", clusterapps.SourceIgnore)), nil
+	}
 	return out.WithDirectory("cluster-secrets", secrets), nil
 }

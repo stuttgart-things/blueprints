@@ -43,6 +43,9 @@ const (
 	KindAppProfile  = "AppProfile"
 	KindClusterApps = "ClusterApps"
 
+	ModeSeparate = "separate"
+	ModeInline   = "inline"
+
 	// SecretsNamespace is where substituteFrom can read the secrets.
 	SecretsNamespace = "flux-system" // pragma: allowlist secret
 
@@ -133,10 +136,19 @@ type Source struct {
 }
 
 // SecretsSpec says where the generate-cluster-secrets output lives in the
-// cluster repo, and how the Kustomization applying it decrypts.
+// cluster repo, and who applies it.
+//
+// mode separate (default): a Kustomization of its own applies spec.secrets.path
+// and decrypts with decryptionSecret. For a cluster that already has a
+// sops-age key of its own.
+//
+// mode inline: the output sits in the cluster's own path, next to apps.yaml,
+// and the cluster's root Kustomization applies it with its sops-age key --
+// which then has to be the cluster key. For clusters bootstrapped with it.
 type SecretsSpec struct {
-	// Repo path the generate-cluster-secrets output is exported to. It must
-	// lie outside every path another Kustomization decrypts with a
+	Mode string `yaml:"mode"`
+	// separate: repo path the generate-cluster-secrets output is exported to.
+	// It must lie outside every path another Kustomization decrypts with a
 	// different key.
 	Path             string `yaml:"path"`
 	Kustomization    string `yaml:"kustomization"`
@@ -166,7 +178,15 @@ type Result struct {
 	// Nil when no enabled app has secrets.
 	ClusterSecrets []byte
 	SecretProfiles map[string][]byte
+	// Inline: the secrets go next to Manifests, see SecretsSpec.
+	Inline bool
 }
+
+// SourceIgnore keeps the files the cluster must not apply out of its root
+// Kustomization in inline mode: the key file is encrypted for master and
+// escrow only, and .sops.yaml is no Kubernetes object. Placed in the output
+// directory; source-controller honours .sourceignore in subdirectories.
+const SourceIgnore = "# written by render-cluster-apps\nsops-age.enc.yaml\n.sops.yaml\n"
 
 // ParseClusterApps decodes a ClusterApps document; unknown fields fail.
 func ParseClusterApps(b []byte) (*ClusterApps, error) {
@@ -330,13 +350,24 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 	if err := errors.Join(errs...); err != nil {
 		return nil, err
 	}
-	if len(withSecrets) > 0 && spec.Secrets.Path == "" {
-		return nil, fmt.Errorf("%s: apps with secrets are enabled, so spec.secrets.path is required", c.Metadata.Name)
+	inline := false
+	switch spec.Secrets.Mode {
+	case "", ModeSeparate:
+		if len(withSecrets) > 0 && spec.Secrets.Path == "" {
+			return nil, fmt.Errorf("%s: apps with secrets are enabled, so spec.secrets.path is required", c.Metadata.Name)
+		}
+	case ModeInline:
+		inline = true
+		if spec.Secrets.Path != "" || spec.Secrets.Kustomization != "" || spec.Secrets.DecryptionSecret != "" || spec.Secrets.SourceRef != "" {
+			return nil, fmt.Errorf("%s: spec.secrets: mode inline takes no path, kustomization, decryptionSecret or sourceRef", c.Metadata.Name)
+		}
+	default:
+		return nil, fmt.Errorf("%s: spec.secrets.mode %q: want %s or %s", c.Metadata.Name, spec.Secrets.Mode, ModeSeparate, ModeInline)
 	}
 
 	secretsKs := or(spec.Secrets.Kustomization, defaultSecretsKs)
 	docs := []any{gitRepository(sourceName, spec.Source)}
-	if len(withSecrets) > 0 {
+	if len(withSecrets) > 0 && !inline {
 		docs = append(docs, kustomization(ksSpec{
 			name:       secretsKs,
 			source:     or(spec.Secrets.SourceRef, defaultClusterSource),
@@ -363,13 +394,15 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 			components: bs.components,
 			substitute: sub,
 		}
-		if bs.secrets {
+		// inline: the root Kustomization applies the secrets together with
+		// this one; substituteFrom's optional: false covers the gap.
+		if bs.secrets && !inline {
 			ks.dependsOn = []string{secretsKs}
 		}
 		docs = append(docs, kustomization(ks))
 	}
 
-	res := &Result{}
+	res := &Result{Inline: inline}
 	var err error
 	if res.Manifests, err = marshalDocs(docs); err != nil {
 		return nil, err

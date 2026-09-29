@@ -300,7 +300,7 @@ spec:
 	if dig(d[1], "spec", "dependsOn") != nil {
 		t.Errorf("inline bundle must not depend on a secrets kustomization: %v", d[1])
 	}
-	if res.ClusterSecrets == nil {
+	if res.ClusterSecrets == nil { // pragma: allowlist secret
 		t.Error("inline still needs the secrets input")
 	}
 	for _, f := range []string{"sops-age.enc.yaml", ".sops.yaml"} {
@@ -311,7 +311,7 @@ spec:
 }
 
 func TestBuildSecretsModeErrors(t *testing.T) {
-	for name, secrets := range map[string]string{
+	for name, secrets := range map[string]string{ // pragma: allowlist secret
 		"unknown mode":     "{ mode: sideways }",
 		"inline with path": "{ mode: inline, path: ./s }",
 		"inline with key":  "{ mode: inline, decryptionSecret: x }",

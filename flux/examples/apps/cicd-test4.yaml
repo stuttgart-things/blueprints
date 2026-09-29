@@ -1,0 +1,29 @@
+---
+# MVP: keycloak on labda cicd-test4, next to the cluster's existing bundles.
+#
+# - Its own catalog GitRepository (flux-apps) at a tag that has keycloak; the
+#   cluster's flux-infra stays on its pin.
+# - Its own bundle Kustomization (apps-mvp); apps-platform stays untouched.
+# - Secrets outside clusters/.../cicd-test4: that path is decrypted by
+#   flux-system with the cluster's existing sops-age key. The cluster key
+#   generated here goes into flux-system/sops-age-apps.
+kind: ClusterApps
+metadata:
+  name: cicd-test4
+spec:
+  source:
+    url: https://github.com/stuttgart-things/flux.git
+    tag: v1.99.2
+  secrets:
+    path: ./secrets/clusters/labda/vsphere/cicd-test4
+    decryptionSecret: sops-age-apps # pragma: allowlist secret
+  bundles:
+    apps-platform: { name: apps-mvp }
+  vars:
+    INFRA_DOMAIN: cicd-test4.4sthings.tiab.ssc.sva.de
+    INFRA_GATEWAY_NAMESPACE: default
+    APPS_CLUSTER_ISSUER: vault-pki-4sthings
+  apps:
+    keycloak:
+      vars:
+        KEYCLOAK_STORAGE_CLASS: openebs-hostpath

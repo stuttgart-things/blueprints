@@ -1,3 +1,10 @@
+# [3.4.0](https://github.com/stuttgart-things/blueprints/compare/v3.3.0...v3.4.0) (2026-09-29)
+
+
+### Features
+
+* **secrets:** generate per-cluster SOPS secrets from a profile ([#204](https://github.com/stuttgart-things/blueprints/issues/204)) ([d756415](https://github.com/stuttgart-things/blueprints/commit/d756415f0f0e054083b91edc6d41fedccda42296))
+
 # [3.3.0](https://github.com/stuttgart-things/blueprints/compare/v3.2.2...v3.3.0) (2026-09-22)
 
 

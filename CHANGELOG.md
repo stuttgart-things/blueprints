@@ -1,3 +1,10 @@
+## [3.6.2](https://github.com/stuttgart-things/blueprints/compare/v3.6.1...v3.6.2) (2026-10-03)
+
+
+### Bug Fixes
+
+* **flux:** kcl-flux-instance 0.3.4 and claim-flux-kustomizations 0.4.0 as defaults ([#211](https://github.com/stuttgart-things/blueprints/issues/211)) ([e222f10](https://github.com/stuttgart-things/blueprints/commit/e222f10264f4e0223c56d89eb361c9ba8befa77d)), closes [stuttgart-things/kcl#324](https://github.com/stuttgart-things/kcl/issues/324) [kcl#322](https://github.com/kcl/issues/322)
+
 ## [3.6.1](https://github.com/stuttgart-things/blueprints/compare/v3.6.0...v3.6.1) (2026-10-03)
 
 

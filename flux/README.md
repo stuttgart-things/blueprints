@@ -24,7 +24,7 @@ dagger call -m flux bootstrap \
   --apply-config=true \
   --encrypt-secrets=true \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
-  --operator-version "0.42.1" \
+  --operator-version "0.61.0" \
   --wait-for-reconciliation=true \
   --progress plain
 ```
@@ -53,7 +53,7 @@ dagger call -m flux bootstrap \
 dagger call -m flux bootstrap \
   --kube-config file:///home/sthings/.kube/cluster \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
-  --operator-version "0.42.1" \
+  --operator-version "0.61.0" \
   --apply-secrets=false \
   --commit-to-git=false \
   --wait-for-reconciliation=false \
@@ -119,7 +119,7 @@ dagger call -m flux verify-secrets \
 dagger call -m flux deploy-operator \
   --kube-config file:///home/sthings/.kube/cluster \
   --helmfile-ref "git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl" \
-  --state-values "version=0.42.1" \
+  --state-values "version=0.61.0" \
   --progress plain
 
 # Wait for reconciliation

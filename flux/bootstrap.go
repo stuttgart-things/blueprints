@@ -37,7 +37,7 @@ func (m *Flux) Destroy(
 	src *dagger.Directory,
 	// Flux operator version for Helmfile state values
 	// +optional
-	// +default="0.42.1"
+	// +default="0.61.0"
 	operatorVersion string,
 ) (string, error) {
 
@@ -146,7 +146,7 @@ func (m *Flux) Bootstrap(
 	configParameters string,
 	// Flux instance version
 	// +optional
-	// +default="2.8.5"
+	// +default="2.9.6"
 	fluxVersion string,
 	// KCL entrypoint file name
 	// +optional
@@ -232,11 +232,11 @@ func (m *Flux) Bootstrap(
 	applyConfig bool,
 	// Flux CLI container image
 	// +optional
-	// +default="ghcr.io/fluxcd/flux-cli:v2.8.5"
+	// +default="ghcr.io/fluxcd/flux-cli:v2.9.6"
 	fluxCliImage string,
 	// Flux operator version for Helmfile state values
 	// +optional
-	// +default="0.47.0"
+	// +default="0.61.0"
 	operatorVersion string,
 ) (string, error) {
 

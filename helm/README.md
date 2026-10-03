@@ -29,7 +29,7 @@ dagger call -m helm deploy-helmfile \
   --vault-secret-id env:VAULT_SECRET_ID \
   --vault-url env:VAULT_ADDR \
   --vault-auth-method approle \
-  --state-values "version=0.42.1" \
+  --state-values "version=0.61.0" \
   --progress plain
 ```
 

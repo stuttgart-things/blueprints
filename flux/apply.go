@@ -21,7 +21,7 @@ func (m *Flux) DeployOperator(
 	// +optional
 	src *dagger.Directory,
 	// Comma-separated key=value pairs for --state-values-set
-	// (e.g., "version=0.42.1")
+	// (e.g., "version=0.61.0")
 	// +optional
 	stateValues string,
 ) error {
@@ -92,7 +92,7 @@ func (m *Flux) WaitForReconciliation(
 	reconciliationTimeout string,
 	// Flux CLI container image
 	// +optional
-	// +default="ghcr.io/fluxcd/flux-cli:v2.8.3"
+	// +default="ghcr.io/fluxcd/flux-cli:v2.9.6"
 	fluxCliImage string,
 ) (string, error) {
 	timeoutSecs := parseTimeout(reconciliationTimeout)

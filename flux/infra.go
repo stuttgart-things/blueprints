@@ -152,7 +152,7 @@ func (m *Flux) BootstrapInfra(
 	verifyTimeout string,
 	// Flux CLI image used for verification
 	// +optional
-	// +default="ghcr.io/fluxcd/flux-cli:v2.9.4"
+	// +default="ghcr.io/fluxcd/flux-cli:v2.9.6"
 	fluxCliImage string,
 ) (string, error) {
 	res, err := renderInfraSet(ctx, valuesFile, ociSource, entrypoint, namespace)

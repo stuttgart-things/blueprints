@@ -51,7 +51,7 @@ dagger call -m repository-linting analyze-report --report-file /tmp/all-findings
 - Helm (render Helmfile):
 	- `dagger call -m helm deploy-helmfile --operation template --helmfile-ref git::https://github.com/stuttgart-things/helm.git@apps/nginx.yaml.gotmpl`
 - Flux (bootstrap on a cluster):
-	- `dagger call -m flux bootstrap --kube-config file://~/.kube/cluster --helmfile-ref git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl --operator-version 0.42.1`
+	- `dagger call -m flux bootstrap --kube-config file://~/.kube/cluster --helmfile-ref git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl --operator-version 0.61.0`
 - ArgoCD (render + deploy a clusterbook cluster registration):
 	- `dagger call -m argocd bootstrap-clusterbook-cluster --name=philly --network-key=10.31.101 --deploy=true --kube-config env:KUBECONFIG`
 - Secrets (decrypt a SOPS file):

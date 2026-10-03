@@ -1,3 +1,10 @@
+## [3.6.1](https://github.com/stuttgart-things/blueprints/compare/v3.6.0...v3.6.1) (2026-10-03)
+
+
+### Bug Fixes
+
+* **flux:** flux-operator 0.61.0, Flux 2.9.6 and flux-cli v2.9.6 as defaults ([#209](https://github.com/stuttgart-things/blueprints/issues/209)) ([cea4dd9](https://github.com/stuttgart-things/blueprints/commit/cea4dd966e6cad6a6ce1cefbfda0426978dfb3eb)), closes [helm#167](https://github.com/helm/issues/167)
+
 # [3.6.0](https://github.com/stuttgart-things/blueprints/compare/v3.5.0...v3.6.0) (2026-09-29)
 
 

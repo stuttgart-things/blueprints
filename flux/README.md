@@ -148,7 +148,7 @@ A `ClusterApps` file per cluster enables apps and sets values. Examples:
   `spec.source`, the same revision the cluster's bundles pull.
   `--profile-dir` replaces that, e.g. to try a profile before it is in the catalog.
 - **Bundle Kustomizations:** rendered by `claim-flux-kustomizations`
-  (`templateName: bundle`, `--bundle-module`, default 0.4.0). Its parameters go
+  (`templateName: bundle`, `--bundle-module`, default 0.5.0). Its parameters go
   as a file, so `components` and `substitute` stay a list and a map.
 
 ```bash
@@ -171,6 +171,33 @@ dagger call -m flux render-cluster-apps \
   profile does not declare, or a secret key the profile does not declare.
 - The cluster key goes into the Secret named by `spec.secrets.decryptionSecret`:
   `dagger call -m secrets cluster-age-key --existing out/cluster-secrets --master-age-key env:SOPS_AGE_KEY plaintext`.
+
+### Catalog from an OCI artifact, bundles in layers
+
+`examples/apps/oci-layers.yaml`; the full case is `clusters/edge/cluster-apps.yaml`
+in stuttgart-things/harvester ([harvester#364](https://github.com/stuttgart-things/harvester/issues/364)).
+
+- **`spec.source.kind: OCIRepository`** (default `GitRepository`): the whole
+  catalog repo as one OCI artifact, e.g. `oci://ghcr.io/stuttgart-things/flux/repo`,
+  with a `tag`. The output has an `OCIRepository` instead of the GitRepository.
+  Each bundle reads it with `sourceRef.kind: OCIRepository` and patches its
+  children to that kind (they hard-code `GitRepository`; claim-flux-kustomizations
+  0.5.0 `patches`). The profiles are read from the same artifact
+  (`flux pull artifact`). A per-directory artifact does not work: the children
+  use paths from the repo root.
+- **`spec.layers`** + **`spec.path`**: one Kustomization per layer, applying
+  `<spec.path>/<dir>` from the cluster's own repo (`flux-system`), with
+  `dependsOn`, `wait` (default `true`), `timeout` (default `5m`),
+  `decryptionSecret`, `substituteFrom` and `labels`. They go into `flux/apps.yaml`.
+- **`spec.bundles.<bundle>.layer`**: the bundle Kustomization goes to
+  `flux/<dir>/<bundle name>.yaml` instead of `flux/apps.yaml`. It gets the
+  layer's substitution, so a var can be `${CLUSTER_DOMAIN}` from a ConfigMap
+  the layer reads. A layer without bundles applies only what the cluster
+  keeps there by hand.
+- **`--extra-profile-dir`**: AppProfiles added to the catalog's, e.g. for
+  catalog components that have no `profile.yaml` yet. A name in both fails.
+- **`--bundle-source`**: a local checkout of claim-flux-kustomizations instead
+  of `--bundle-module`, to try a template change before it is published.
 
 Two layouts, set with `spec.secrets.mode`:
 

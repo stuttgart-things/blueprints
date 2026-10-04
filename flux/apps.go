@@ -32,6 +32,14 @@ const catalogProfiles = "*/platform/components/*/profile.yaml"
 //	flux/cluster-secrets/             applied by the cluster's root Kustomization
 //	flux/cluster-secrets/.sourceignore  keeps sops-age.enc.yaml and .sops.yaml out
 //
+// With spec.layers, apps.yaml also carries one Kustomization per layer, and a
+// bundle placed in a layer goes to flux/<layer dir>/<bundle name>.yaml
+// instead: export flux/ into spec.path.
+//
+// spec.source.kind OCIRepository: the catalog is the whole repo as one OCI
+// artifact. The bundles read it with sourceRef.kind OCIRepository and a patch
+// for their children; the profiles come from the same artifact.
+//
 // The AppProfiles come from the catalog itself, at the tag (or branch) in
 // spec.source -- the same revision the cluster's bundles pull. --profile-dir
 // replaces that, e.g. to try a profile before it is in the catalog. Each
@@ -60,10 +68,16 @@ func (m *Flux) RenderClusterApps(
 	// Glob for the files to read in profileDir (default **/*.yaml; the catalog: */platform/components/*/profile.yaml)
 	// +optional
 	profileGlob string,
+	// Directory with more AppProfiles (**/*.yaml), added to the catalog's or profileDir's -- e.g. a cluster's own, before they move into the catalog. A name in both fails.
+	// +optional
+	extraProfileDir *dagger.Directory,
 	// OCI KCL module rendering the bundle Kustomizations
 	// +optional
-	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations?tag=0.4.0"
+	// +default="ghcr.io/stuttgart-things/claim-flux-kustomizations?tag=0.5.0"
 	bundleModule string,
+	// Local checkout of that KCL module, used instead of bundleModule -- to try a template change before it is published
+	// +optional
+	bundleSource *dagger.Directory,
 	// AGE key of the CI / key custodian; needed when an enabled app has secrets
 	// +optional
 	masterAgeKey *dagger.Secret,
@@ -106,7 +120,11 @@ func (m *Flux) RenderClusterApps(
 
 	if profileDir == nil {
 		src := c.Spec.Source
-		profileDir = catalogCheckout(src.URL, src.Tag, src.Branch)
+		if src.IsOCI() {
+			profileDir = catalogPull(src.URL, src.Tag)
+		} else {
+			profileDir = catalogCheckout(src.URL, src.Tag, src.Branch)
+		}
 		if profileGlob == "" {
 			profileGlob = catalogProfiles
 		}
@@ -114,17 +132,15 @@ func (m *Flux) RenderClusterApps(
 	if profileGlob == "" {
 		profileGlob = "**/*.yaml"
 	}
-	paths, err := profileDir.Glob(ctx, profileGlob)
-	if err != nil {
-		return nil, fmt.Errorf("list profiles: %w", err)
-	}
 	files := map[string][]byte{}
-	for _, p := range paths {
-		s, err := profileDir.File(p).Contents(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("read %s: %w", p, err)
+	if err := readFiles(ctx, profileDir, profileGlob, "", files); err != nil {
+		return nil, err
+	}
+	if extraProfileDir != nil {
+		// prefixed, so a profile in both is a duplicate name, not a lost file
+		if err := readFiles(ctx, extraProfileDir, "**/*.yaml", "extra:", files); err != nil {
+			return nil, err
 		}
-		files[p] = []byte(s)
 	}
 	profiles, err := clusterapps.ParseProfiles(files)
 	if err != nil {
@@ -136,14 +152,21 @@ func (m *Flux) RenderClusterApps(
 		return nil, err
 	}
 	manifests := string(res.Manifests)
+	out := dag.Directory()
 	for _, b := range res.Bundles {
-		ks, err := renderBundle(ctx, bundleModule, b)
+		ks, err := renderBundle(ctx, bundleModule, bundleSource, b)
 		if err != nil {
 			return nil, fmt.Errorf("render bundle %v: %w", b["name"], err)
 		}
-		manifests += "---\n" + strings.TrimPrefix(strings.TrimSpace(ks), "---\n") + "\n"
+		doc := "---\n" + strings.TrimPrefix(strings.TrimSpace(ks), "---\n") + "\n"
+		name, _ := b["name"].(string)
+		if dir, ok := res.BundleDirs[name]; ok {
+			out = out.WithNewFile(path.Join("flux", dir, name+".yaml"), doc)
+			continue
+		}
+		manifests += doc
 	}
-	out := dag.Directory().WithNewFile("flux/apps.yaml", manifests)
+	out = out.WithNewFile("flux/apps.yaml", manifests)
 	if res.ClusterSecrets == nil { // pragma: allowlist secret
 		return out, nil
 	}
@@ -179,17 +202,52 @@ func (m *Flux) RenderClusterApps(
 // renderBundle renders one bundle Kustomization with claim-flux-kustomizations.
 // The parameters go as a file: components and substitute are a list and a
 // map, which the comma-separated --parameters form cannot carry.
-func renderBundle(ctx context.Context, module string, params clusterapps.BundleParams) (string, error) {
+func renderBundle(ctx context.Context, module string, source *dagger.Directory, params clusterapps.BundleParams) (string, error) {
 	b, err := yaml.Marshal(params)
 	if err != nil {
 		return "", err
 	}
 	file := dag.Directory().WithNewFile("parameters.yaml", string(b)).File("parameters.yaml")
-	return dag.Kcl().Run(dagger.KclRunOpts{
+	opts := dagger.KclRunOpts{
 		OciSource:      module,
 		ParametersFile: file,
 		Entrypoint:     "main.k",
-	}).Contents(ctx)
+	}
+	if source != nil {
+		opts.Source, opts.OciSource = source, ""
+	}
+	return dag.Kcl().Run(opts).Contents(ctx)
+}
+
+// readFiles adds every file of dir matching glob to files, keyed prefix+path.
+func readFiles(ctx context.Context, dir *dagger.Directory, glob, prefix string, files map[string][]byte) error {
+	paths, err := dir.Glob(ctx, glob)
+	if err != nil {
+		return fmt.Errorf("list profiles: %w", err)
+	}
+	for _, p := range paths {
+		s, err := dir.File(p).Contents(ctx)
+		if err != nil {
+			return fmt.Errorf("read %s: %w", p, err)
+		}
+		files[prefix+p] = []byte(s)
+	}
+	return nil
+}
+
+// fluxCLIImage pulls the catalog artifact; the same flux as the clusters run.
+const fluxCLIImage = "ghcr.io/fluxcd/flux-cli:v2.9.6"
+
+// catalogPull extracts the catalog's OCI artifact (the whole repo) at a tag.
+// The artifact is public; a tag is immutable, so it caches like a git tag.
+func catalogPull(url, tag string) *dagger.Directory {
+	return dag.Container().From(fluxCLIImage).
+		// flux pull wants the output directory to exist and writable; the
+		// image runs as an unprivileged user
+		WithUser("root").
+		WithDirectory("/catalog", dag.Directory()).
+		WithExec([]string{"flux", "pull", "artifact", url + ":" + tag, "--output", "/catalog"}).
+		Directory("/catalog")
 }
 
 // catalogCheckout clones the catalog at a tag or branch. A plain git clone

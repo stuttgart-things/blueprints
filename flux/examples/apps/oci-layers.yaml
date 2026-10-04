@@ -1,0 +1,50 @@
+---
+# The catalog from an OCI artifact, the bundles in layers (harvester#364,
+# phase 4b; the full case is clusters/edge/cluster-apps.yaml in
+# stuttgart-things/harvester).
+#
+# - spec.source.kind OCIRepository: the whole stuttgart-things/flux repo as
+#   one artifact. Rendered as an OCIRepository; each bundle reads it with
+#   sourceRef.kind OCIRepository and patches its children to that kind. The
+#   profiles come from the same artifact.
+# - spec.layers: Kustomizations of the cluster's own repo, one per directory
+#   below spec.path. A bundle placed in a layer goes to
+#   flux/<dir>/<bundle>.yaml, so it gets the layer's substituteFrom: here
+#   ${CLUSTER_DOMAIN} is filled in from the ConfigMap cluster-vars.
+#
+# Export flux/ into spec.path.
+kind: ClusterApps
+metadata:
+  name: edge-02
+spec:
+  source:
+    kind: OCIRepository
+    name: flux-repo
+    url: oci://ghcr.io/stuttgart-things/flux/repo
+    tag: v1.117.1
+  path: ./clusters/edge-02
+  secrets:
+    mode: inline
+  layers:
+    infra:
+      dir: infra
+      timeout: 15m
+      substituteFrom:
+        - kind: ConfigMap
+          name: cluster-vars
+    apps:
+      dir: apps
+      dependsOn: [infra]
+      decryptionSecret: sops-age # pragma: allowlist secret
+      substituteFrom:
+        - kind: ConfigMap
+          name: cluster-vars
+  bundles:
+    apps-platform:
+      layer: apps
+  vars:
+    INFRA_DOMAIN: ${CLUSTER_DOMAIN}
+  apps:
+    minio:
+      vars:
+        MINIO_STORAGE_CLASS: local-path

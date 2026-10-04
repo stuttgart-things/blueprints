@@ -346,3 +346,133 @@ func TestBuildSecretsModeErrors(t *testing.T) {
 		})
 	}
 }
+
+const ociCluster = `
+kind: ClusterApps
+metadata: { name: edge }
+spec:
+  source:
+    kind: OCIRepository
+    name: flux-repo
+    url: oci://ghcr.io/stuttgart-things/flux/repo
+    tag: v1.117.1
+    interval: 1h
+  secrets: { mode: inline }
+  path: ./clusters/edge
+  layers:
+    edge-infra:
+      dir: infra
+      timeout: 15m
+      substituteFrom: [{ kind: ConfigMap, name: cluster-vars, optional: false }]
+    edge-apps:
+      dir: apps
+      dependsOn: [edge-infra]
+      wait: false
+      decryptionSecret: sops-age
+      substituteFrom: [{ kind: ConfigMap, name: cluster-vars }]
+      labels: { kustomization.stuttgart-things.com/type: apps }
+  bundles:
+    apps-platform: { layer: edge-apps }
+  apps:
+    keycloak: { vars: { KEYCLOAK_STORAGE_CLASS: local-path } }
+`
+
+func TestBuildOCISourceAndLayers(t *testing.T) {
+	res, err := build(t, ociCluster, keycloakProfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := docs(t, res.Manifests)
+	if len(d) != 3 {
+		t.Fatalf("want OCIRepository + 2 layers, got %d docs:\n%s", len(d), res.Manifests)
+	}
+	if d[0]["kind"] != "OCIRepository" || dig(d[0], "metadata", "name") != "flux-repo" ||
+		dig(d[0], "spec", "url") != "oci://ghcr.io/stuttgart-things/flux/repo" ||
+		dig(d[0], "spec", "ref", "tag") != "v1.117.1" || dig(d[0], "spec", "interval") != "1h" {
+		t.Errorf("source: %v", d[0])
+	}
+
+	// sorted by name: edge-apps, edge-infra
+	apps, infra := d[1], d[2]
+	if dig(apps, "metadata", "name") != "edge-apps" || dig(apps, "spec", "path") != "./clusters/edge/apps" ||
+		dig(apps, "spec", "wait") != false || dig(apps, "spec", "timeout") != "5m" ||
+		dig(apps, "spec", "decryption", "secretRef", "name") != "sops-age" ||
+		dig(apps, "spec", "sourceRef", "name") != "flux-system" {
+		t.Errorf("edge-apps: %v", apps)
+	}
+	if deps, _ := dig(apps, "spec", "dependsOn").([]any); len(deps) != 1 || dig(deps[0], "name") != "edge-infra" {
+		t.Errorf("edge-apps dependsOn: %v", dig(apps, "spec", "dependsOn"))
+	}
+	if sf, _ := dig(apps, "spec", "postBuild", "substituteFrom").([]any); len(sf) != 1 ||
+		dig(sf[0], "name") != "cluster-vars" || dig(sf[0], "optional") != nil {
+		t.Errorf("edge-apps substituteFrom: %v", sf)
+	}
+	if dig(apps, "metadata", "labels", "kustomization.stuttgart-things.com/type") != "apps" || dig(infra, "metadata", "labels") != nil {
+		t.Errorf("layer labels: %v / %v", dig(apps, "metadata"), dig(infra, "metadata"))
+	}
+	if dig(infra, "spec", "wait") != true || dig(infra, "spec", "timeout") != "15m" || dig(infra, "spec", "decryption") != nil {
+		t.Errorf("edge-infra: %v", infra)
+	}
+	if sf, _ := dig(infra, "spec", "postBuild", "substituteFrom").([]any); len(sf) != 1 || dig(sf[0], "optional") != false {
+		t.Errorf("edge-infra substituteFrom: %v", sf)
+	}
+
+	if len(res.Bundles) != 1 {
+		t.Fatalf("want 1 bundle, got %v", res.Bundles)
+	}
+	b := res.Bundles[0]
+	if b["sourceRefKind"] != "OCIRepository" || b["sourceRefName"] != "flux-repo" {
+		t.Errorf("bundle source: %v", b)
+	}
+	if sub, _ := b["substitute"].(map[string]string); sub["APPS_SOURCE"] != "flux-repo" {
+		t.Errorf("bundle APPS_SOURCE: %v", b["substitute"])
+	}
+	patches, _ := b["patches"].([]any)
+	if len(patches) != 1 || !strings.Contains(dig(patches[0], "patch").(string), "value: OCIRepository") ||
+		dig(patches[0], "target", "kind") != "Kustomization" {
+		t.Errorf("bundle patches: %v", b["patches"])
+	}
+	if res.BundleDirs["apps-platform"] != "apps" {
+		t.Errorf("bundle dir: %v", res.BundleDirs)
+	}
+}
+
+func TestBuildGitSourceAddsNoOCIParams(t *testing.T) {
+	res, err := build(t, cluster, keycloakProfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{"sourceRefKind", "patches"} {
+		if _, ok := res.Bundles[0][k]; ok {
+			t.Errorf("git source must leave %s unset (the existing renders stay identical): %v", k, res.Bundles[0])
+		}
+	}
+	if len(res.BundleDirs) != 0 {
+		t.Errorf("no layers, no bundle dirs: %v", res.BundleDirs)
+	}
+}
+
+func TestBuildLayerErrors(t *testing.T) {
+	head := "kind: ClusterApps\nmetadata: { name: c }\nspec:\n  apps: { headlamp: {} }\n"
+	git := "  source: { url: https://x, tag: v1 }\n"
+	cases := map[string]struct{ spec, want string }{
+		"oci without tag":     {"  source: { kind: OCIRepository, url: oci://x }\n", "needs an oci:// url and a tag"},
+		"oci with branch":     {"  source: { kind: OCIRepository, url: oci://x, tag: v1, branch: main }\n", "needs an oci:// url and a tag"},
+		"oci with git url":    {"  source: { kind: OCIRepository, url: https://x, tag: v1 }\n", "needs an oci:// url and a tag"},
+		"unknown source kind": {"  source: { kind: Bucket, url: s3://x, tag: v1 }\n", "spec.source.kind"},
+		"layers without path": {git + "  layers: { l: { dir: a } }\n", "needs spec.path"},
+		"layer dir escapes":   {git + "  path: ./c\n  layers: { l: { dir: ../a } }\n", "must be a subdirectory"},
+		"layer dir empty":     {git + "  path: ./c\n  layers: { l: {} }\n", "must be a subdirectory"},
+		"layers share dir":    {git + "  path: ./c\n  layers: { l: { dir: a }, m: { dir: a/ } }\n", "share dir"},
+		"bad substituteFrom":  {git + "  path: ./c\n  layers: { l: { dir: a, substituteFrom: [{ kind: Bucket, name: x }] } }\n", "substituteFrom needs"},
+		"unknown layer":       {git + "  path: ./c\n  layers: { l: { dir: a } }\n  bundles: { apps-platform: { layer: m } }\n", "unknown layer"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			_, err := build(t, head+tc.spec, headlampProfile)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("got %v, want %q", err, tc.want)
+			}
+		})
+	}
+}

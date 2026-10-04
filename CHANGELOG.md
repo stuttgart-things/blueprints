@@ -1,3 +1,10 @@
+# [3.8.0](https://github.com/stuttgart-things/blueprints/compare/v3.7.0...v3.8.0) (2026-10-04)
+
+
+### Features
+
+* **flux:** render-cluster-apps -- per-bundle timeout (spec.bundles.<b>.timeout) ([#213](https://github.com/stuttgart-things/blueprints/issues/213)) ([f8cb669](https://github.com/stuttgart-things/blueprints/commit/f8cb669a8253aa9721067f4ec1de6a7c72e28421)), closes [stuttgart-things/harvester#364](https://github.com/stuttgart-things/harvester/issues/364)
+
 # [3.7.0](https://github.com/stuttgart-things/blueprints/compare/v3.6.2...v3.7.0) (2026-10-04)
 
 

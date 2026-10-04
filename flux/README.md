@@ -194,6 +194,9 @@ in stuttgart-things/harvester ([harvester#364](https://github.com/stuttgart-thin
   layer's substitution, so a var can be `${CLUSTER_DOMAIN}` from a ConfigMap
   the layer reads. A layer without bundles applies only what the cluster
   keeps there by hand.
+- **`spec.bundles.<bundle>.timeout`**: `spec.timeout` of the bundle
+  Kustomization (default `15m`), e.g. `10m` for a small infra bundle. The
+  bundle waits for every selected app, so this is how long they all may take.
 - **`--extra-profile-dir`**: AppProfiles added to the catalog's, e.g. for
   catalog components that have no `profile.yaml` yet. A name in both fails.
 - **`--bundle-source`**: a local checkout of claim-flux-kustomizations instead

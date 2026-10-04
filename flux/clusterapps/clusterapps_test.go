@@ -372,7 +372,7 @@ spec:
       substituteFrom: [{ kind: ConfigMap, name: cluster-vars }]
       labels: { kustomization.stuttgart-things.com/type: apps }
   bundles:
-    apps-platform: { layer: edge-apps }
+    apps-platform: { layer: edge-apps, timeout: 10m }
   apps:
     keycloak: { vars: { KEYCLOAK_STORAGE_CLASS: local-path } }
 `
@@ -423,6 +423,9 @@ func TestBuildOCISourceAndLayers(t *testing.T) {
 	b := res.Bundles[0]
 	if b["sourceRefKind"] != "OCIRepository" || b["sourceRefName"] != "flux-repo" {
 		t.Errorf("bundle source: %v", b)
+	}
+	if b["timeout"] != "10m" {
+		t.Errorf("bundle timeout: %v", b["timeout"])
 	}
 	if sub, _ := b["substitute"].(map[string]string); sub["APPS_SOURCE"] != "flux-repo" {
 		t.Errorf("bundle APPS_SOURCE: %v", b["substitute"])

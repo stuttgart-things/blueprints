@@ -11,6 +11,8 @@
 #   below spec.path. A bundle placed in a layer goes to
 #   flux/<dir>/<bundle>.yaml, so it gets the layer's substituteFrom: here
 #   ${CLUSTER_DOMAIN} is filled in from the ConfigMap cluster-vars.
+# - spec.bundles.<b>.timeout: the bundle Kustomization's spec.timeout
+#   (default 15m).
 #
 # Export flux/ into spec.path.
 kind: ClusterApps
@@ -42,6 +44,7 @@ spec:
   bundles:
     apps-platform:
       layer: apps
+      timeout: 10m
   vars:
     INFRA_DOMAIN: ${CLUSTER_DOMAIN}
   apps:

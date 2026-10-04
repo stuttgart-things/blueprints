@@ -53,6 +53,7 @@ const (
 	defaultSecretsKs        = "cluster-secrets" // pragma: allowlist secret
 	defaultDecryptionSecret = "sops-age"        // pragma: allowlist secret
 	defaultClusterSource    = "flux-system"
+	defaultBundleTimeout    = "15m"
 
 	SourceKindGit = "GitRepository"
 	SourceKindOCI = "OCIRepository"
@@ -213,10 +214,12 @@ type SecretsSpec struct {
 }
 
 // Bundle renames a bundle's Kustomization, e.g. to run next to an existing
-// one, and places it in a layer.
+// one, places it in a layer and sets its timeout.
 type Bundle struct {
 	Name  string `yaml:"name"`
 	Layer string `yaml:"layer"`
+	// spec.timeout of the bundle Kustomization; default 15m
+	Timeout string `yaml:"timeout"`
 }
 
 // App enables one catalog app and sets its values.
@@ -480,7 +483,7 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 			"namespace":     "flux-system",
 			"interval":      "1h",
 			"retryInterval": "1m",
-			"timeout":       "15m",
+			"timeout":       or(spec.Bundles[b].Timeout, defaultBundleTimeout),
 			"sourceRefName": sourceName,
 			"path":          bundles[b].root,
 			"components":    bs.components,

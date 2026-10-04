@@ -53,7 +53,19 @@ const (
 	defaultSecretsKs        = "cluster-secrets" // pragma: allowlist secret
 	defaultDecryptionSecret = "sops-age"        // pragma: allowlist secret
 	defaultClusterSource    = "flux-system"
+
+	SourceKindGit = "GitRepository"
+	SourceKindOCI = "OCIRepository"
 )
+
+// ociKindPatch turns every Kustomization a bundle renders into an
+// OCIRepository consumer. The catalog's bundle children hard-code
+// sourceRef.kind: GitRepository and read only the name from APPS_SOURCE /
+// FLUX_SOURCE; drop this once the catalog has a variable for the kind.
+var ociKindPatch = map[string]any{
+	"target": map[string]any{"group": "kustomize.toolkit.fluxcd.io", "kind": "Kustomization"},
+	"patch":  "- op: replace\n  path: /spec/sourceRef/kind\n  value: OCIRepository\n",
+}
 
 // bundle is one catalog bundle: its root and the variable its components
 // read the GitRepository name from.
@@ -123,17 +135,60 @@ type ClusterApps struct {
 		Bundles map[string]Bundle `yaml:"bundles"`
 		Vars    map[string]string `yaml:"vars"`
 		Apps    map[string]App    `yaml:"apps"`
+		// Path of the cluster in its own repo, e.g. ./clusters/edge. Needed
+		// for layers: their Kustomizations point at <path>/<dir>.
+		Path   string           `yaml:"path"`
+		Layers map[string]Layer `yaml:"layers"`
 	} `yaml:"spec"`
 }
 
-// Source is the catalog GitRepository the bundles pull from.
+// Layer is a Kustomization of the cluster's own repo that applies one
+// directory of it, <spec.path>/<dir>: a bundle placed in the layer
+// (spec.bundles.<b>.layer) is written into that directory instead of
+// apps.yaml, so it starts only when the layer does (dependsOn) and gets the
+// layer's substitution and decryption. A layer without bundles applies only
+// what the cluster keeps there by hand.
+//
+//	layers:
+//	  edge-infra: { dir: infra, timeout: 15m, substituteFrom: [{ kind: ConfigMap, name: cluster-vars }] }
+//	  edge-apps:  { dir: apps, dependsOn: [edge-infra], wait: false, decryptionSecret: sops-age }
+type Layer struct {
+	Dir       string   `yaml:"dir"`
+	DependsOn []string `yaml:"dependsOn"`
+	// default true
+	Wait *bool `yaml:"wait"`
+	// default 5m
+	Timeout string `yaml:"timeout"`
+	// SOPS: every layer that applies a *.enc.yaml needs its own; the
+	// FluxInstance's patch reaches only flux-system.
+	DecryptionSecret string            `yaml:"decryptionSecret"`
+	SubstituteFrom   []SubstituteFrom  `yaml:"substituteFrom"`
+	Labels           map[string]string `yaml:"labels"`
+}
+
+// SubstituteFrom is one postBuild.substituteFrom source.
+type SubstituteFrom struct {
+	Kind     string `yaml:"kind" json:"kind"`
+	Name     string `yaml:"name" json:"name"`
+	Optional *bool  `yaml:"optional,omitempty" json:"optional,omitempty"`
+}
+
+// Source is the catalog source the bundles pull from: a GitRepository
+// (default), or an OCIRepository holding the whole catalog repo as one
+// artifact (oci://ghcr.io/stuttgart-things/flux/repo, tag only). A
+// per-directory artifact does not work: the bundle children use paths from
+// the repo root.
 type Source struct {
+	Kind     string `yaml:"kind"`
 	Name     string `yaml:"name"`
 	URL      string `yaml:"url"`
 	Tag      string `yaml:"tag"`
 	Branch   string `yaml:"branch"`
 	Interval string `yaml:"interval"`
 }
+
+// IsOCI reports whether the catalog comes from an OCIRepository.
+func (s Source) IsOCI() bool { return s.Kind == SourceKindOCI }
 
 // SecretsSpec says where the generate-cluster-secrets output lives in the
 // cluster repo, and who applies it.
@@ -157,9 +212,11 @@ type SecretsSpec struct {
 	SourceRef string `yaml:"sourceRef"`
 }
 
-// Bundle renames a bundle's Kustomization, e.g. to run next to an existing one.
+// Bundle renames a bundle's Kustomization, e.g. to run next to an existing
+// one, and places it in a layer.
 type Bundle struct {
-	Name string `yaml:"name"`
+	Name  string `yaml:"name"`
+	Layer string `yaml:"layer"`
 }
 
 // App enables one catalog app and sets its values.
@@ -171,14 +228,17 @@ type App struct {
 
 // Result is what Build renders.
 type Result struct {
-	// Flux manifests for the cluster's own path: the catalog GitRepository
-	// and, in mode separate, the secrets Kustomization.
+	// Flux manifests for the cluster's own path: the catalog source, the
+	// layer Kustomizations and, in mode separate, the secrets Kustomization.
 	Manifests []byte
 	// One parameters file per bundle for claim-flux-kustomizations
 	// templateName=bundle, which renders the bundle Kustomization. The
 	// structured values (components, substitute) survive only through a
 	// parameters file, not through the comma-separated --parameters form.
 	Bundles []BundleParams
+	// Bundle Kustomization name -> the layer directory its file goes to.
+	// A bundle without a layer goes into Manifests' file.
+	BundleDirs map[string]string
 	// ClusterSecrets and SecretProfile documents for generate-cluster-secrets.
 	// Nil when no enabled app has secrets.
 	ClusterSecrets []byte
@@ -282,15 +342,30 @@ func (ap *AppProfile) validate() error {
 // Build checks the cluster file against the profiles and renders the result.
 func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 	spec := &c.Spec
-	if spec.Source.URL == "" || (spec.Source.Tag == "") == (spec.Source.Branch == "") {
-		return nil, fmt.Errorf("%s: spec.source needs a url and exactly one of tag or branch", c.Metadata.Name)
+	switch spec.Source.Kind {
+	case "", SourceKindGit:
+		if spec.Source.URL == "" || (spec.Source.Tag == "") == (spec.Source.Branch == "") {
+			return nil, fmt.Errorf("%s: spec.source needs a url and exactly one of tag or branch", c.Metadata.Name)
+		}
+	case SourceKindOCI:
+		if !strings.HasPrefix(spec.Source.URL, "oci://") || spec.Source.Tag == "" || spec.Source.Branch != "" {
+			return nil, fmt.Errorf("%s: spec.source of kind %s needs an oci:// url and a tag, no branch", c.Metadata.Name, SourceKindOCI)
+		}
+	default:
+		return nil, fmt.Errorf("%s: spec.source.kind %q: want %s or %s", c.Metadata.Name, spec.Source.Kind, SourceKindGit, SourceKindOCI)
+	}
+	if err := checkLayers(c); err != nil {
+		return nil, err
 	}
 	if len(spec.Apps) == 0 {
 		return nil, fmt.Errorf("%s: spec.apps is empty", c.Metadata.Name)
 	}
-	for b := range spec.Bundles {
+	for b, cfg := range spec.Bundles {
 		if _, ok := bundles[b]; !ok {
 			return nil, fmt.Errorf("%s: spec.bundles: unknown bundle %q", c.Metadata.Name, b)
+		}
+		if _, ok := spec.Layers[cfg.Layer]; cfg.Layer != "" && !ok {
+			return nil, fmt.Errorf("%s: spec.bundles.%s: unknown layer %q", c.Metadata.Name, b, cfg.Layer)
 		}
 	}
 	sourceName := or(spec.Source.Name, defaultSourceName)
@@ -374,7 +449,10 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 	}
 
 	secretsKs := or(spec.Secrets.Kustomization, defaultSecretsKs)
-	docs := []any{gitRepository(sourceName, spec.Source)}
+	docs := []any{source(sourceName, spec.Source)}
+	for _, name := range sortedKeys(spec.Layers) {
+		docs = append(docs, layerKustomization(name, spec.Path, spec.Layers[name]))
+	}
 	if len(withSecrets) > 0 && !inline {
 		docs = append(docs, kustomization(ksSpec{
 			name:       secretsKs,
@@ -385,6 +463,7 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 		}))
 	}
 	var bundleParams []BundleParams
+	bundleDirs := map[string]string{}
 	for _, b := range sortedKeys(state) {
 		bs := state[b]
 		sub := map[string]string{bundles[b].sourceVar: sourceName}
@@ -412,10 +491,17 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 		if bs.secrets && !inline {
 			params["dependsOnNames"] = []string{secretsKs}
 		}
+		if spec.Source.IsOCI() {
+			params["sourceRefKind"] = SourceKindOCI
+			params["patches"] = []any{ociKindPatch}
+		}
+		if l := spec.Bundles[b].Layer; l != "" {
+			bundleDirs[params["name"].(string)] = spec.Layers[l].Dir
+		}
 		bundleParams = append(bundleParams, params)
 	}
 
-	res := &Result{Inline: inline, Bundles: bundleParams}
+	res := &Result{Inline: inline, Bundles: bundleParams, BundleDirs: bundleDirs}
 	var err error
 	if res.Manifests, err = marshalDocs(docs); err != nil {
 		return nil, err
@@ -525,6 +611,87 @@ func kustomization(k ksSpec) map[string]any {
 		"metadata":   map[string]any{"name": k.name, "namespace": "flux-system"},
 		"spec":       spec,
 	}
+}
+
+// checkLayers validates spec.layers and spec.path.
+func checkLayers(c *ClusterApps) error {
+	spec := &c.Spec
+	if len(spec.Layers) == 0 {
+		return nil
+	}
+	if spec.Path == "" {
+		return fmt.Errorf("%s: spec.layers needs spec.path, the cluster's path in its repo", c.Metadata.Name)
+	}
+	dirs := map[string]string{}
+	var errs []error
+	for _, name := range sortedKeys(spec.Layers) {
+		l := spec.Layers[name]
+		d := path.Clean(l.Dir)
+		if l.Dir == "" || path.IsAbs(d) || d == "." || strings.HasPrefix(d, "..") {
+			errs = append(errs, fmt.Errorf("%s: layer %s: dir %q must be a subdirectory of spec.path", c.Metadata.Name, name, l.Dir))
+		} else if other, dup := dirs[d]; dup {
+			errs = append(errs, fmt.Errorf("%s: layers %s and %s share dir %q", c.Metadata.Name, other, name, d))
+		}
+		dirs[d] = name
+		for _, sf := range l.SubstituteFrom {
+			if (sf.Kind != "ConfigMap" && sf.Kind != "Secret") || sf.Name == "" {
+				errs = append(errs, fmt.Errorf("%s: layer %s: substituteFrom needs kind ConfigMap or Secret and a name", c.Metadata.Name, name))
+			}
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// layerKustomization applies <clusterPath>/<dir> from the cluster's own repo.
+func layerKustomization(name, clusterPath string, l Layer) map[string]any {
+	spec := map[string]any{
+		"interval":      "1h",
+		"retryInterval": "1m",
+		"timeout":       or(l.Timeout, "5m"),
+		"prune":         true,
+		"wait":          l.Wait == nil || *l.Wait,
+		"sourceRef":     map[string]any{"kind": SourceKindGit, "name": defaultClusterSource},
+		"path":          "./" + path.Join(strings.TrimPrefix(clusterPath, "./"), path.Clean(l.Dir)),
+	}
+	if len(l.DependsOn) > 0 {
+		deps := []map[string]string{}
+		for _, d := range l.DependsOn {
+			deps = append(deps, map[string]string{"name": d})
+		}
+		spec["dependsOn"] = deps
+	}
+	if len(l.SubstituteFrom) > 0 {
+		spec["postBuild"] = map[string]any{"substituteFrom": l.SubstituteFrom}
+	}
+	if l.DecryptionSecret != "" {
+		spec["decryption"] = map[string]any{"provider": "sops", "secretRef": map[string]string{"name": l.DecryptionSecret}}
+	}
+	meta := map[string]any{"name": name, "namespace": "flux-system"}
+	if len(l.Labels) > 0 {
+		meta["labels"] = l.Labels
+	}
+	return map[string]any{
+		"apiVersion": "kustomize.toolkit.fluxcd.io/v1",
+		"kind":       "Kustomization",
+		"metadata":   meta,
+		"spec":       spec,
+	}
+}
+
+func source(name string, s Source) map[string]any {
+	if s.IsOCI() {
+		return map[string]any{
+			"apiVersion": "source.toolkit.fluxcd.io/v1",
+			"kind":       SourceKindOCI,
+			"metadata":   map[string]any{"name": name, "namespace": "flux-system"},
+			"spec": map[string]any{
+				"interval": or(s.Interval, "10m"),
+				"url":      s.URL,
+				"ref":      map[string]string{"tag": s.Tag},
+			},
+		}
+	}
+	return gitRepository(name, s)
 }
 
 func gitRepository(name string, s Source) map[string]any {

@@ -1,3 +1,10 @@
+# [3.7.0](https://github.com/stuttgart-things/blueprints/compare/v3.6.2...v3.7.0) (2026-10-04)
+
+
+### Features
+
+* **flux:** render-cluster-apps -- catalog from an OCIRepository, bundles in layers ([#212](https://github.com/stuttgart-things/blueprints/issues/212)) ([3a9d310](https://github.com/stuttgart-things/blueprints/commit/3a9d310e29c2f7fd66cc10aa5876f593e59fd139)), closes [harvester#364](https://github.com/harvester/issues/364)
+
 ## [3.6.2](https://github.com/stuttgart-things/blueprints/compare/v3.6.1...v3.6.2) (2026-10-03)
 
 

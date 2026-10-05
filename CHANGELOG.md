@@ -1,3 +1,10 @@
+# [3.9.0](https://github.com/stuttgart-things/blueprints/compare/v3.8.0...v3.9.0) (2026-10-05)
+
+
+### Features
+
+* **flux:** render-cluster-apps marks secret-keyword lines with pragma: allowlist secret ([#214](https://github.com/stuttgart-things/blueprints/issues/214)) ([3aacb9a](https://github.com/stuttgart-things/blueprints/commit/3aacb9a28ac67d8a61f931b6cf87a60e3fde86d5)), closes [stuttgart-things/harvester#364](https://github.com/stuttgart-things/harvester/issues/364)
+
 # [3.8.0](https://github.com/stuttgart-things/blueprints/compare/v3.7.0...v3.8.0) (2026-10-04)
 
 

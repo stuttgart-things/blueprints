@@ -167,6 +167,10 @@ dagger call -m flux render-cluster-apps \
   Otherwise that Kustomization fails on files it cannot decrypt.
 - Omit `--existing-secrets` only on the first run, otherwise every generated
   value and the cluster key are replaced.
+- Lines in the generated Kustomizations whose key contains a detect-secrets
+  keyword (`INFRA_TLS_SECRET: wildcard-tls`) get `# pragma: allowlist secret`.
+  They only ever hold names (values are in `cluster-secrets/`), and a pragma
+  added by hand would be lost on the next render.
 - The run fails early on an unknown app, a missing required var, a var the
   profile does not declare, or a secret key the profile does not declare.
 - The cluster key goes into the Secret named by `spec.secrets.decryptionSecret`:

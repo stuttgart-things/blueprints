@@ -158,7 +158,7 @@ func (m *Flux) RenderClusterApps(
 		if err != nil {
 			return nil, fmt.Errorf("render bundle %v: %w", b["name"], err)
 		}
-		doc := "---\n" + strings.TrimPrefix(strings.TrimSpace(ks), "---\n") + "\n"
+		doc := clusterapps.AllowlistSecretKeywords("---\n" + strings.TrimPrefix(strings.TrimSpace(ks), "---\n") + "\n")
 		name, _ := b["name"].(string)
 		if dir, ok := res.BundleDirs[name]; ok {
 			out = out.WithNewFile(path.Join("flux", dir, name+".yaml"), doc)
@@ -166,7 +166,7 @@ func (m *Flux) RenderClusterApps(
 		}
 		manifests += doc
 	}
-	out = out.WithNewFile("flux/apps.yaml", manifests)
+	out = out.WithNewFile("flux/apps.yaml", clusterapps.AllowlistSecretKeywords(manifests))
 	if res.ClusterSecrets == nil { // pragma: allowlist secret
 		return out, nil
 	}

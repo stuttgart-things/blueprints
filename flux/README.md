@@ -201,6 +201,32 @@ in stuttgart-things/harvester ([harvester#364](https://github.com/stuttgart-thin
 - **`spec.bundles.<bundle>.timeout`**: `spec.timeout` of the bundle
   Kustomization (default `15m`), e.g. `10m` for a small infra bundle. The
   bundle waits for every selected app, so this is how long they all may take.
+- **`spec.wiring`** (opt-in, [#215](https://github.com/stuttgart-things/blueprints/issues/215)):
+  with `generate: true` the run also writes the `kustomization.yaml` files
+  that list what it generated, so they cannot drift. Unset, the output is
+  exactly as before.
+  - `flux/kustomization.yaml`: `spec.wiring.bootstrap` (default `config.yaml`,
+    `secrets.yaml`, the files the Flux bootstrap commits; `[]` for none), then
+    `spec.wiring.extraResources` (hand-written files of the cluster's path,
+    e.g. `cluster-vars.yaml`), `apps.yaml` and, in mode `inline` with secrets,
+    `cluster-secrets/secrets`.
+  - `flux/<dir>/kustomization.yaml` per layer: its bundle files (sorted), then
+    `spec.layers.<name>.extraResources` (e.g. `ca.yaml`). A layer with neither
+    gets no file, so a hand-written `kustomization.yaml` there stays.
+  - Lists keep their order. An entry that is not a relative path, is listed
+    twice or names a generated file fails the run, as does `extraResources`
+    without `generate: true`.
+
+  ```yaml
+  spec:
+    wiring:
+      generate: true
+      extraResources: [cluster-vars.yaml]
+    layers:
+      edge-infra: { dir: infra, extraResources: [ca.yaml] }
+      edge-apps: { dir: apps }
+      edge-lab: { dir: lab } # no bundle, no extras: lab/kustomization.yaml stays hand-written
+  ```
 - **`--extra-profile-dir`**: AppProfiles added to the catalog's, e.g. for
   catalog components that have no `profile.yaml` yet. A name in both fails.
 - **`--bundle-source`**: a local checkout of claim-flux-kustomizations instead

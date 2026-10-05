@@ -140,7 +140,39 @@ type ClusterApps struct {
 		// for layers: their Kustomizations point at <path>/<dir>.
 		Path   string           `yaml:"path"`
 		Layers map[string]Layer `yaml:"layers"`
+		// Wiring: also generate the kustomization.yaml files that list what
+		// the run writes. Off by default.
+		Wiring Wiring `yaml:"wiring"`
 	} `yaml:"spec"`
+}
+
+// DefaultBootstrapResources are the files the Flux bootstrap commits to the
+// cluster's path: the FluxInstance and its sops key.
+var DefaultBootstrapResources = []string{"config.yaml", "secrets.yaml"}
+
+// WiringFile is the name of a generated wiring file.
+const WiringFile = "kustomization.yaml"
+
+// Wiring generates the cluster path's kustomization.yaml files, which
+// otherwise are hand-written lists of what render-cluster-apps wrote.
+// flux/kustomization.yaml lists bootstrap, extraResources, apps.yaml and, in
+// mode inline with secrets, cluster-secrets/secrets. Each layer dir gets
+// flux/<dir>/kustomization.yaml with the layer's bundle files (sorted), then
+// spec.layers.<name>.extraResources. A layer with neither gets none, so a
+// hand-written one there is left alone.
+//
+//	wiring:
+//	  generate: true
+//	  extraResources: [cluster-vars.yaml]
+//	layers:
+//	  edge-infra: { dir: infra, extraResources: [ca.yaml] }
+type Wiring struct {
+	Generate bool `yaml:"generate"`
+	// Files the Flux bootstrap committed to the cluster's path; default
+	// config.yaml, secrets.yaml. [] for none.
+	Bootstrap []string `yaml:"bootstrap"`
+	// Hand-written resources of the cluster's path, listed after bootstrap.
+	ExtraResources []string `yaml:"extraResources"`
 }
 
 // Layer is a Kustomization of the cluster's own repo that applies one
@@ -165,6 +197,9 @@ type Layer struct {
 	DecryptionSecret string            `yaml:"decryptionSecret"`
 	SubstituteFrom   []SubstituteFrom  `yaml:"substituteFrom"`
 	Labels           map[string]string `yaml:"labels"`
+	// Hand-written resources of the layer's dir, listed in its generated
+	// kustomization.yaml after the bundle files; needs spec.wiring.generate.
+	ExtraResources []string `yaml:"extraResources"`
 }
 
 // SubstituteFrom is one postBuild.substituteFrom source.
@@ -248,6 +283,10 @@ type Result struct {
 	SecretProfiles map[string][]byte
 	// Inline: the secrets go next to Manifests, see SecretsSpec.
 	Inline bool
+	// spec.wiring.generate: directory below the output's flux/ ("" = the
+	// cluster's path itself) -> its kustomization.yaml resources, in order.
+	// Render with WiringFiles.
+	Wiring map[string][]string
 }
 
 // BundleParams is a parameters file for claim-flux-kustomizations.
@@ -358,6 +397,9 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 		return nil, fmt.Errorf("%s: spec.source.kind %q: want %s or %s", c.Metadata.Name, spec.Source.Kind, SourceKindGit, SourceKindOCI)
 	}
 	if err := checkLayers(c); err != nil {
+		return nil, err
+	}
+	if err := checkWiring(c); err != nil {
 		return nil, err
 	}
 	if len(spec.Apps) == 0 {
@@ -505,6 +547,9 @@ func Build(c *ClusterApps, profiles map[string]*AppProfile) (*Result, error) {
 	}
 
 	res := &Result{Inline: inline, Bundles: bundleParams, BundleDirs: bundleDirs}
+	if spec.Wiring.Generate {
+		res.Wiring = wiring(c, bundleDirs, inline && len(withSecrets) > 0)
+	}
 	var err error
 	if res.Manifests, err = marshalDocs(docs); err != nil {
 		return nil, err
@@ -643,6 +688,109 @@ func checkLayers(c *ClusterApps) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// checkWiring validates spec.wiring and the layers' extraResources: every
+// entry a relative path, none listed twice or clashing with a generated file,
+// and extraResources only together with wiring.generate.
+func checkWiring(c *ClusterApps) error {
+	spec := &c.Spec
+	w := spec.Wiring
+	var errs []error
+	check := func(where string, reserved map[string]bool, lists ...[]string) {
+		seen := map[string]bool{}
+		for _, list := range lists {
+			for _, r := range list {
+				clean := path.Clean(r)
+				switch {
+				case strings.TrimSpace(r) == "" || path.IsAbs(clean) || clean == ".":
+					errs = append(errs, fmt.Errorf("%s: %s: resource %q must be a relative path", c.Metadata.Name, where, r))
+				case reserved[clean]:
+					errs = append(errs, fmt.Errorf("%s: %s: %q is generated, do not list it", c.Metadata.Name, where, r))
+				case seen[clean]:
+					errs = append(errs, fmt.Errorf("%s: %s: %q listed twice", c.Metadata.Name, where, r))
+				}
+				seen[clean] = true
+			}
+		}
+	}
+	if !w.Generate {
+		if w.Bootstrap != nil || len(w.ExtraResources) > 0 {
+			errs = append(errs, fmt.Errorf("%s: spec.wiring: bootstrap and extraResources need generate: true", c.Metadata.Name))
+		}
+		for _, name := range sortedKeys(spec.Layers) {
+			if len(spec.Layers[name].ExtraResources) > 0 {
+				errs = append(errs, fmt.Errorf("%s: layer %s: extraResources needs spec.wiring.generate: true", c.Metadata.Name, name))
+			}
+		}
+		return errors.Join(errs...)
+	}
+	check("spec.wiring", map[string]bool{"apps.yaml": true, "cluster-secrets/secrets": true, WiringFile: true}, bootstrapResources(w), w.ExtraResources) // pragma: allowlist secret
+	for _, name := range sortedKeys(spec.Layers) {
+		reserved := map[string]bool{WiringFile: true}
+		for b, cfg := range spec.Bundles {
+			if cfg.Layer == name {
+				reserved[or(cfg.Name, b)+".yaml"] = true
+			}
+		}
+		check("layer "+name+": extraResources", reserved, spec.Layers[name].ExtraResources)
+	}
+	return errors.Join(errs...)
+}
+
+// wiring lists the resources of every generated kustomization.yaml, see
+// Wiring. User lists keep their order; bundle files are sorted.
+func wiring(c *ClusterApps, bundleDirs map[string]string, inlineSecrets bool) map[string][]string {
+	spec := &c.Spec
+	root := append(append(append([]string{}, bootstrapResources(spec.Wiring)...), spec.Wiring.ExtraResources...), "apps.yaml")
+	if inlineSecrets {
+		root = append(root, "cluster-secrets/secrets")
+	}
+	out := map[string][]string{"": root}
+	byDir := map[string][]string{}
+	for _, name := range sortedKeys(bundleDirs) {
+		d := path.Clean(bundleDirs[name])
+		byDir[d] = append(byDir[d], name+".yaml")
+	}
+	for _, name := range sortedKeys(spec.Layers) {
+		l := spec.Layers[name]
+		d := path.Clean(l.Dir)
+		res := append(append([]string{}, byDir[d]...), l.ExtraResources...)
+		if len(res) > 0 {
+			out[d] = res
+		}
+	}
+	return out
+}
+
+// bootstrapResources is spec.wiring.bootstrap, or its default when unset.
+func bootstrapResources(w Wiring) []string {
+	if w.Bootstrap == nil {
+		return DefaultBootstrapResources
+	}
+	return w.Bootstrap
+}
+
+// WiringFiles renders Result.Wiring: path below flux/ -> kustomization.yaml.
+// from names the ClusterApps file in the header comment.
+func (r *Result) WiringFiles(cluster, from string) map[string][]byte {
+	out := map[string][]byte{}
+	for dir, resources := range r.Wiring {
+		var b strings.Builder
+		fmt.Fprintf(&b, "# GENERATED by blueprints flux render-cluster-apps from %s\n", from)
+		fmt.Fprintf(&b, "# (ClusterApps %s, spec.wiring). Do not edit: list hand-written files in\n", cluster)
+		if dir == "" {
+			b.WriteString("# spec.wiring.extraResources there and re-render.\n")
+		} else {
+			b.WriteString("# spec.layers.<layer>.extraResources there and re-render.\n")
+		}
+		b.WriteString("apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n")
+		for _, res := range resources {
+			fmt.Fprintf(&b, "  - %s\n", res)
+		}
+		out[path.Join(dir, WiringFile)] = []byte(b.String())
+	}
+	return out
 }
 
 // layerKustomization applies <clusterPath>/<dir> from the cluster's own repo.

@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"maps"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -31,6 +33,11 @@ const catalogProfiles = "*/platform/components/*/profile.yaml"
 //	flux/apps.yaml                    -> the cluster's own path, as a whole
 //	flux/cluster-secrets/             applied by the cluster's root Kustomization
 //	flux/cluster-secrets/.sourceignore  keeps sops-age.enc.yaml and .sops.yaml out
+//
+// spec.wiring.generate: true adds flux/kustomization.yaml (bootstrap files,
+// spec.wiring.extraResources, apps.yaml, cluster-secrets/secrets in mode
+// inline) and flux/<layer dir>/kustomization.yaml (the layer's bundle files,
+// spec.layers.<name>.extraResources) for each layer that has either.
 //
 // With spec.layers, apps.yaml also carries one Kustomization per layer, and a
 // bundle placed in a layer goes to flux/<layer dir>/<bundle name>.yaml
@@ -167,6 +174,16 @@ func (m *Flux) RenderClusterApps(
 		manifests += doc
 	}
 	out = out.WithNewFile("flux/apps.yaml", clusterapps.AllowlistSecretKeywords(manifests))
+	if res.Wiring != nil {
+		from, err := clusterApps.Name(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("cluster apps file name: %w", err)
+		}
+		files := res.WiringFiles(c.Metadata.Name, path.Base(from))
+		for _, p := range slices.Sorted(maps.Keys(files)) {
+			out = out.WithNewFile(path.Join("flux", p), clusterapps.AllowlistSecretKeywords(string(files[p])))
+		}
+	}
 	if res.ClusterSecrets == nil { // pragma: allowlist secret
 		return out, nil
 	}

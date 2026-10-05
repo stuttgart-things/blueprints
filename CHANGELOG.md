@@ -1,3 +1,10 @@
+# [3.10.0](https://github.com/stuttgart-things/blueprints/compare/v3.9.0...v3.10.0) (2026-10-05)
+
+
+### Features
+
+* **flux:** render-cluster-apps -- optionally generate the kustomization.yaml wiring (spec.wiring) ([#215](https://github.com/stuttgart-things/blueprints/issues/215)) ([#216](https://github.com/stuttgart-things/blueprints/issues/216)) ([2980b0a](https://github.com/stuttgart-things/blueprints/commit/2980b0a7d75355ed7d2c257cc48b02f438e24fd3))
+
 # [3.9.0](https://github.com/stuttgart-things/blueprints/compare/v3.8.0...v3.9.0) (2026-10-05)
 
 

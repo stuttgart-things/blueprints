@@ -13,6 +13,11 @@
 #   ${CLUSTER_DOMAIN} is filled in from the ConfigMap cluster-vars.
 # - spec.bundles.<b>.timeout: the bundle Kustomization's spec.timeout
 #   (default 15m).
+# - spec.wiring.generate: also write flux/kustomization.yaml (config.yaml,
+#   secrets.yaml, the extraResources, apps.yaml, cluster-secrets/secrets) and
+#   flux/<dir>/kustomization.yaml per layer (its bundle files, then the
+#   layer's extraResources). Here: infra/ gets only extraResources (no
+#   bundle), apps/ gets apps-platform.yaml.
 #
 # Export flux/ into spec.path.
 kind: ClusterApps
@@ -25,12 +30,16 @@ spec:
     url: oci://ghcr.io/stuttgart-things/flux/repo
     tag: v1.117.1
   path: ./clusters/edge-02
+  wiring:
+    generate: true
+    extraResources: [cluster-vars.yaml]
   secrets:
     mode: inline
   layers:
     infra:
       dir: infra
       timeout: 15m
+      extraResources: [ca.yaml]
       substituteFrom:
         - kind: ConfigMap
           name: cluster-vars

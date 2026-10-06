@@ -27,7 +27,8 @@ func (m *Vm) ExecuteAnsibleWithExport(
 	hosts string,
 	// +optional
 	parameters string,
-	// Path to a YAML file containing parameters (lower priority)
+	// Path to a YAML file containing parameters (lower priority). Nested
+	// dicts and lists keep their types.
 	// +optional
 	parametersFile *dagger.File,
 	// +optional

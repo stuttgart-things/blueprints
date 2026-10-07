@@ -59,6 +59,8 @@ dagger call -m secrets create-kubernetes-secret-string \
   --age-public-key env:AGE_PUB
 ```
 
+Only `data`/`stringData` are encrypted (`--encrypted-regex`, default `^(data|stringData)$`), so `apiVersion`, `kind` and `metadata` stay readable and Flux's kustomize-controller can apply the Secret. With `--sops-config` the config's creation rule decides instead.
+
 ```bash
 # VALIDATE that an AGE private key matches a given AGE public key
 dagger call -m secrets validate-age-key-pair \

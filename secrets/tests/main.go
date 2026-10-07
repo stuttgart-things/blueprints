@@ -11,6 +11,7 @@ import (
 	"context"
 	"crypto/rand"
 	_ "embed"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -86,6 +87,7 @@ func (t *Tests) All(ctx context.Context) (string, error) {
 		{"edge cluster without vault works, with its own key", func() error { return f.checkNoVault(ctx, first) }},
 		{"vault ref without vault connection fails clearly", func() error { return f.checkVaultMissing(ctx) }},
 		{"wrong master key cannot take over existing output", func() error { return f.checkWrongMaster(ctx, first) }},
+		{"create-kubernetes-secret keeps metadata readable for flux", func() error { return f.checkKubernetesSecret(ctx) }},
 	}
 
 	var report []string
@@ -388,6 +390,49 @@ func (f *fixture) checkWrongMaster(ctx context.Context, first *dagger.Directory)
 }
 
 // clusterKey decrypts the cluster's private key with the master key.
+// checkKubernetesSecret: only data is encrypted, so Flux's
+// kustomize-controller can apply the Secret, and it still decrypts.
+func (f *fixture) checkKubernetesSecret(ctx context.Context) error {
+	value := "k8s-" + nonce()
+	file := dag.Secrets().CreateKubernetesSecret(
+		"app-credentials", "apps", "user=admin,password="+value,
+		dag.SetSecret("k8s-recipient-"+nonce(), f.masterPub),
+	)
+	enc, err := file.Contents(ctx)
+	if err != nil {
+		return err
+	}
+
+	lines := map[string]bool{}
+	for _, l := range strings.Split(enc, "\n") {
+		lines[l] = true
+	}
+	for _, want := range []string{"apiVersion: v1", "kind: Secret", "    name: app-credentials", "    namespace: apps", "type: Opaque"} {
+		if !lines[want] {
+			return fmt.Errorf("%q is not readable in the encrypted manifest", want)
+		}
+	}
+	if !strings.Contains(enc, "    password: ENC[AES256_GCM") {
+		return fmt.Errorf("data.password is not encrypted")
+	}
+
+	plain, err := dag.Secrets().Decrypt(ctx, f.master, file)
+	if err != nil {
+		return fmt.Errorf("decrypt: %w", err)
+	}
+	var doc struct {
+		Data map[string]string `yaml:"data"`
+	}
+	if err := yaml.Unmarshal([]byte(plain), &doc); err != nil {
+		return err
+	}
+	got, err := base64.StdEncoding.DecodeString(doc.Data["password"])
+	if err != nil || string(got) != value {
+		return fmt.Errorf("decrypted data.password does not round-trip")
+	}
+	return nil
+}
+
 func (f *fixture) clusterKey(ctx context.Context, out *dagger.Directory) (*dagger.Secret, error) {
 	data, err := stringData(ctx, f.master, out.File("sops-age.enc.yaml"))
 	if err != nil {

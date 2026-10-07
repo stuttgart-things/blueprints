@@ -1,3 +1,10 @@
+# [3.11.0](https://github.com/stuttgart-things/blueprints/compare/v3.10.4...v3.11.0) (2026-10-07)
+
+
+### Features
+
+* **secrets:** create-kubernetes-secret yields Secrets Flux can apply (dagger sops v0.137.0) ([#226](https://github.com/stuttgart-things/blueprints/issues/226)) ([f242fb2](https://github.com/stuttgart-things/blueprints/commit/f242fb23b321404475b84c92a7caa8516fb4587e)), closes [stuttgart-things/dagger#407](https://github.com/stuttgart-things/dagger/issues/407)
+
 ## [3.10.4](https://github.com/stuttgart-things/blueprints/compare/v3.10.3...v3.10.4) (2026-10-07)
 
 

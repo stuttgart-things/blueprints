@@ -1,3 +1,10 @@
+## [3.10.2](https://github.com/stuttgart-things/blueprints/compare/v3.10.1...v3.10.2) (2026-10-07)
+
+
+### Bug Fixes
+
+* **flux:** mark cluster and git functions +cache="never" ([#222](https://github.com/stuttgart-things/blueprints/issues/222)) ([8e94aa6](https://github.com/stuttgart-things/blueprints/commit/8e94aa68e9f102a8d6f6fff209070a0e7739e903)), closes [#182](https://github.com/stuttgart-things/blueprints/issues/182) [#221](https://github.com/stuttgart-things/blueprints/issues/221) [#182](https://github.com/stuttgart-things/blueprints/issues/182)
+
 ## [3.10.1](https://github.com/stuttgart-things/blueprints/compare/v3.10.0...v3.10.1) (2026-10-07)
 
 

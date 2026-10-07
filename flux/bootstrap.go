@@ -20,6 +20,7 @@ import (
 // Usage:
 //
 //	dagger call -m flux destroy --kube-config file:///tmp/kubeconfig
+// +cache="never"
 func (m *Flux) Destroy(
 	ctx context.Context,
 	// Kubeconfig secret for cluster access
@@ -120,6 +121,7 @@ func (m *Flux) Destroy(
 //	6: ApplySecrets — apply AFTER operator is running
 //	7: VerifySecrets — confirm secrets exist
 //	8: WaitForReconciliation — wait for Flux to reconcile
+// +cache="never"
 func (m *Flux) Bootstrap(
 	ctx context.Context,
 	// OCI KCL module source for rendering Flux instance config

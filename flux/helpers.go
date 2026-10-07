@@ -15,6 +15,11 @@ import (
 // can see, so an exec with unchanged arguments is otherwise served from cache
 // and never reaches the cluster. A bootstrap against a rebuilt or emptied
 // cluster then reports every phase green and installs nothing (#182).
+//
+// The stamps only help if the function body runs at all: Dagger also caches
+// a module function call by its arguments. Every exported function that
+// reads or changes the cluster (or commits to git) is therefore marked
+// +cache="never".
 func clusterContainer(image string, kubeConfig *dagger.Secret) *dagger.Container {
 	return dag.Container().
 		From(image).

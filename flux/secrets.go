@@ -9,6 +9,7 @@ import (
 )
 
 // ApplySecrets applies secret manifests to the cluster.
+// +cache="never"
 func (m *Flux) ApplySecrets(
 	ctx context.Context,
 	// Secret YAML content
@@ -42,6 +43,7 @@ func (m *Flux) ApplySecrets(
 
 // VerifySecrets auto-extracts secret names from the YAML and verifies they
 // exist in the cluster.
+// +cache="never"
 func (m *Flux) VerifySecrets(
 	ctx context.Context,
 	// Secret YAML content (multi-document)

@@ -27,7 +27,8 @@ data:
 // using the given AGE public key. Returns the encrypted manifest as a *dagger.File.
 //
 // Values are base64-encoded and placed under `data:` to match the standard
-// Kubernetes Secret layout.
+// Kubernetes Secret layout. Only `data`/`stringData` are encrypted, so
+// apiVersion, kind and metadata stay readable and Flux can apply the result.
 //
 // Usage:
 //
@@ -44,9 +45,15 @@ func (m *Secrets) CreateKubernetesSecret(
 	keyValues string,
 	// AGE public key for SOPS encryption
 	agePublicKey *dagger.Secret,
-	// SOPS config file (.sops.yaml)
+	// SOPS config file (.sops.yaml). When given, its creation rule decides
+	// what is encrypted and --encrypted-regex is not applied.
 	// +optional
 	sopsConfig *dagger.File,
+	// Keys whose values are encrypted. The default keeps apiVersion, kind and
+	// metadata readable, which Flux's kustomize-controller needs.
+	// +optional
+	// +default="^(data|stringData)$"
+	encryptedRegex string,
 ) (*dagger.File, error) {
 	manifest, err := renderSecretManifest(ctx, name, namespace, keyValues)
 	if err != nil {
@@ -57,14 +64,15 @@ func (m *Secrets) CreateKubernetesSecret(
 		WithNewFile("secret.yaml", manifest).
 		File("secret.yaml")
 
-	return dag.Sops().Encrypt(
-		agePublicKey,
-		plainFile,
-		dagger.SopsEncryptOpts{
-			FileExtension: "yaml",
-			SopsConfig:    sopsConfig,
-		},
-	), nil
+	opts := dagger.SopsEncryptOpts{
+		FileExtension: "yaml",
+		SopsConfig:    sopsConfig,
+	}
+	if sopsConfig == nil {
+		opts.EncryptedRegex = encryptedRegex
+	}
+
+	return dag.Sops().Encrypt(agePublicKey, plainFile, opts), nil
 }
 
 // CreateKubernetesSecretString is the string-returning variant of
@@ -77,8 +85,11 @@ func (m *Secrets) CreateKubernetesSecretString(
 	agePublicKey *dagger.Secret,
 	// +optional
 	sopsConfig *dagger.File,
+	// +optional
+	// +default="^(data|stringData)$"
+	encryptedRegex string,
 ) (string, error) {
-	f, err := m.CreateKubernetesSecret(ctx, name, namespace, keyValues, agePublicKey, sopsConfig)
+	f, err := m.CreateKubernetesSecret(ctx, name, namespace, keyValues, agePublicKey, sopsConfig, encryptedRegex)
 	if err != nil {
 		return "", err
 	}

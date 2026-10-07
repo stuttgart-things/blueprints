@@ -397,8 +397,7 @@ func waitForKustomizations(
 	// One unfiltered list call separates the two: if the cluster cannot be
 	// reached at all, say so instead of waiting out the clock and then lying
 	// about which components are at fault.
-	if _, err := fluxCliContainer(fluxCliImage, kubeConfig).
-		WithEnvVariable("CACHEBUST", fmt.Sprintf("%d", time.Now().UnixNano())).
+	if _, err := clusterContainer(fluxCliImage, kubeConfig).
 		WithExec([]string{"flux", "get", "kustomization", "-n", namespace}).
 		Stdout(ctx); err != nil {
 		return nil, fmt.Errorf("cannot reach the cluster to verify (namespace %q): %w", namespace, err)
@@ -410,8 +409,7 @@ func waitForKustomizations(
 	for {
 		still := pending[:0:0]
 		for _, name := range pending {
-			out, err := fluxCliContainer(fluxCliImage, kubeConfig).
-				WithEnvVariable("CACHEBUST", fmt.Sprintf("%d", time.Now().UnixNano())).
+			out, err := clusterContainer(fluxCliImage, kubeConfig).
 				WithExec([]string{
 					"flux", "get", "kustomization", name,
 					"-n", namespace,

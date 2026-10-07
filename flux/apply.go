@@ -28,7 +28,7 @@ func (m *Flux) DeployOperator(
 	return dag.Helm().HelmfileOperation(
 		ctx,
 		dagger.HelmHelmfileOperationOpts{
-			Src:             src,
+			Src:             stampDir(src),
 			HelmfileRef:     helmfileRef,
 			Operation:       "apply",
 			KubeConfig:      kubeConfig,
@@ -55,7 +55,7 @@ kind: Namespace
 metadata:
   name: %s`, namespace)
 
-	fullContent := nsDoc + "\n---\n" + configContent
+	fullContent := stampManifest(nsDoc + "\n---\n" + configContent)
 
 	configFile := dag.Directory().
 		WithNewFile("config.yaml", fullContent).
@@ -115,7 +115,7 @@ echo "Timeout waiting for Flux reconciliation after ${TIMEOUT_SECS}s"
 flux check
 `, timeoutSecs)
 
-	cli := fluxCliContainer(fluxCliImage, kubeConfig)
+	cli := clusterContainer(fluxCliImage, kubeConfig)
 
 	var results []string
 

@@ -48,12 +48,7 @@ func (m *Flux) Destroy(
 	// Phase 0: Delete FluxInstance CR
 	// =========================================================================
 
-	_, err := dag.Container().
-		From(kubectlImage).
-		WithMountedSecret("/tmp/kubeconfig", kubeConfig, dagger.ContainerWithMountedSecretOpts{
-			Mode: 0444,
-		}).
-		WithEnvVariable("KUBECONFIG", "/tmp/kubeconfig").
+	_, err := clusterContainer(kubectlImage, kubeConfig).
 		WithExec([]string{"kubectl", "delete", "fluxinstance", "--all", "-n", namespace, "--ignore-not-found=true"}).
 		Stdout(ctx)
 	if err != nil {
@@ -66,12 +61,7 @@ func (m *Flux) Destroy(
 	// Phase 1: Delete Flux secrets
 	// =========================================================================
 
-	_, err = dag.Container().
-		From(kubectlImage).
-		WithMountedSecret("/tmp/kubeconfig", kubeConfig, dagger.ContainerWithMountedSecretOpts{
-			Mode: 0444,
-		}).
-		WithEnvVariable("KUBECONFIG", "/tmp/kubeconfig").
+	_, err = clusterContainer(kubectlImage, kubeConfig).
 		WithExec([]string{"kubectl", "delete", "secret", "--all", "-n", namespace, "--ignore-not-found=true"}).
 		Stdout(ctx)
 	if err != nil {
@@ -87,7 +77,7 @@ func (m *Flux) Destroy(
 	err = dag.Helm().HelmfileOperation(
 		ctx,
 		dagger.HelmHelmfileOperationOpts{
-			Src:             src,
+			Src:             stampDir(src),
 			HelmfileRef:     helmfileRef,
 			Operation:       "destroy",
 			KubeConfig:      kubeConfig,
@@ -105,12 +95,7 @@ func (m *Flux) Destroy(
 	// Phase 3: Delete flux-system namespace
 	// =========================================================================
 
-	_, err = dag.Container().
-		From(kubectlImage).
-		WithMountedSecret("/tmp/kubeconfig", kubeConfig, dagger.ContainerWithMountedSecretOpts{
-			Mode: 0444,
-		}).
-		WithEnvVariable("KUBECONFIG", "/tmp/kubeconfig").
+	_, err = clusterContainer(kubectlImage, kubeConfig).
 		WithExec([]string{"kubectl", "delete", "namespace", namespace, "--ignore-not-found=true", "--timeout=120s"}).
 		Stdout(ctx)
 	if err != nil {

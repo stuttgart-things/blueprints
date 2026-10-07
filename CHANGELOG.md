@@ -1,3 +1,13 @@
+## [3.10.1](https://github.com/stuttgart-things/blueprints/compare/v3.10.0...v3.10.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **flux:** never serve cluster operations from the Dagger cache ([#182](https://github.com/stuttgart-things/blueprints/issues/182)) ([#221](https://github.com/stuttgart-things/blueprints/issues/221)) ([6b99087](https://github.com/stuttgart-things/blueprints/commit/6b990878c89f6dd950f31f9139ea290fc76cded6))
+* Go 1.27.1 build defaults, templating without golang:1.22, go.mod 1.26.7 (stuttgart-things/dagger[#400](https://github.com/stuttgart-things/blueprints/issues/400)) ([#219](https://github.com/stuttgart-things/blueprints/issues/219)) ([36b1631](https://github.com/stuttgart-things/blueprints/commit/36b1631af763b170326cf5d5982dc4f60e70a7d8))
+* **vm:** --cache-buster also re-runs the playbook, not only the requirements render ([#199](https://github.com/stuttgart-things/blueprints/issues/199)) ([#220](https://github.com/stuttgart-things/blueprints/issues/220)) ([ed10ccc](https://github.com/stuttgart-things/blueprints/commit/ed10ccccfbe4c3c0f61723247b52a77b82bb8af6))
+* **vm:** pass --parameters-file as one JSON extra-vars object ([#217](https://github.com/stuttgart-things/blueprints/issues/217)) ([#218](https://github.com/stuttgart-things/blueprints/issues/218)) ([2bfb825](https://github.com/stuttgart-things/blueprints/commit/2bfb825e77c470316d553ca6620a6bbd079944f6))
+
 # [3.10.0](https://github.com/stuttgart-things/blueprints/compare/v3.9.0...v3.10.0) (2026-10-05)
 
 

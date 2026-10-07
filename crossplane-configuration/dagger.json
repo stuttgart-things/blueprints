@@ -7,8 +7,8 @@
   "dependencies": [
     {
       "name": "crossplane",
-      "source": "github.com/stuttgart-things/dagger/crossplane@v0.136.2",
-      "pin": "ca78ac47372a435afb89678c99cdde6a2131adb9"
+      "source": "github.com/stuttgart-things/dagger/crossplane@v0.137.3",
+      "pin": "54aed3f10c8f86eff79822d01093967405e488a1"
     },
     {
       "name": "kcl",

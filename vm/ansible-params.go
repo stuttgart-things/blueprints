@@ -29,12 +29,12 @@ func (m *Vm) mergeAnsibleParameters(ctx context.Context, file *dagger.File, strP
 		}
 	}
 
-	// If no string parameters, return YAML params as key=value pairs
+	// If no string parameters, return YAML params as they are
 	if strParams == "" {
 		if len(fileParams) == 0 {
 			return "", nil
 		}
-		return convertMapToAnsibleParams(fileParams), nil
+		return convertMapToAnsibleParams(fileParams)
 	}
 
 	// Parse string parameters (format: "key1=value1,key2=value2")
@@ -43,8 +43,8 @@ func (m *Vm) mergeAnsibleParameters(ctx context.Context, file *dagger.File, strP
 	// Merge maps with string params taking priority
 	mergedParams := mergeParamMaps(fileParams, strParamMap)
 
-	// Convert to Ansible parameters format (key=value pairs)
-	return convertMapToAnsibleParams(mergedParams), nil
+	// Convert to Ansible parameters format (one JSON object)
+	return convertMapToAnsibleParams(mergedParams)
 }
 
 // parseStringParams parses string parameters in format "key1=value1,key2=value2"
@@ -120,37 +120,18 @@ func mergeParamMaps(base, override map[string]interface{}) map[string]interface{
 	return result
 }
 
-// convertMapToAnsibleParams converts a map to Ansible parameters string format
-// Returns "key1=value1 key2=value2" format (space-separated)
-func convertMapToAnsibleParams(params map[string]interface{}) string {
+// convertMapToAnsibleParams renders the parameters as one JSON object for
+// --extra-vars. Unlike key=value pairs, Ansible parses JSON extra vars with
+// their types, so nested dicts and lists reach the playbook as such (#217).
+func convertMapToAnsibleParams(params map[string]interface{}) (string, error) {
 	if len(params) == 0 {
-		return ""
+		return "", nil
 	}
 
-	var pairs []string
-	for k, v := range params {
-		// Format the value appropriately
-		switch val := v.(type) {
-		case string:
-			pairs = append(pairs, fmt.Sprintf("%s=%s", k, val))
-		case bool:
-			pairs = append(pairs, fmt.Sprintf("%s=%v", k, val))
-		case int, int32, int64, float32, float64:
-			pairs = append(pairs, fmt.Sprintf("%s=%v", k, val))
-		default:
-			// For complex types, convert to JSON string
-			jsonBytes, err := json.Marshal(val)
-			if err != nil {
-				// Fallback to string representation
-				pairs = append(pairs, fmt.Sprintf("%s=%v", k, val))
-			} else {
-				// Escape single quotes in JSON for shell
-				jsonStr := strings.ReplaceAll(string(jsonBytes), "'", "'\"'\"'")
-				pairs = append(pairs, fmt.Sprintf("%s='%s'", k, jsonStr))
-			}
-		}
+	jsonBytes, err := json.Marshal(params)
+	if err != nil {
+		return "", fmt.Errorf("failed to encode ansible parameters as JSON: %w", err)
 	}
 
-	// Return space-separated pairs
-	return strings.Join(pairs, " ")
+	return string(jsonBytes), nil
 }

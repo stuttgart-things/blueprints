@@ -67,9 +67,9 @@ func (m *Vm) BakeLocalByProfile(
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
 	requirementsData string,
-	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
-	// down to CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
-	// remote requirements instead of a cached render.
+	// Any value that changes between runs -- a timestamp, a CI run id. Forces a
+	// fresh fetch of the remote requirements AND a real playbook run instead of
+	// a cached one.
 	//
 	// Deliberately NOT a field in execution.yaml: it is a property of THIS run,
 	// not of the VM being built, and committing one would make it stale by

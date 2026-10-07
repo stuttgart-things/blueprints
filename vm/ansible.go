@@ -51,10 +51,10 @@ func (m *Vm) ExecuteAnsible(
 	// +optional
 	// +default="simple"
 	inventoryType string,
-	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
-	// into CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
-	// remote requirements instead of a cached render. Leave empty to keep the
-	// previous behaviour.
+	// Any value that changes between runs -- a timestamp, a CI run id. Forces a
+	// fresh fetch of the remote requirements AND a real playbook run instead of
+	// a cached one (the value goes into src as a marker file). Leave empty to
+	// keep Dagger's caching.
 	// +optional
 	// +default=""
 	cacheBuster string,
@@ -82,6 +82,10 @@ func (m *Vm) ExecuteAnsible(
 			EnvSecrets:     envSecrets,
 		})
 }
+
+// cacheBusterMarker is the file prepareAnsibleExecution writes the cache
+// buster into. Same name as in the configuration module.
+const cacheBusterMarker = ".dagger-cache-buster"
 
 // ansiblePrepResult holds the prepared inputs for Ansible execution.
 type ansiblePrepResult struct {
@@ -145,6 +149,14 @@ func (m *Vm) prepareAnsibleExecution(
 			},
 		)
 		requirements = generatedRequirements.File("requirements.yaml")
+	}
+
+	// WRITE THE CACHE BUSTER INTO THE DIRECTORY THE PLAYBOOKS RUN IN. Without
+	// it the exec sees the same src, inventory, requirements and parameters as
+	// the last run and answers from cache: no PLAY RECAP, but true (#199). The
+	// dot-file is never read, and this also covers an explicit --requirements.
+	if cacheBuster != "" {
+		src = src.WithNewFile(cacheBusterMarker, cacheBuster)
 	}
 
 	// MERGE PARAMETERS FROM FILE AND STRING (STRING HAS HIGHER PRIORITY)

@@ -165,9 +165,9 @@ func (m *Vm) BakeHarvester(
 	// +default="simple"
 	inventoryType string,
 	// Any value that changes between runs — a timestamp, a CI run id. Forces a
-	// fresh fetch of the remote Ansible requirements instead of a cached
-	// render. The kubectl apply gets its own stamp regardless; see
-	// stampManifest.
+	// fresh fetch of the remote Ansible requirements and a real playbook run
+	// instead of a cached one. The kubectl apply gets its own stamp
+	// regardless; see stampManifest.
 	// +optional
 	// +default=""
 	cacheBuster string,

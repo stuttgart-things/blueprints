@@ -1,3 +1,10 @@
+## [3.11.1](https://github.com/stuttgart-things/blueprints/compare/v3.11.0...v3.11.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* bump dagger helm/crossplane/hugo to v0.137.3 (random secret names) ([#227](https://github.com/stuttgart-things/blueprints/issues/227)) ([bebc3df](https://github.com/stuttgart-things/blueprints/commit/bebc3df9b9ef1e3b353656d99cd88f335a4ffa03)), closes [stuttgart-things/dagger#417](https://github.com/stuttgart-things/dagger/issues/417)
+
 # [3.11.0](https://github.com/stuttgart-things/blueprints/compare/v3.10.4...v3.11.0) (2026-10-07)
 
 

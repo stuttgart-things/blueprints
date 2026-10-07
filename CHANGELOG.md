@@ -1,3 +1,10 @@
+## [3.10.4](https://github.com/stuttgart-things/blueprints/compare/v3.10.3...v3.10.4) (2026-10-07)
+
+
+### Bug Fixes
+
+* bump dagger helm/crossplane/hugo to v0.136.2 (credential leak fix) ([#223](https://github.com/stuttgart-things/blueprints/issues/223)) ([d2a6bda](https://github.com/stuttgart-things/blueprints/commit/d2a6bdab558d2480b8dcdf575f1108b8ec781dbe)), closes [stuttgart-things/dagger#403](https://github.com/stuttgart-things/dagger/issues/403)
+
 ## [3.10.3](https://github.com/stuttgart-things/blueprints/compare/v3.10.2...v3.10.3) (2026-10-07)
 
 

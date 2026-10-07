@@ -21,7 +21,7 @@ func (m *Flux) ApplySecrets(
 	kubeConfig *dagger.Secret,
 ) (string, error) {
 	secretFile := dag.Directory().
-		WithNewFile("secrets.yaml", secretContent).
+		WithNewFile("secrets.yaml", stampManifest(secretContent)).
 		File("secrets.yaml")
 
 	_, err := dag.Kubernetes().Kubectl(
@@ -87,12 +87,7 @@ func (m *Flux) VerifySecrets(
 
 	var found, missing []string
 	for _, name := range secretNames {
-		_, err := dag.Container().
-			From("bitnami/kubectl:latest").
-			WithMountedSecret("/tmp/kubeconfig", kubeConfig, dagger.ContainerWithMountedSecretOpts{
-				Mode: 0444,
-			}).
-			WithEnvVariable("KUBECONFIG", "/tmp/kubeconfig").
+		_, err := clusterContainer("bitnami/kubectl:latest", kubeConfig).
 			WithExec([]string{"kubectl", "get", "secret", name, "-n", namespace, "-o", "name"}).
 			Stdout(ctx)
 		if err != nil {

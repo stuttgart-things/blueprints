@@ -55,10 +55,10 @@ func (m *Vm) ExecuteAnsibleWithExport(
 	// +optional
 	// +default="simple"
 	inventoryType string,
-	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
-	// into CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
-	// remote requirements instead of a cached render. Leave empty to keep the
-	// previous behaviour.
+	// Any value that changes between runs -- a timestamp, a CI run id. Forces a
+	// fresh fetch of the remote requirements AND a real playbook run instead of
+	// a cached one (the value goes into src as a marker file). Leave empty to
+	// keep Dagger's caching.
 	// +optional
 	// +default=""
 	cacheBuster string,
@@ -134,10 +134,10 @@ func (m *Vm) ExecuteAnsibleEncryptAndCommit(
 	// +optional
 	// +default="simple"
 	inventoryType string,
-	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
-	// into CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
-	// remote requirements instead of a cached render. Leave empty to keep the
-	// previous behaviour.
+	// Any value that changes between runs -- a timestamp, a CI run id. Forces a
+	// fresh fetch of the remote requirements AND a real playbook run instead of
+	// a cached one (the value goes into src as a marker file). Leave empty to
+	// keep Dagger's caching.
 	// +optional
 	// +default=""
 	cacheBuster string,

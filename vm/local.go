@@ -62,10 +62,10 @@ func (m *Vm) BakeLocal(
 	// +optional
 	// +default="https://raw.githubusercontent.com/stuttgart-things/ansible/refs/heads/main/templates/requirements-data.yaml"
 	requirementsData string,
-	// Any value that changes between runs -- a timestamp, a CI run id. Threaded
-	// down to CreateAnsibleRequirementFiles, where it forces a fresh fetch of the
-	// remote requirements instead of a cached render. Leave empty to keep the
-	// previous behaviour.
+	// Any value that changes between runs -- a timestamp, a CI run id. Forces a
+	// fresh fetch of the remote requirements AND a real playbook run instead of
+	// a cached one (the value goes into src as a marker file). Leave empty to
+	// keep Dagger's caching.
 	//
 	// Worth passing from CI: the dagger-labda runner keeps its engine between
 	// runs, so without it a merged collection bump can stay invisible to the

@@ -21,8 +21,8 @@
     },
     {
       "name": "go",
-      "source": "github.com/stuttgart-things/dagger/go@v0.123.0",
-      "pin": "f2cd87dc9ef63af1121c308bae2b68f60325a2d1"
+      "source": "github.com/stuttgart-things/dagger/go@v0.136.1",
+      "pin": "0fa0bcf2a2108690c837262c9ad569af7e07a60b"
     },
     {
       "name": "kcl",

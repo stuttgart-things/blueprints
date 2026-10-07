@@ -14,8 +14,10 @@ import (
 func (m *GoMicroservice) RunBuildStage(
 	ctx context.Context,
 	src *dagger.Directory,
+	// Go version of the golang build image
+	// renovate: datasource=golang-version depName=golang
 	// +optional
-	// +default="1.25.5"
+	// +default="1.27.1"
 	goVersion string,
 	// +optional
 	// +default="linux"

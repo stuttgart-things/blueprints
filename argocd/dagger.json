@@ -26,8 +26,8 @@
     },
     {
       "name": "templating",
-      "source": "github.com/stuttgart-things/dagger/templating@v0.112.1",
-      "pin": "25d1dd4fc3c17d224462258b617ebcdee5ed1492"
+      "source": "github.com/stuttgart-things/dagger/templating@v0.136.1",
+      "pin": "0fa0bcf2a2108690c837262c9ad569af7e07a60b"
     }
   ]
 }

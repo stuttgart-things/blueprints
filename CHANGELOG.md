@@ -1,3 +1,10 @@
+## [3.10.3](https://github.com/stuttgart-things/blueprints/compare/v3.10.2...v3.10.3) (2026-10-07)
+
+
+### Bug Fixes
+
+* **deps:** update module filippo.io/age to v1.3.2 ([#205](https://github.com/stuttgart-things/blueprints/issues/205)) ([0a8c04f](https://github.com/stuttgart-things/blueprints/commit/0a8c04f03c96ab74d881195e51c4ed1bad378bb9))
+
 ## [3.10.2](https://github.com/stuttgart-things/blueprints/compare/v3.10.1...v3.10.2) (2026-10-07)
 
 

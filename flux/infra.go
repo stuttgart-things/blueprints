@@ -105,6 +105,7 @@ type infraRenderResult struct {
 // one whose output carries the `managed-by: kcl-flux-kustomizations` annotation
 // in the cluster repositories -- this function drives it instead of the files
 // being written by hand.
+// +cache="never"
 func (m *Flux) BootstrapInfra(
 	ctx context.Context,
 	// values.yaml describing the source and the components

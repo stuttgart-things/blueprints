@@ -9,6 +9,7 @@ import (
 )
 
 // DeployOperator deploys the Flux operator via Helmfile.
+// +cache="never"
 func (m *Flux) DeployOperator(
 	ctx context.Context,
 	// Kubeconfig secret for cluster access
@@ -39,6 +40,7 @@ func (m *Flux) DeployOperator(
 }
 
 // ApplyConfig applies rendered config (non-secret) manifests to the cluster.
+// +cache="never"
 func (m *Flux) ApplyConfig(
 	ctx context.Context,
 	// Config YAML content
@@ -78,6 +80,7 @@ metadata:
 
 // WaitForReconciliation runs flux check with retry, reconciles sources,
 // and gets all Flux resources.
+// +cache="never"
 func (m *Flux) WaitForReconciliation(
 	ctx context.Context,
 	// Target namespace

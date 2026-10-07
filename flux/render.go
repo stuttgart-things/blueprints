@@ -77,6 +77,7 @@ func (m *Flux) RenderConfig(
 }
 
 // CommitConfig commits rendered config and optional secrets to a Git repository.
+// +cache="never"
 func (m *Flux) CommitConfig(
 	ctx context.Context,
 	// Config YAML content to commit

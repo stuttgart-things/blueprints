@@ -40,8 +40,8 @@
     },
     {
       "name": "terraform",
-      "source": "github.com/stuttgart-things/dagger/terraform@v0.123.0",
-      "pin": "f2cd87dc9ef63af1121c308bae2b68f60325a2d1"
+      "source": "github.com/stuttgart-things/dagger/terraform@v0.139.0",
+      "pin": "2eb065a19df524e4aa2f509b4fedb5012b782bc7"
     }
   ],
   "disableDefaultFunctionCaching": true

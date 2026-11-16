@@ -74,6 +74,15 @@ func (m *Vm) ExecuteTerraform(
 	// Run terraform output --json after apply and write result to output.json
 	// +optional
 	exportTfOutput bool,
+	// A resolv.conf for the Terraform containers (apply/destroy AND the
+	// output read), instead of the Dagger engine's resolver. For a backend or
+	// provider in a lab zone the runner's resolvers answer only sometimes, e.g.
+	// the MinIO state backend in 4sthings.tiab.ssc.sva.de: list the zone's
+	// authoritative server first, then the usual resolvers -- Terraform's Go
+	// resolver moves on to the next server when the first REFUSES a name
+	// outside its zone (stuttgart-things/stuttgart-things#4681).
+	// +optional
+	terraformResolvConf *dagger.File,
 ) (*dagger.Directory, error) {
 
 	tfDir := terraformDir
@@ -205,6 +214,9 @@ func (m *Vm) ExecuteTerraform(
 	if exportTfOutput {
 		execOpts.ExportTfOutput = true
 	}
+	if terraformResolvConf != nil {
+		execOpts.ResolvConf = terraformResolvConf
+	}
 
 	if kubeSecretValue != "" && kubeSecretTfVar != "" {
 		tfVar := fmt.Sprintf("%s=%s", kubeSecretTfVar, kubeSecretValue)
@@ -244,6 +256,15 @@ func (m *Vm) OutputTerraformRun(
 	// +optional
 	// +default="/root/.kube/config"
 	kubeConfigPath string,
+	// A resolv.conf for the Terraform containers (apply/destroy AND the
+	// output read), instead of the Dagger engine's resolver. For a backend or
+	// provider in a lab zone the runner's resolvers answer only sometimes, e.g.
+	// the MinIO state backend in 4sthings.tiab.ssc.sva.de: list the zone's
+	// authoritative server first, then the usual resolvers -- Terraform's Go
+	// resolver moves on to the next server when the first REFUSES a name
+	// outside its zone (stuttgart-things/stuttgart-things#4681).
+	// +optional
+	terraformResolvConf *dagger.File,
 ) (string, error) {
 
 	opts := dagger.TerraformOutputOpts{}
@@ -256,6 +277,9 @@ func (m *Vm) OutputTerraformRun(
 	if kubeConfig != nil {
 		opts.KubeConfig = kubeConfig
 		opts.KubeConfigPath = kubeConfigPath
+	}
+	if terraformResolvConf != nil {
+		opts.ResolvConf = terraformResolvConf
 	}
 
 	output, err := dag.Terraform().Output(ctx, terraformDir, opts)
@@ -275,6 +299,15 @@ func (m *Vm) OutputTerraformRunWithCreds(
 	awsAccessKeyID *dagger.Secret,
 	// +optional
 	awsSecretAccessKey *dagger.Secret,
+	// A resolv.conf for the Terraform containers (apply/destroy AND the
+	// output read), instead of the Dagger engine's resolver. For a backend or
+	// provider in a lab zone the runner's resolvers answer only sometimes, e.g.
+	// the MinIO state backend in 4sthings.tiab.ssc.sva.de: list the zone's
+	// authoritative server first, then the usual resolvers -- Terraform's Go
+	// resolver moves on to the next server when the first REFUSES a name
+	// outside its zone (stuttgart-things/stuttgart-things#4681).
+	// +optional
+	terraformResolvConf *dagger.File,
 ) (string, error) {
-	return m.OutputTerraformRun(ctx, terraformDir, awsAccessKeyID, awsSecretAccessKey, nil, "")
+	return m.OutputTerraformRun(ctx, terraformDir, awsAccessKeyID, awsSecretAccessKey, nil, "", terraformResolvConf)
 }

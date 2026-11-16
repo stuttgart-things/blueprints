@@ -105,6 +105,15 @@ func (m *Vm) BakeLocal(
 	// +optional
 	// +default="encrypted-exports"
 	exportDestinationPath string,
+	// A resolv.conf for the Terraform containers (apply/destroy AND the
+	// output read), instead of the Dagger engine's resolver. For a backend or
+	// provider in a lab zone the runner's resolvers answer only sometimes, e.g.
+	// the MinIO state backend in 4sthings.tiab.ssc.sva.de: list the zone's
+	// authoritative server first, then the usual resolvers -- Terraform's Go
+	// resolver moves on to the next server when the first REFUSES a name
+	// outside its zone (stuttgart-things/stuttgart-things#4681).
+	// +optional
+	terraformResolvConf *dagger.File,
 ) (*dagger.Directory, error) {
 	workDir := "/src"
 
@@ -190,6 +199,7 @@ func (m *Vm) BakeLocal(
 				"",    // kubeSecretJsonpath
 				"",    // kubeSecretTfVar
 				false, // exportTfOutput
+				terraformResolvConf,
 			)
 
 		if terraformErr == nil {
@@ -218,6 +228,7 @@ func (m *Vm) BakeLocal(
 			terraformDirResult,
 			awsAccessKeyID,
 			awsSecretAccessKey,
+			terraformResolvConf,
 		)
 	if err != nil {
 		return nil, fmt.Errorf("getting terraform output failed: %w", err)

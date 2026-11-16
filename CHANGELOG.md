@@ -1,3 +1,10 @@
+# [3.12.0](https://github.com/stuttgart-things/blueprints/compare/v3.11.1...v3.12.0) (2026-11-16)
+
+
+### Features
+
+* **vm:** --terraform-resolv-conf for the Terraform apply/destroy and output read ([#231](https://github.com/stuttgart-things/blueprints/issues/231)) ([e92e68c](https://github.com/stuttgart-things/blueprints/commit/e92e68c040dc889eb9a55017d67a22776af5618b)), closes [stuttgart-things/stuttgart-things#4681](https://github.com/stuttgart-things/stuttgart-things/issues/4681)
+
 ## [3.11.1](https://github.com/stuttgart-things/blueprints/compare/v3.11.0...v3.11.1) (2026-10-07)
 
 

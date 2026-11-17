@@ -7,8 +7,8 @@
   "dependencies": [
     {
       "name": "ansible",
-      "source": "github.com/stuttgart-things/dagger/ansible@v0.139.1",
-      "pin": "e73e95c69f5ecc1513a017e6d700ea25b33ad1a2"
+      "source": "github.com/stuttgart-things/dagger/ansible@v0.139.2",
+      "pin": "b8b91cf7cba2ca431bd9835bbcba0f235b79772f"
     },
     {
       "name": "configuration",

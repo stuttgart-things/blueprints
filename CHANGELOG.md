@@ -1,3 +1,10 @@
+## [3.12.1](https://github.com/stuttgart-things/blueprints/compare/v3.12.0...v3.12.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **vm:** bump ansible module to v0.139.1 (Vault env inline, no vault module load) ([#233](https://github.com/stuttgart-things/blueprints/issues/233)) ([c12a19a](https://github.com/stuttgart-things/blueprints/commit/c12a19ae6f3b2f899e7ca9179619e3e651708301)), closes [stuttgart-things/dagger#432](https://github.com/stuttgart-things/dagger/issues/432) [stuttgart-things/stuttgart-things#4681](https://github.com/stuttgart-things/stuttgart-things/issues/4681)
+
 # [3.12.0](https://github.com/stuttgart-things/blueprints/compare/v3.11.1...v3.12.0) (2026-11-16)
 
 

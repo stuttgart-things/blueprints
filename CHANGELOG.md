@@ -1,3 +1,10 @@
+## [3.12.2](https://github.com/stuttgart-things/blueprints/compare/v3.12.1...v3.12.2) (2026-11-17)
+
+
+### Bug Fixes
+
+* **vm:** bump ansible module to v0.139.2 (engineVersion v0.21.9 again) ([#234](https://github.com/stuttgart-things/blueprints/issues/234)) ([15f5780](https://github.com/stuttgart-things/blueprints/commit/15f5780052f813f57963b611bf34234b743efc8e)), closes [stuttgart-things/stuttgart-things#4681](https://github.com/stuttgart-things/stuttgart-things/issues/4681)
+
 ## [3.12.1](https://github.com/stuttgart-things/blueprints/compare/v3.12.0...v3.12.1) (2026-11-17)
 
 

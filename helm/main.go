@@ -5,4 +5,4 @@
 
 package main
 
-type Helm struct{}
+type HelmBlueprint struct{}

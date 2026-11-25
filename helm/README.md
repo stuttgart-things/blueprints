@@ -4,6 +4,12 @@ Helmfile-driven deployment workflows. Extracted from `kubernetes-deployment`
 in #143 so the catch-all module shrinks to a thin orchestrator over
 `kcl` + `kubectl`.
 
+The module is named `helm-blueprint` (not `helm`): it wraps
+`github.com/stuttgart-things/dagger/helm`, and Dagger rejects a module that
+depends on another module with its own name. The directory and
+`dagger call -m helm ...` stay the same; as a dependency it is
+`dag.HelmBlueprint()`.
+
 ```bash
 # RENDER HELMFILE (no cluster apply)
 dagger call -m helm deploy-helmfile \

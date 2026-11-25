@@ -9,7 +9,7 @@ import (
 
 // DeployMicroservices runs a sequence of Helmfile operations from a
 // comma-separated list of helmfile references against the same cluster.
-func (m *Helm) DeployMicroservices(
+func (m *HelmBlueprint) DeployMicroservices(
 	ctx context.Context,
 	// +optional
 	src *dagger.Directory,

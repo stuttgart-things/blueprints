@@ -1,3 +1,10 @@
+## [3.12.4](https://github.com/stuttgart-things/blueprints/compare/v3.12.3...v3.12.4) (2026-11-25)
+
+
+### Bug Fixes
+
+* **deps:** align all stuttgart-things/dagger module pins at v0.141.3 ([#238](https://github.com/stuttgart-things/blueprints/issues/238)) ([94a96bb](https://github.com/stuttgart-things/blueprints/commit/94a96bbbaf09a46dfc5819b8bf4d5d3af35dfa59)), closes [#235](https://github.com/stuttgart-things/blueprints/issues/235)
+
 ## [3.12.3](https://github.com/stuttgart-things/blueprints/compare/v3.12.2...v3.12.3) (2026-11-25)
 
 

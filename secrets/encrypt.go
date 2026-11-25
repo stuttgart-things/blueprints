@@ -22,9 +22,9 @@ func (m *Secrets) EncryptFile(
 	sopsConfig *dagger.File,
 ) (string, error) {
 	return dag.Sops().Encrypt(
-		agePublicKey,
 		plaintextFile,
 		dagger.SopsEncryptOpts{
+			AgeKey:        agePublicKey,
 			FileExtension: fileExtension,
 			SopsConfig:    sopsConfig,
 		},

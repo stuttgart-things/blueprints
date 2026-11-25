@@ -65,6 +65,7 @@ func (m *Secrets) CreateKubernetesSecret(
 		File("secret.yaml")
 
 	opts := dagger.SopsEncryptOpts{
+		AgeKey:        agePublicKey,
 		FileExtension: "yaml",
 		SopsConfig:    sopsConfig,
 	}
@@ -72,7 +73,7 @@ func (m *Secrets) CreateKubernetesSecret(
 		opts.EncryptedRegex = encryptedRegex
 	}
 
-	return dag.Sops().Encrypt(agePublicKey, plainFile, opts), nil
+	return dag.Sops().Encrypt(plainFile, opts), nil
 }
 
 // CreateKubernetesSecretString is the string-returning variant of

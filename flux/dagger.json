@@ -7,23 +7,23 @@
   "dependencies": [
     {
       "name": "git",
-      "source": "github.com/stuttgart-things/dagger/git@v0.112.0",
-      "pin": "261615cf3eaa18a1acea7293132d7315d8cc886a"
+      "source": "github.com/stuttgart-things/dagger/git@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     },
     {
       "name": "helm",
-      "source": "github.com/stuttgart-things/dagger/helm@v0.137.3",
-      "pin": "54aed3f10c8f86eff79822d01093967405e488a1"
+      "source": "github.com/stuttgart-things/dagger/helm@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     },
     {
       "name": "kcl",
-      "source": "github.com/stuttgart-things/dagger/kcl@v0.129.5",
-      "pin": "d9d7e212a9945017d970214534055352462cbe2b"
+      "source": "github.com/stuttgart-things/dagger/kcl@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     },
     {
       "name": "kubernetes",
-      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.112.0",
-      "pin": "261615cf3eaa18a1acea7293132d7315d8cc886a"
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     },
     {
       "name": "secrets",

@@ -203,9 +203,9 @@ func (m *CrossplaneConfiguration) AddCluster(
 	// ENCRYPT WITH SOPS (if enabled)
 	if encryptWithSops {
 		encryptedFile := dag.Sops().Encrypt(
-			agePublicKey,
 			mergedFile,
 			dagger.SopsEncryptOpts{
+				AgeKey:        agePublicKey,
 				FileExtension: "yaml",
 				SopsConfig:    sopsConfig,
 			},

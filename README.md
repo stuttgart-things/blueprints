@@ -2,7 +2,7 @@
 
 **Blueprints** is a collection of modular, reusable Dagger pipelines for automating build, test, and deployment workflows in modern DevOps environments.
 
-> Dagger engine: **v0.20.8** · sub-module pins: **v0.112.0** (see each `dagger.json` file).
+> Dagger engine: **v0.21.9** (all modules; keep in step with `DAGGER_VERSION` in `.github/workflows/this-test-modules.yaml`) · sub-modules from [stuttgart-things/dagger](https://github.com/stuttgart-things/dagger), pinned per module (see each `dagger.json` file).
 
 ## Overview
 

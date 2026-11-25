@@ -73,9 +73,9 @@ func (m *Secrets) RenderTemplate(
 		return nil, fmt.Errorf("ageRecipient is required when encrypt=true")
 	}
 
-	encryptOpts := dagger.SopsEncryptOpts{FileExtension: fileExtension}
+	encryptOpts := dagger.SopsEncryptOpts{AgeKey: ageRecipient, FileExtension: fileExtension}
 	if sopsConfig != nil {
 		encryptOpts.SopsConfig = sopsConfig
 	}
-	return dag.Sops().Encrypt(ageRecipient, renderedFile, encryptOpts), nil
+	return dag.Sops().Encrypt(renderedFile, encryptOpts), nil
 }

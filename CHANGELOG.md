@@ -1,3 +1,10 @@
+## [3.12.3](https://github.com/stuttgart-things/blueprints/compare/v3.12.2...v3.12.3) (2026-11-25)
+
+
+### Bug Fixes
+
+* **helm:** rename module to helm-blueprint so it loads again ([#237](https://github.com/stuttgart-things/blueprints/issues/237)) ([166f6ab](https://github.com/stuttgart-things/blueprints/commit/166f6abae2e8a6ce33fe9eb576066c19746b99f9)), closes [#235](https://github.com/stuttgart-things/blueprints/issues/235)
+
 ## [3.12.2](https://github.com/stuttgart-things/blueprints/compare/v3.12.1...v3.12.2) (2026-11-17)
 
 

@@ -26,12 +26,6 @@ on:
 #     named anything else (e.g. claude/*).
 #   * No smoke-test step: this repo has no tests/smoke/<module>.sh. tests/
 #     holds fixtures, and the Taskfile's test-<module> targets need secrets.
-#
-# Known to fail: `helm`. The local module declares a dependency on the remote
-# module of the same name (github.com/stuttgart-things/dagger/helm), which the
-# workspace loader rejects -- `dagger functions` on it has been broken since
-# before this workflow existed, on main and at the old engine version alike.
-# Left failing on purpose: excluding it would hide a real breakage.
 
 permissions:
   contents: read

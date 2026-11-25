@@ -7,8 +7,8 @@
   "dependencies": [
     {
       "name": "ansible",
-      "source": "github.com/stuttgart-things/dagger/ansible@v0.139.2",
-      "pin": "b8b91cf7cba2ca431bd9835bbcba0f235b79772f"
+      "source": "github.com/stuttgart-things/dagger/ansible@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     },
     {
       "name": "configuration",
@@ -16,23 +16,23 @@
     },
     {
       "name": "git",
-      "source": "github.com/stuttgart-things/dagger/git@v0.123.0",
-      "pin": "f2cd87dc9ef63af1121c308bae2b68f60325a2d1"
+      "source": "github.com/stuttgart-things/dagger/git@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     },
     {
       "name": "go",
-      "source": "github.com/stuttgart-things/dagger/go@v0.136.1",
-      "pin": "0fa0bcf2a2108690c837262c9ad569af7e07a60b"
+      "source": "github.com/stuttgart-things/dagger/go@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     },
     {
       "name": "kcl",
-      "source": "github.com/stuttgart-things/dagger/kcl@v0.129.5",
-      "pin": "d9d7e212a9945017d970214534055352462cbe2b"
+      "source": "github.com/stuttgart-things/dagger/kcl@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     },
     {
       "name": "kubernetes",
-      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.123.0",
-      "pin": "f2cd87dc9ef63af1121c308bae2b68f60325a2d1"
+      "source": "github.com/stuttgart-things/dagger/kubernetes@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     },
     {
       "name": "secrets",
@@ -40,8 +40,8 @@
     },
     {
       "name": "terraform",
-      "source": "github.com/stuttgart-things/dagger/terraform@v0.139.0",
-      "pin": "2eb065a19df524e4aa2f509b4fedb5012b782bc7"
+      "source": "github.com/stuttgart-things/dagger/terraform@v0.141.3",
+      "pin": "7fd8309338eb2f439af26948a9b29825d79bec0f"
     }
   ],
   "disableDefaultFunctionCaching": true
